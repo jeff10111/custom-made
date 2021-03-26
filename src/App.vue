@@ -1,17 +1,16 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <SelectionInterface aaa="useless string"/>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import SelectionInterface from './components/SelectionInterface.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    SelectionInterface
   }
 }
 </script>
