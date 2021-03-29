@@ -23,7 +23,6 @@ export default {
 </script>
 
 <style scoped>
-@import './bootstrap.css';
 button{height: 5em; width: 5em;}
 .selectedDiv{border-style: dotted;}
 </style>

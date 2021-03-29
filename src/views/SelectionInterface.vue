@@ -1,5 +1,7 @@
 <template>
 <div>
+<router-link :to="'/simulation?body=' + userSelection.body + '&powerup=' + userSelection.powerup + '&engine=' + userSelection.engine">
+Start Simulation</router-link>
 
 <div class="container">
   <div class="row">
@@ -28,7 +30,7 @@
 </template>
 
 <script>
-import InterfaceItem2 from './InterfaceItem2.vue'
+import InterfaceItem2 from '@/components/InterfaceItem2.vue'
 export default {
   name: 'SelectionInterface',
   components: {
@@ -42,7 +44,7 @@ export default {
     bodies: ['Train','Car','Tank','Spaceship'],
     engines: ['Steam', 'Petrol', 'Jet', 'Nuclear Fusion'],
     powerups: ['4 Wheel Drive', 'Emergency Siren','Portal','Speed Boost'],
-    userSelection: {body:"",engine:"",powerup:""}
+    userSelection: {body:"Train",engine:"Steam",powerup:"Portal"}//
     };
   },
   methods: {
@@ -69,7 +71,7 @@ export default {
 
 
 <style>
-@import './bootstrap.css';
+@import '~@/components/bootstrap.css';
 .col-sm {margin-bottom: 10px;} 
 h1{margin-bottom: 10px;}
 </style>

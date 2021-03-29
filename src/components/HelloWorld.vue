@@ -28,7 +28,7 @@
       <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
     </ul>
     <div id="app-2">
-  <span v-bind:title="message">
+  <span v-bind:title="msg">
     Hover your mouse over me for a few seconds
     to see my dynamically bound title!
   </span>
