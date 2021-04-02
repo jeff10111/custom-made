@@ -1,12 +1,12 @@
 
 <template>
   <div id="renderCanvas">
-    <!-- {{this.userSelection["body"]}} with {{this.userSelection.engine}} engine and {{this.userSelection.powerup}} powerup -->
+    {{this.userSelection["body"]}} with {{this.userSelection.engine}} engine and {{this.userSelection.powerup}} powerup
     <Scene v-model="myScene">
-      <Entity v-model="myEntity">
+      <!-- <Entity v-model="myEntity">
         <Box v-model="myBox"></Box>
-      </Entity>
-      <!-- <Asset src="../assets/dornaRigged.glb" v-model="myAssetRoot"></Asset> -->
+      </Entity> -->
+      <Asset :position="[0,0,0]" :scaling="[0.1,0.1,0.1]" src="../assets/dornaRigged.glb" v-model="dornaArm"></Asset>
     </Scene>
   </div>
 </template>
@@ -25,7 +25,7 @@ export default {
       myScene: null,
       myEntity: null,
       myBox: null,
-      // myAssetRoot: {path: '../assets/dornaRigged.glb'},
+      dornaArm: {path: '../assets/dornaRigged.glb'},
       };
   },
   watch: {
@@ -34,8 +34,8 @@ export default {
       // do something with it here or call a method to use it from here
     },
 
-    myEntity() {
-      // myEntity is now available from the component
+    dornaArm() {
+      // dornaArm now available from the component
       // do something with it here or call a method to use it from here
     },
 
@@ -48,6 +48,7 @@ export default {
     this.userSelection["body"] = this.$route.query.body;
     this.userSelection["engine"] = this.$route.query.engine;
     this.userSelection["powerup"] = this.$route.query.powerup;
+
     
   }
 }
