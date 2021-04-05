@@ -6,11 +6,19 @@
       <!-- <Entity v-model="myEntity">
         <Box v-model="myBox"></Box>
       </Entity> -->
-      <Asset :position="[0,0,0]" :scaling="[0.1,0.1,0.1]" src="../assets/dornaRigged.glb" v-model="dornaArm"></Asset>
+      <Asset :position="[0,0,0]" :scaling="[0.1,0.1,0.1]" src="../assets/dornaRigged.glb" v-model="dornaArm" v-on="scaleUp()"></Asset>
     </Scene>
   </div>
 </template>
-
+<script src="https://preview.babylonjs.com/babylon.js"></script>
+<script src="https://preview.babylonjs.com/gui/babylon.gui.min.js"></script>
+<script src="https://preview.babylonjs.com/inspector/babylon.inspector.bundle.js"></script>
+<script src="https://preview.babylonjs.com/nodeEditor/babylon.nodeEditor.js"></script>
+<script src="https://preview.babylonjs.com/materialsLibrary/babylonjs.materials.min.js"></script>
+<script src="https://preview.babylonjs.com/proceduralTexturesLibrary/babylonjs.proceduralTextures.min.js"></script>
+<script src="https://preview.babylonjs.com/postProcessesLibrary/babylonjs.postProcess.min.js"></script>
+<script src="https://preview.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+<script src="https://preview.babylonjs.com/serializers/babylonjs.serializers.min.js"></script>
 <script>
 
 export default {
@@ -28,6 +36,11 @@ export default {
       dornaArm: {path: '../assets/dornaRigged.glb'},
       };
   },
+  methods: {
+    scaleUp() {
+      console.log(this.dornaArm)
+    }
+  },
   watch: {
     myScene() {
       // myScene is now available from the component
@@ -37,6 +50,8 @@ export default {
     dornaArm() {
       // dornaArm now available from the component
       // do something with it here or call a method to use it from here
+      console.log("yo");
+      console.log(this);
     },
 
     myBox() {
@@ -49,7 +64,6 @@ export default {
     this.userSelection["engine"] = this.$route.query.engine;
     this.userSelection["powerup"] = this.$route.query.powerup;
 
-    
   }
 }
 </script>
