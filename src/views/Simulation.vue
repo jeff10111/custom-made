@@ -1,7 +1,8 @@
 <template>
 <div>
   <div>{{this.userSelection["body"]}} with {{this.userSelection.engine}} engine and {{this.userSelection.powerup}} powerup</div>
-  <canvas id="gameCanvas"></canvas>
+  <div><button @click="spinArm">Spin!</button></div>
+  <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
 </div>
 </template>
 
@@ -11,6 +12,12 @@ import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 import { Skeleton, SceneLoader, Engine, Scene, ArcRotateCamera, Vector3, Mesh, MeshBuilder, HemisphericLight } from "@babylonjs/core";
 import Vue from 'vue'
+
+var runningApp;
+
+function spinArm() {
+  console.log(runningApp.scene);
+}
 
 var createScene = async function (engine, canvas) {
   var scene = new Scene(engine);
@@ -23,19 +30,24 @@ var createScene = async function (engine, canvas) {
     console.log(result)
     for (var mesh in result.meshes) {
       var thisMesh = result.meshes[mesh]
+      thisMesh.scaling.scaleInPlace(0.2);
       console.log(thisMesh.name)
-      var rot = thisMesh.rotationQuaternion.toEulerAngles()
-      // console.log(Math.round(rot.x * 2) / 2)
-      // console.log(Math.round(rot.y * 2) / 2)
-      // console.log(Math.round(rot.z * 2) / 2)
+      const rot = thisMesh.rotationQuaternion.toEulerAngles()
+      // const roundX = Math.round(rot.x * 2) / 2
+      // const roundY = Math.round(rot.y * 2) / 2
+      // const roundZ = Math.round(rot.z * 2) / 2
+      // console.log(roundX, roundY, roundZ)
       // Quaternions must be reset on imported models otherwise they will not be able to be rotated
       thisMesh.rotationQuaternion = null;
       // But we still want them in the original positions
-      thisMesh.rotation = Vector3((rot.x * 2) / 2, (rot.y * 2) / 2, (rot.z * 2) / 2)
-
+      const newRot = new Vector3(rot.x, rot.y, rot.z)
+      thisMesh.rotation = newRot;
     }
 
     console.log(scene.getMeshByName("Arm_1"));
+    scene.getMeshByName(
+      "__root__"
+    ).rotation = new Vector3(0,0.5,0);
     
 
     // result.meshes[0].scaling.scaleInPlace(0.8)
@@ -59,8 +71,12 @@ class BabylonApp {
         var scene;
         var scenePromise = createScene(engine, canvas) 
         scenePromise.then(returnedScene => {
+          console.log(returnedScene);
           scene = returnedScene;
+          this.scene = returnedScene;
         })
+
+        
 
         window.addEventListener("keydown", (ev) => {
             // Shift+Ctrl+Alt+I
@@ -90,6 +106,14 @@ export default {
   props: {
     test: {one:"a",two:"a"}//should be passing values as props but don't know how yet
   },
+  methods: {
+    spinArm() {
+      console.log(runningApp);
+      console.log(runningApp.scene);
+      console.log(runningApp.scene.getMeshByName("__root__"));
+      runningApp.scene.getMeshByName("__root__").rotation = new Vector3(0,runningApp.scene.getMeshByName("__root__").rotation.y + 1,0);
+    }
+  },
   data() {
     return {userSelection: {body: "", engine: "", powerup: ""}, mode: 0};
   },
@@ -99,6 +123,7 @@ export default {
     this.userSelection["powerup"] = this.$route.query.powerup;
 
     let Application = new BabylonApp(this.$refs.canvas);
+    runningApp = Application
   }
 }
 </script>
