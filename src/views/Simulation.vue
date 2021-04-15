@@ -10,8 +10,10 @@
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
-import { Skeleton, SceneLoader, Engine, Scene, ArcRotateCamera, Vector3, Mesh, MeshBuilder, HemisphericLight } from "@babylonjs/core";
-import Vue from 'vue'
+import {PhysicsImpostor} from "@babylonjs/core/Physics";
+import "@babylonjs/core/Physics/Plugins/cannonJSPlugin";
+import { Skeleton, SceneLoader, Engine, Scene, ArcRotateCamera, Vector3, Mesh, MeshBuilder, HemisphericLight, Color3 } from "@babylonjs/core";
+window.CANNON = require('cannon');
 
 var runningApp;
 
@@ -24,41 +26,74 @@ var createScene = async function (engine, canvas) {
   var camera =  new ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, Vector3.Zero(), scene);
   camera.attachControl(canvas, true);
   var light1 = new HemisphericLight("light1", new Vector3(1, 1, 0), scene);
-  // var box = MeshBuilder.CreateBox("box", { diameter: 1 }, scene);
-  // const ground = MeshBuilder.CreateGround("ground", 1, 1, 1, scene, false);
   SceneLoader.ImportMeshAsync("", "/assets/", "dornaRigged.glb").then((result) => {
     console.log(result)
     for (var mesh in result.meshes) {
       var thisMesh = result.meshes[mesh]
-      thisMesh.scaling.scaleInPlace(0.2);
+      thisMesh.scaling.scaleInPlace(0.8);
       console.log(thisMesh.name)
       const rot = thisMesh.rotationQuaternion.toEulerAngles()
-      // const roundX = Math.round(rot.x * 2) / 2
-      // const roundY = Math.round(rot.y * 2) / 2
-      // const roundZ = Math.round(rot.z * 2) / 2
-      // console.log(roundX, roundY, roundZ)
       // Quaternions must be reset on imported models otherwise they will not be able to be rotated
       thisMesh.rotationQuaternion = null;
       // But we still want them in the original positions
       const newRot = new Vector3(rot.x, rot.y, rot.z)
       thisMesh.rotation = newRot;
     }
-
     console.log(scene.getMeshByName("Arm_1"));
     scene.getMeshByName(
       "__root__"
     ).rotation = new Vector3(0,0.5,0);
-    
-
-    // result.meshes[0].scaling.scaleInPlace(0.8)
-    // result.meshes[1].position.x = 20;
-    // const dornaArm1 = scene.getMeshByName("Arm_1");
-    // console.log(dornaArm1);
-
-
   });
 
+  //Creating ground, sphere, cylinder
+  var ground = MeshBuilder.CreateGround("ground", {width: 30, height: 30}, scene);
+  var sphere = MeshBuilder.CreateSphere("sphere", {diameter: 3, segments: 32}, scene);
+  var cylinder = MeshBuilder.CreateCylinder("cylinder", {height: 12, diameterTop: .5, diameterBottom: .1}, scene);
+  var cube = MeshBuilder.CreateBox("cube", {height: 5, width: 5}, scene);
+  //creating boundary boxes
+  var left = MeshBuilder.CreateBox("left", {height: 7, width: 24}, scene);
+  var right = MeshBuilder.CreateBox("right", {height: 7, width: 24}, scene);
+  var top = MeshBuilder.CreateBox("top", {height: 7, width: 24}, scene);
+  var bottom = MeshBuilder.CreateBox("bottom", {height: 7, width: 24}, scene);
 
+  //Setting coordinates for the meshes and camera target/radius
+  var wallY = 4;
+  cube.position.y = 10;
+  cylinder.position.y = 10;
+  sphere.position.z = -.5;
+  sphere.position.y = 5;
+  cylinder.position.z = -10;
+  camera.setTarget(cylinder);
+  camera.radius *= 2;
+  cylinder.rotation.x = 1;
+  left.position.z = -13;
+  right.position.z = 13;
+  top.rotation.y = 1.57;
+  bottom.rotation.y = 1.57;
+  top.position.x = 13;
+  bottom.position.x = -13;
+  top.position.y = wallY;
+  bottom.position.y = wallY;
+  left.position.y = wallY;
+  right.position.y = wallY;
+ 
+  //Adding physics to objects
+  scene.enablePhysics();
+  //cylinder.physicsImpostor = new PhysicsImpostor(cylinder, PhysicsImpostor.BoxImpostor, { mass: 1, restitution: .9 }, scene)
+  sphere.physicsImpostor = new PhysicsImpostor(sphere, PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.9 }, scene);
+  ground.physicsImpostor = new PhysicsImpostor(ground, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+  cube.physicsImpostor = new PhysicsImpostor(cube, PhysicsImpostor.BoxImpostor, {mass: 1, restitution: 0.9}, scene);
+  top.physicsImpostor = new PhysicsImpostor(top, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+  bottom.physicsImpostor = new PhysicsImpostor(bottom, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+  left.physicsImpostor = new PhysicsImpostor(left, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+  right.physicsImpostor = new PhysicsImpostor(right, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
+
+
+  //Initial linear and angular velocity
+  sphere.physicsImpostor.setLinearVelocity(new Vector3(0,7,10));
+  sphere.physicsImpostor.setAngularVelocity(new Vector3(100,2,0));
+
+  scene.ambientColor = new Color3(256,0,0);
   return scene;
 }
 
@@ -75,8 +110,6 @@ class BabylonApp {
           scene = returnedScene;
           this.scene = returnedScene;
         })
-
-        
 
         window.addEventListener("keydown", (ev) => {
             // Shift+Ctrl+Alt+I
@@ -121,7 +154,6 @@ export default {
     this.userSelection["body"] = this.$route.query.body;
     this.userSelection["engine"] = this.$route.query.engine;
     this.userSelection["powerup"] = this.$route.query.powerup;
-
     let Application = new BabylonApp(this.$refs.canvas);
     runningApp = Application
   }

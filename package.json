@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "babylonjs": "^4.2.0",
+    "cannon": "^0.6.2",
     "core-js": "^3.6.5",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0"
@@ -16,6 +17,8 @@
   "devDependencies": {
     "@babylonjs/core": "^4.2.0",
     "@babylonjs/inspector": "^4.2.0",
+    "@types/babylonjs": "^2.4.1",
+    "@types/cannon": "^0.1.5",
     "@vue/cli-plugin-babel": "~4.5.0",
     "@vue/cli-plugin-eslint": "~4.5.0",
     "@vue/cli-plugin-router": "^4.5.12",
