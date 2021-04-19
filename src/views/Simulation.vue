@@ -12,14 +12,10 @@ import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 import {PhysicsImpostor} from "@babylonjs/core/Physics";
 import "@babylonjs/core/Physics/Plugins/cannonJSPlugin";
-import { Skeleton, SceneLoader, Engine, Scene, ArcRotateCamera, Vector3, Mesh, MeshBuilder, HemisphericLight, Color3 } from "@babylonjs/core";
+import { Skeleton, Animation, SceneLoader, Engine, Scene, ArcRotateCamera, Vector3, Mesh, MeshBuilder, HemisphericLight, Color3 } from "@babylonjs/core";
 window.CANNON = require('cannon');
 
 var runningApp;
-
-function spinArm() {
-  console.log(runningApp.scene);
-}
 
 var createScene = async function (engine, canvas) {
   var scene = new Scene(engine);
@@ -30,7 +26,6 @@ var createScene = async function (engine, canvas) {
     console.log(result)
     for (var mesh in result.meshes) {
       var thisMesh = result.meshes[mesh]
-      thisMesh.scaling.scaleInPlace(0.8);
       console.log(thisMesh.name)
       const rot = thisMesh.rotationQuaternion.toEulerAngles()
       // Quaternions must be reset on imported models otherwise they will not be able to be rotated
@@ -39,10 +34,15 @@ var createScene = async function (engine, canvas) {
       const newRot = new Vector3(rot.x, rot.y, rot.z)
       thisMesh.rotation = newRot;
     }
-    console.log(scene.getMeshByName("Arm_1"));
-    scene.getMeshByName(
-      "__root__"
-    ).rotation = new Vector3(0,0.5,0);
+
+    // Need to reset the rotation for the bones also for animations to work
+    var boneList = ["ShoulderBone", "UpperarmBone", "ForearmBone", "HandBone"]
+    for (var bone in boneList) {
+      var sceneBone = runningApp.scene.getTransformNodeByName(boneList[bone])
+      sceneBone.rotation = new Vector3(sceneBone.rotation.x, sceneBone.rotation.y, sceneBone.rotation.z);
+    }
+
+
   });
 
   //Creating ground, sphere, cylinder
@@ -144,7 +144,67 @@ export default {
       console.log(runningApp);
       console.log(runningApp.scene);
       console.log(runningApp.scene.getMeshByName("__root__"));
-      runningApp.scene.getMeshByName("__root__").rotation = new Vector3(0,runningApp.scene.getMeshByName("__root__").rotation.y + 1,0);
+      // for (var mesh in result.meshes) {}
+
+      // runningApp.scene.getSkeleton
+
+      // Temp: reset all bone rotations so it doesn't fold up indefinitely
+      var boneList = ["ShoulderBone", "UpperarmBone", "ForearmBone", "HandBone"]
+      for (var bone in boneList) {
+        var sceneBone = runningApp.scene.getTransformNodeByName(boneList[bone])
+        sceneBone.rotation = new Vector3(0, 0, 0);
+      }
+
+
+
+      var forearmBone = runningApp.scene.getTransformNodeByName("ForearmBone");
+      var upperarmBone = runningApp.scene.getTransformNodeByName("UpperarmBone");
+      var shoulderBone = runningApp.scene.getTransformNodeByName("ShoulderBone");
+
+      const frameRate = 10;
+      const xRot = new Animation("xRot", "rotation.x", frameRate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+      const keyFrames = [];
+      keyFrames.push({
+          frame: 0,
+          value: forearmBone.rotation.x,
+      });
+      keyFrames.push({
+          frame: frameRate,
+          value: forearmBone.rotation.x + Math.PI/6,
+      });
+      keyFrames.push({
+          frame: 2 * frameRate,
+          value: forearmBone.rotation.x + Math.PI/6 * 2,
+      });
+      xRot.setKeys(keyFrames);
+
+      const zRot = new Animation("zRot", "rotation.z", frameRate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+      const keyFrames2 = [];
+      keyFrames2.push({
+          frame: 0,
+          value: forearmBone.rotation.z,
+      });
+      keyFrames2.push({
+          frame: frameRate,
+          value: shoulderBone.rotation.z + Math.PI/8,
+      });
+      keyFrames2.push({
+          frame: 2 * frameRate,
+          value: forearmBone.rotation.z + Math.PI/8 * 2,
+      });
+      zRot.setKeys(keyFrames2);
+      
+      forearmBone.animations.push(xRot)
+      runningApp.scene.beginAnimation(forearmBone, 0, 2*frameRate, false)
+
+      
+      upperarmBone.animations.push(xRot)
+      runningApp.scene.beginAnimation(upperarmBone, 0, 2*frameRate, false)
+
+      shoulderBone.animations.push(zRot)
+      runningApp.scene.beginAnimation(shoulderBone, 0, 2*frameRate, false)
+
+
     }
   },
   data() {
