@@ -8,6 +8,7 @@
 <script>
 // @ is an alias to /src
 import HelloWorld from '@/components/HelloWorld.vue'
+import {readCsv} from '@/utils/csvHelper.js'
 
 export default {
   name: 'Home',
@@ -15,4 +16,8 @@ export default {
     HelloWorld
   }
 }
+
+console.log(readCsv('Tank_Assembly_J'))
+
+
 </script>
