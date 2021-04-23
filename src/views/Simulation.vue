@@ -140,69 +140,65 @@ export default {
     test: {one:"a",two:"a"}//should be passing values as props but don't know how yet
   },
   methods: {
+    rotateTo(boneName, attribute, valueTo) {
+      var thisBone = runningApp.scene.getTransformNodeByName(boneName);
+
+      //Dynamically retrieve the selected value
+      const splitAttr = attribute.split('.');
+      var thisAttr = thisBone
+      splitAttr.forEach(element => {
+        thisAttr = thisAttr[element]
+      });
+
+      console.log("Retrieved val: " + thisAttr)
+
+      const frameRate = 10;
+      const thisAnim = new Animation(boneName + '_' + attribute, attribute, frameRate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
+      const keyFrames = [];
+      keyFrames.push({
+          frame: 0,
+          value: thisAttr,
+      });
+      keyFrames.push({
+          frame: 2 * frameRate,
+          value: valueTo,
+      });
+      thisAnim.setKeys(keyFrames);
+      
+      thisBone.animations.push(thisAnim)
+      runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
+
+    },
     spinArm() {
       console.log(runningApp);
       console.log(runningApp.scene);
       console.log(runningApp.scene.getMeshByName("__root__"));
-      // for (var mesh in result.meshes) {}
 
-      // runningApp.scene.getSkeleton
-
-      // Temp: reset all bone rotations so it doesn't fold up indefinitely
-      var boneList = ["ShoulderBone", "UpperarmBone", "ForearmBone", "HandBone"]
-      for (var bone in boneList) {
-        var sceneBone = runningApp.scene.getTransformNodeByName(boneList[bone])
-        sceneBone.rotation = new Vector3(0, 0, 0);
-      }
+      // // Temp: reset all bone rotations so it doesn't fold up indefinitely
+      // var boneList = ["ShoulderBone", "UpperarmBone", "ForearmBone", "HandBone"]
+      // for (var bone in boneList) {
+      //   var sceneBone = runningApp.scene.getTransformNodeByName(boneList[bone])
+      //   sceneBone.rotation = new Vector3(0, 0, 0);
+      // }
 
 
+      var test = Math.floor(Math.random() * 10 -5)
+      if (test == 0) {test = 1}
+      console.log("Shoulder spin amt: " + test)
 
-      var forearmBone = runningApp.scene.getTransformNodeByName("ForearmBone");
-      var upperarmBone = runningApp.scene.getTransformNodeByName("UpperarmBone");
-      var shoulderBone = runningApp.scene.getTransformNodeByName("ShoulderBone");
-
-      const frameRate = 10;
-      const xRot = new Animation("xRot", "rotation.x", frameRate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
-      const keyFrames = [];
-      keyFrames.push({
-          frame: 0,
-          value: forearmBone.rotation.x,
-      });
-      keyFrames.push({
-          frame: frameRate,
-          value: forearmBone.rotation.x + Math.PI/6,
-      });
-      keyFrames.push({
-          frame: 2 * frameRate,
-          value: forearmBone.rotation.x + Math.PI/6 * 2,
-      });
-      xRot.setKeys(keyFrames);
-
-      const zRot = new Animation("zRot", "rotation.z", frameRate, Animation.ANIMATIONTYPE_FLOAT, Animation.ANIMATIONLOOPMODE_CONSTANT);
-      const keyFrames2 = [];
-      keyFrames2.push({
-          frame: 0,
-          value: forearmBone.rotation.z,
-      });
-      keyFrames2.push({
-          frame: frameRate,
-          value: shoulderBone.rotation.z + Math.PI/8,
-      });
-      keyFrames2.push({
-          frame: 2 * frameRate,
-          value: forearmBone.rotation.z + Math.PI/8 * 2,
-      });
-      zRot.setKeys(keyFrames2);
-      
-      forearmBone.animations.push(xRot)
-      runningApp.scene.beginAnimation(forearmBone, 0, 2*frameRate, false)
-
-      
-      upperarmBone.animations.push(xRot)
-      runningApp.scene.beginAnimation(upperarmBone, 0, 2*frameRate, false)
-
-      shoulderBone.animations.push(zRot)
-      runningApp.scene.beginAnimation(shoulderBone, 0, 2*frameRate, false)
+      this.rotateTo("ShoulderBone", "rotation.z", Math.PI/test);
+test = Math.floor(Math.random() * 20 -10)
+      if (test == 0) {test = 1}
+      console.log("Forearm spin amt: " + test)
+      this.rotateTo("ForearmBone", "rotation.x", Math.PI/test);
+      test = Math.floor(Math.random() * 20 -10)
+      if (test == 0) {test = 1}
+      console.log("Upperarm spin amt: " + test)
+      this.rotateTo("UpperarmBone", "rotation.x", Math.PI/test);
+      test = Math.floor(Math.random() * 20 -10)
+      if (test == 0) {test = 1}
+      console.log("Hand spin amt: " + test)
+      this.rotateTo("HandBone", "rotation.x", Math.PI/test);
 
 
     }
