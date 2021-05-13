@@ -70,7 +70,7 @@ var createScene = async function (engine, canvas) {
 function hingeTest(scene, camera){
 
     var light1 = new DirectionalLight("light1", new Vector3(1, 1, 1), scene);
-    var height = 13;
+    var height = 14;
     light1.intensity = 0.5;
 
     var material = new StandardMaterial("material", scene);
@@ -115,7 +115,7 @@ function hingeTest(scene, camera){
     box.physicsImpostor = new PhysicsImpostor(box, PhysicsImpostor.BoxImpostor, { mass: 10, friction:0 }, scene);
     leftWheel.physicsImpostor = new PhysicsImpostor(leftWheel, PhysicsImpostor.CylinderImpostor, {damping: wheelDampening, mass: 10, restitution: 0}, scene);
     rightWheel.physicsImpostor = new PhysicsImpostor(rightWheel, PhysicsImpostor.CylinderImpostor, {damping: wheelDampening,  mass: 10, restitution: 0}, scene);
-    centerWheel.physicsImpostor = new PhysicsImpostor(centerWheel, PhysicsImpostor.CylinderImpostor, {damping: wheelDampening, mass: 100, restitution: 0}, scene);
+    centerWheel.physicsImpostor = new PhysicsImpostor(centerWheel, PhysicsImpostor.CylinderImpostor, {damping: wheelDampening, mass: 10, restitution: 0}, scene);
     ramp.physicsImpostor = new PhysicsImpostor(ramp, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 1}, scene); 
     ramp2.physicsImpostor = new PhysicsImpostor(ramp2, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 1}, scene); 
     ramp3.physicsImpostor = new PhysicsImpostor(ramp3, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 1}, scene); 
@@ -147,9 +147,9 @@ function hingeTest(scene, camera){
   centerWheel.physicsImpostor.addJoint(box.physicsImpostor, centerJount);
   
   var impulseDirection = new Vector3(1, 0, 0);
-  var impulseMagnitude = -9000;
+  var impulseMagnitude = -4500;
   var contactLocalRefPoint = new Vector3(0, 0, 0);
-  //box.physicsImpostor.applyImpulse(impulseDirection.scale(impulseMagnitude), box.getAbsolutePosition().add(contactLocalRefPoint));
+  box.physicsImpostor.applyImpulse(impulseDirection.scale(impulseMagnitude), box.getAbsolutePosition().add(contactLocalRefPoint));
 
   centerWheel.physicsImpostor.setAngularVelocity(new Vector3(0,0,10));
   leftWheel.physicsImpostor.setAngularVelocity(new Vector3(0,0,30));
