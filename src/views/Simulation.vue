@@ -4,6 +4,7 @@
   <div><button @click="spinArm">Spin!</button></div>
   <div><button @click="grabBox">Grab Box!</button></div>
   <div><button @click="dropBox">Drop Box!</button></div>
+  <div><button @click="placeBox">Place Box!</button></div>
   <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
 </div>
 </template>
@@ -56,6 +57,7 @@ var createScene = async function (engine, canvas) {
   // var sphere = MeshBuilder.CreateSphere("sphere", {diameter: 3, segments: 32}, scene);
   // var cylinder = MeshBuilder.CreateCylinder("cylinder", {height: 12, diameterTop: .5, diameterBottom: .1}, scene);
   var cube = MeshBuilder.CreateBox("cube", {height: 2, width: 2, depth: 2}, scene);
+  var base = MeshBuilder.CreateBox("base", {height: 2, width: 2, depth: 2}, scene);
   //creating boundary boxes
   // var left = MeshBuilder.CreateBox("left", {height: 7, width: 24}, scene);
   // var right = MeshBuilder.CreateBox("right", {height: 7, width: 24}, scene);
@@ -63,42 +65,18 @@ var createScene = async function (engine, canvas) {
   // var bottom = MeshBuilder.CreateBox("bottom", {height: 7, width: 24}, scene);
 
   //Setting coordinates for the meshes and camera target/radius
-  // var wallY = 4;
   cube.position = new Vector3(0,1,10)
+  base.position = new Vector3(10,1,0)
 
-  // cylinder.position.y = 10;
-  // sphere.position.z = -.5;
-  // sphere.position.y = 5;
-  // cylinder.position.z = -10;
   // camera.setTarget(cylinder);
   camera.radius *= 2;
-  // cylinder.rotation.x = 1;
-  // left.position.z = -13;
-  // right.position.z = 13;
-  // top.rotation.y = 1.57;
-  // // bottom.rotation.y = 1.57;
-  // top.position.x = 13;
-  // // bottom.position.x = -13;
-  // top.position.y = wallY;
-  // bottom.position.y = wallY;
-  // left.position.y = wallY;
-  // right.position.y = wallY;
+
  
   //Adding physics to objects
   scene.enablePhysics();
-  //cylinder.physicsImpostor = new PhysicsImpostor(cylinder, PhysicsImpostor.BoxImpostor, { mass: 1, restitution: .9 }, scene)
-  // sphere.physicsImpostor = new PhysicsImpostor(sphere, PhysicsImpostor.SphereImpostor, { mass: 1, restitution: 0.9 }, scene);
+
   ground.physicsImpostor = new PhysicsImpostor(ground, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9}, scene);
   cube.physicsImpostor = new PhysicsImpostor(cube, PhysicsImpostor.BoxImpostor, {mass: 1, restitution: 0.1, ignoreParent: true }, scene);
-  // top.physicsImpostor = new PhysicsImpostor(top, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
-  // bottom.physicsImpostor = new PhysicsImpostor(bottom, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
-  // left.physicsImpostor = new PhysicsImpostor(left, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
-  // right.physicsImpostor = new PhysicsImpostor(right, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9 }, scene);
-
-
-  //Initial linear and angular velocity
-  // sphere.physicsImpostor.setLinearVelocity(new Vector3(0,7,10));
-  // sphere.physicsImpostor.setAngularVelocity(new Vector3(100,2,0));
 
   scene.ambientColor = new Color3(256,0,0);
   return scene;
@@ -220,7 +198,6 @@ export default {
     async grabBox() {
       var cube = runningApp.scene.getMeshByName("cube")
       cube.physicsImpostor.mass = 0
-      cube.position = new Vector3(0,1,10)
       this.rotateTo("ShoulderBone", "rotation.z", Math.PI/2);
 
       var animation = this.rotateTo("UpperarmBone", "rotation.x", 0.698132, false);
@@ -252,7 +229,36 @@ export default {
       var cube = runningApp.scene.getMeshByName("cube")
       cube.physicsImpostor.mass = 1
       cube.setParent(null);
+    },
+    async placeBox() {
+      var cube = runningApp.scene.getMeshByName("cube")
+      cube.physicsImpostor.mass = 0
+      this.rotateTo("ShoulderBone", "rotation.z", 0);
 
+      var animation = this.rotateTo("UpperarmBone", "rotation.x", 0.698132, false);
+      var thisBone = runningApp.scene.getTransformNodeByName("UpperarmBone");
+      thisBone.animations.push(animation)
+      var anim = runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
+      console.log("Start")
+      await anim.waitAsync();
+      console.log("Fin")
+
+      this.rotateTo("UpperarmBone", "rotation.x", 0.383972);
+
+      this.rotateTo("ForearmBone", "rotation.x", -2.14675);
+      animation = this.rotateTo("HandBone", "rotation.x", 0.139626, false);
+      thisBone = runningApp.scene.getTransformNodeByName("HandBone");
+      thisBone.animations.push(animation)
+      anim = runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
+      console.log(typeof(anim))
+      console.log("Start")
+      await anim.waitAsync();
+      console.log("Fin")
+
+      
+
+      cube.setParent(runningApp.scene.getMeshByName("base"))
+      cube.physicsImpostor.mass = 0
     }
   },
   data() {
