@@ -5,6 +5,7 @@
   <div><button @click="grabBox">Grab Box!</button></div>
   <div><button @click="dropBox">Drop Box!</button></div>
   <div><button @click="placeBox">Place Box!</button></div>
+  <div><button @click="playCSV">Play CSV!</button></div>
   <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
 </div>
 </template>
@@ -15,11 +16,12 @@ import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
 import {PhysicsImpostor} from "@babylonjs/core/Physics";
 import "@babylonjs/core/Physics/Plugins/cannonJSPlugin";
+import {readCsv} from '@/utils/csvHelper.js'
 import { StandardMaterial, Animation, SceneLoader, Engine, Scene, ArcRotateCamera, Vector3, Mesh, MeshBuilder, HemisphericLight, Color3 } from "@babylonjs/core";
 window.CANNON = require('cannon');
 
 var runningApp;
-const frameRate = 10;
+const frameRate = 1000;
 
 var createScene = async function (engine, canvas) {
   var scene = new Scene(engine);
@@ -135,7 +137,7 @@ export default {
         thisAttr = thisAttr[element]
       });
 
-      console.log("Retrieved val: " + thisAttr)
+      // console.log("Retrieved val: " + thisAttr)
 
       
       const thisAnim = new Animation(boneName + '_' + attribute, attribute, frameRate, Animation.ANIMATIONTYPE_FLOAT);
@@ -216,14 +218,64 @@ export default {
       thisBone.animations.push(animation)
       anim = runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
       console.log(typeof(anim))
-      console.log("Start")
+      // console.log("Start")
       await anim.waitAsync();
-      console.log("Fin")
+      // console.log("Fin")
 
       
 
       cube.setParent(runningApp.scene.getTransformNodeByName("HandBone"))
       cube.physicsImpostor.mass = 0
+    },
+    async playCSV(){
+      console.log("Yo")
+      var csv = readCsv('Tank_Assembly_J')
+      var lastrow = csv[0]
+      console.log(lastrow)
+      var x = 0
+      for (var row of csv) {
+
+        // var row = csv[250]
+        if (JSON.stringify(lastrow) !== JSON.stringify(row)) {
+          x += 1
+          console.log(x)
+          if (x%10==0) {
+            x=0
+            console.log(row)
+            lastrow = row
+            for (var angle of row) {
+              var anim
+              // console.log("Shoulder Angle ", row[0], parseInt(row[0]) * (Math.PI/180))
+              var animation = this.rotateTo("ShoulderBone", "rotation.z", parseInt(row[0]) * (Math.PI/180), false);
+              var thisBone = runningApp.scene.getTransformNodeByName("ShoulderBone");
+              thisBone.animations.push(animation)
+              anim = runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
+              // console.log("Start Shoulder")
+              await anim.waitAsync()
+  
+              // console.log("Upperarm Angle ", row[0], parseInt(row[0]) * (Math.PI/180))
+              animation = this.rotateTo("UpperarmBone", "rotation.x", parseInt(row[1]) * (Math.PI/180), false);
+              thisBone = runningApp.scene.getTransformNodeByName("UpperarmBone");
+              thisBone.animations.push(animation)
+              anim = runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
+              // console.log("Start Upperarm")
+              // await anim.waitAsync()
+  
+              animation = this.rotateTo("ForearmBone", "rotation.x", parseInt(row[2]) * (Math.PI/180), false);
+              thisBone = runningApp.scene.getTransformNodeByName("ForearmBone");
+              thisBone.animations.push(animation)
+              anim = runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
+              // console.log("Start Forearm")
+              // await anim.waitAsync()
+  
+              // for (var anim of anims) {
+              //   await anim.waitAsync();
+              //   console.log("Fin")
+              // }
+            }
+          }
+        }
+      }
     },
     dropBox() {
       var cube = runningApp.scene.getMeshByName("cube")
