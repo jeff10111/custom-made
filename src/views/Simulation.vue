@@ -16,7 +16,7 @@ import {BoundingInfo, BoundingBox} from "@babylonjs/core/Culling";
 import  {StandardMaterial} from "@babylonjs/core/Materials"
 import {NoiseProceduralTexture} from "@babylonjs/core/Materials/Textures/Procedurals"
 import "@babylonjs/core/Physics/Plugins/cannonJSPlugin";
-import { Skeleton, SceneLoader, Engine, Scene, ArcRotateCamera, Vector3, Mesh, MeshBuilder, HemisphericLight, Color3, DirectionalLight } from "@babylonjs/core";
+import { Skeleton, SceneLoader, Engine, Scene, ArcRotateCamera, Vector3, Mesh, MeshBuilder, HemisphericLight, Color3, DirectionalLight, FollowCamera } from "@babylonjs/core";
 window.CANNON = require('cannon');
 var runningApp;
 var vehicle;
@@ -24,18 +24,12 @@ var vehicle;
 
 async function importMesh(name, rootURL, fileName, scale, scene)
 {
-  //SceneLoader.ImportMeshAsync(name, rootURL, fileName, scene).then((result) => {
-    // for (var mesh in result.meshes) {
-    //   var thisMesh = result.meshes[mesh]
-    //   thisMesh.scaling.scaleInPlace(scale);
-    //   console.log("Imported mesh: " + thisMesh.name);
-    //   //Executing the setup for the particular mesh
-    //   //var fn = window[name];
-    //   //if (typeof fn === "function") fn();
-    //   console.log(scene.meshes.map(x => x.name));
-    // }});
-  await SceneLoader.ImportMeshAsync(name, rootURL, fileName, scene);
-  //scene.getMeshByName(name).parent = null;
+  await SceneLoader.ImportMeshAsync("", rootURL, fileName, scene);
+  for(var x in name)
+  {
+    console.log(name);
+    scene.getMeshByName(name).parent = null;
+  }
 }
 
 //https://doc.babylonjs.com/divingDeeper/importers/oBJ
@@ -51,8 +45,11 @@ var createScene = async function (engine, canvas) {
   var light1 = new HemisphericLight("light1", new Vector3(1, 1, 0), scene); 
 
   //Importing assets
-  //const promise = importMesh("ShellOther","/assets/","shellActual.glb", 1, scene);
-  //const promise2 = importMesh("TrainFull","/assets/","TrainFull.obj",1, scene);
+  //const promise = importMesh("","/assets/","train.glb", 1, scene);
+
+  await SceneLoader.ImportMeshAsync("", "/assets/", "train.glb", scene);
+
+
   
   //Creating the ground and enabling physics
   var ground = MeshBuilder.CreateGround("ground", {width: 3000, height: 3000}, scene);
@@ -65,8 +62,7 @@ var createScene = async function (engine, canvas) {
   //Test function
   //hingeTest(scene);
   scene.ambientColor = new Color3(256,0,0);
-  //await promise;
-  //await promise2;
+
   return scene;
 }
 
@@ -208,7 +204,7 @@ class Tank
   }
 }
 
-class ModelT
+class CarPrototype
 {
   constructor(scene)
   {
@@ -425,9 +421,83 @@ class SpaceShip
 
 }
 
-class TrainFull
+class Train
 {
+  constructor(scene)
+  {
+    this.meshNames = ["TrainNoWheels","TL1","TL2","TL3","TR1","TR2","TR3"];
+    this.meshNames.map(x => scene.getMeshByName(x).parent = null);
+    this.wheels = [];
+    this.motors = [];
+    this.body = scene.getMeshByName("TrainNoWheels");
+    this.wheelMass = 1;
+    this.bodyMass = 100;
+    this.torque = 10;
+    this.speed = 10;
+    this.friction = 50;
 
+    var box = MeshBuilder.CreateBox("box",{},scene);
+    box.position = new Vector3(this.body.x,0,this.body.z);
+//Positioning correctly
+
+
+  //Creating physics imposter, joint and then adding the joint, one by one, to avoid collisions.
+  var newJoint;
+  var mesh;
+  this.body.physicsImpostor = new PhysicsImpostor(this.body, PhysicsImpostor.BoxImpostor,{mass:this.bodyMass},scene);
+
+  this.attachWheel(1,-10,-7,8,scene);
+  this.attachWheel(2,-3.5,-7,8,scene);
+  this.attachWheel(3,3,-7,8,scene);
+  this.attachWheel(4,-10,-7,-8,scene);
+  this.attachWheel(5,-3.5,-7,-8,scene);
+  this.attachWheel(6,3,-7,-8,scene);
+  //this.motors.map(x => x.setMotor(-10,100));
+  }
+  attachWheel(index,x,y,z,scene)
+  {
+  var mesh = scene.getMeshByName(this.meshNames[index]);
+  mesh.physicsImpostor = new PhysicsImpostor(mesh,PhysicsImpostor.SphereImpostor,{mass:this.wheelMass, friction:this.friction},scene);
+  this.wheels.push(mesh);
+  var newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint,{
+      mainPivot: new Vector3(0,0,0),//Having these as zero means the pivot is in the wheel (good thing)
+      connectedPivot: new Vector3(this.body.position.x+x, y, this.body.position.z+z),//(length,y,)
+      mainAxis: new Vector3(0,0,1),//axis of rotation for body 1
+      connectedAxis: new Vector3(0,0,1),//axis of rotation for body 2
+  });
+  mesh.physicsImpostor.addJoint(this.body.physicsImpostor, newJoint);
+  this.motors.push(newJoint);
+  }
+  forwards()
+  {
+    this.motors.map(x => x.setMotor(-this.speed,this.torque));
+  }
+  left()
+  {
+    for(var x = 0; x < 6; x+=1)
+    {
+      (x < 3) ? this.motors[x].setMotor(this.speed,this.torque) : this.motors[x].setMotor(-this.speed,this.torque);
+    }
+  }
+  right()
+  {
+    for(var x = 0; x < 6; x+=1)
+    {
+      (x > 2) ? this.motors[x].setMotor(this.speed,this.torque) : this.motors[x].setMotor(-this.speed,this.torque);
+    }
+  }
+  backwards()
+  {
+    this.motors.map(x => x.setMotor(this.speed,this.torque));
+  }
+  releaseSteering()
+  {
+    this.motors.map(x => x.setMotor(0,this.torque));
+  }
+  releaseDrive()
+  {
+    this.motors.map(x => x.setMotor(0,this.torque));
+  }
 }
 
 class BabylonApp {
@@ -441,7 +511,8 @@ class BabylonApp {
         scenePromise.then(returnedScene => {
           scene = returnedScene;
           this.scene = returnedScene;
-          vehicle = new ModelT(scene);
+          //vehicle = new ModelT(scene);
+          vehicle = new Train(scene);
           engine.runRenderLoop(() => {
           scene.render();
         });
@@ -471,6 +542,9 @@ class BabylonApp {
             else if(ev.key == "ArrowLeft" || ev.key == "a")
             {
               vehicle.left();
+            } else if(ev.key == "c")
+            {
+              new FollowCamera
             }
         });
 
