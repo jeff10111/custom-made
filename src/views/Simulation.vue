@@ -73,6 +73,10 @@ var createScene = async function (engine, canvas, vehicle) {
       await SceneLoader.ImportMeshAsync("", "/assets/", "tank.glb", scene);
       break;
   }
+  //importing track
+  await SceneLoader.ImportMeshAsync("","/assets/","track.glb")
+  var track = scene.getMeshByName("Track");
+  track.position = new Vector3(-125,-480,-760);
 
   //Creating the ground and enabling physics
   var ground = MeshBuilder.CreateGround(
@@ -753,7 +757,7 @@ class Train {
     this.body.physicsImpostor = new PhysicsImpostor(
       this.body,
       PhysicsImpostor.BoxImpostor,
-      { mass: this.bodyMass },
+      { mass: this.bodyMass, friction: 0 },
       scene
     );
 
@@ -808,10 +812,10 @@ class Train {
     this.motors.map((x) => x.setMotor(this.speed, this.torque));
   }
   releaseSteering() {
-    this.motors.map((x) => x.setMotor(0, this.torque));
+    this.motors.map((x) => x.setMotor(0, 5));
   }
   releaseDrive() {
-    this.motors.map((x) => x.setMotor(0, this.torque));
+    this.motors.map((x) => x.setMotor(0, 5));
   }
 }
 
