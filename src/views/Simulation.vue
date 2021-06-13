@@ -11,6 +11,7 @@
 </template>
 
 <script>
+import * as BABYLON from 'babylonjs';
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import "@babylonjs/loaders/glTF";
@@ -102,88 +103,157 @@ var createScene = async function (engine, canvas, vehicle) {
 };
 class MT {
   constructor(scene) {
-    this.meshNames = [
-      "MTL1",
-      "MTL2",
-      "MTR1",
-      "MTR2",
-      "MTNoWheels",
-      "MTLB",
-      "MTRB",
-    ];
-    this.meshNames.map((x) => (scene.getMeshByName(x).parent = null));
-    this.body = scene.getMeshByName("MTNoWheels");
-    this.wheels = [];
-    this.motors = [];
-    this.wheelMass = 1;
-    this.bodyMass = 100;
-    this.torque = 100;
+    this.scene = scene;
     this.speed = 10;
-    this.friction = 50;
-    this.body.physicsImpostor = new PhysicsImpostor(
-      this.body,
-      PhysicsImpostor.BoxImpostor,
-      { mass: this.bodyMass },
-      scene
-    );
-    this.attachWheel(0, -7, -6.5, -9, scene, true);
-    this.attachWheel(2, -7, -6.5, 9, scene, true);
-    this.attachWheel(1, 8, -6, -9, scene, false);
-    this.attachWheel(3, 8, -6, 9, scene, false);
-    scene.getMeshByName("MTL2").physicsImpostor.friction = 5;
-    scene.getMeshByName("MTR2").physicsImpostor.friction = 5;
-    this.attachBearing(5, 0, -0.9, 0, scene);
-    this.attachBearing(6, 0, -0.9, 0, scene);
+    this.torque = 10;
+    this.motors = [];
+    this.wheelDiam = 5.5;
+    this.wheelHeight = 1;
+    this.wheelRestitution = 1;
+    this.bodyMass = 20;
+    this.wheelFriction = 50;
+    this.body = BABYLON.MeshBuilder.CreateBox(this.body, {width: 15, depth:20, height:6}, scene);
+    this.w1 = BABYLON.MeshBuilder.CreateCylinder(this.w1, {diameter: this.wheelDiam, height: this.wheelHeight}, scene);
+    this.w2 = BABYLON.MeshBuilder.CreateCylinder(this.w2, {diameter: this.wheelDiam, height: this.wheelHeight}, scene);
+    this.frontPart = BABYLON.MeshBuilder.CreateBox(this.body, {width: 8, depth:20, height:6}, scene);
+    this.b1 = BABYLON.MeshBuilder.CreateBox(this.b1, {size:2, height: 2.4}, scene);
+    this.b2 = BABYLON.MeshBuilder.CreateBox(this.b1, {size:2, height: 2.4}, scene);
+
+
+    //Body positioning and physics
+    this.bodyParts();
+    
+    //WHEEL PART
+    this.positionWheels();
+    this.attachWheels();
+    this.body.visibility = false;
+    this.frontPart.visibility = false;
+    this.w1.visibility = false;
+    this.w2.visibility = false;
   }
-  attachWheel(index, x, y, z, scene, motor) {
-    var mesh = scene.getMeshByName(this.meshNames[index]);
-    var newJoint;
-    mesh.physicsImpostor = new PhysicsImpostor(
-      mesh,
-      PhysicsImpostor.SphereImpostor,
-      { mass: this.wheelMass, friction: this.friction },
-      scene
-    );
-    if (motor) {
-      newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
+  bodyParts()
+  {
+    //Moving body off ground a bit to avoid collisions with the ground
+    this.body.position.y += 15;
+    this.frontPart.parent = this.body;
+    this.frontPart.position.y = 0;//need to make this relative
+    this.frontPart.position.x = 10;
+    this.frontPart.setParent(null);
+    //attaching MOD mesh to babylon mesh, creating a physics imposter for babylon mesh
+    var mesh = this.scene.getMeshByName("MTBody");
+    mesh.parent = this.body;
+    //Adding physics imposter to babylon mesh (the parent of the mod mesh)
+    this.body.physicsImpostor = new BABYLON.PhysicsImpostor(this.body, BABYLON.PhysicsImpostor.BoxImpostor,{mass:this.bodyMass},this.scene);
+    //Positioning the MOD mesh relative to the babylon mesh
+    mesh.position.y -=12;
+    mesh.position.z -=13;
+    mesh.position.x +=0;
+    //creating box physics for front part
+    this.frontPart.physicsImpostor = new BABYLON.PhysicsImpostor(this.frontPart, BABYLON.PhysicsImpostor.BoxImpostor,{mass:5},this.scene);
+    var newJoint = new BABYLON.PhysicsJoint(BABYLON.PhysicsJoint.LockJoint,{});
+    this.body.physicsImpostor.addJoint(this.frontPart.physicsImpostor,newJoint);
+    //bearings
+    this.b1.parent = this.frontPart;
+    this.b1.position.y = -4;
+    this.b1.position.x = 2;
+    this.b1.position.z = 6.5;//width
+    this.b1.setParent(null);
+    this.b1.physicsImpostor = new BABYLON.PhysicsImpostor(this.b1, BABYLON.PhysicsImpostor.BoxImpostor,{friction: 0, mass:1},this.scene);
+    this.frontPart.physicsImpostor.addJoint(this.b1.physicsImpostor, newJoint);
+    this.b2.parent = this.frontPart;
+    this.b2.position.y = -4;
+    this.b2.position.x = 2;
+    this.b2.position.z = -6.5;//width
+    this.b2.setParent(null);
+    this.b2.physicsImpostor = new BABYLON.PhysicsImpostor(this.b2, BABYLON.PhysicsImpostor.BoxImpostor,{friction: 0, mass:1},this.scene);
+    this.frontPart.physicsImpostor.addJoint(this.b2.physicsImpostor, newJoint);
+  }
+
+  positionWheels()
+  {
+    this.w1.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
+    this.w2.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
+    this.w1.position.y += 35;
+
+    //Adding cylinder parent for wheel mesh, positioning relatively
+    var mesh = this.scene.getMeshByName("MTLeft");
+    mesh.parent = this.w1;
+    mesh.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
+    mesh.position.y += 3;//width
+    mesh.position.z -=9.5;//actually y negative is up
+    mesh.position.x += 3.5;//forward/backward
+    mesh = this.scene.getMeshByName("MTRight");
+    mesh.parent = this.w2;
+    mesh.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
+    mesh.position.y += 22.5;//width
+    mesh.position.z -=9.5;//actually y negative is up
+    mesh.position.x += 3.5;//forward/backward
+    //Positioning the cylinder relative to the vehicle body, have to associate it with body first
+    this.w1.parent = this.body;
+    this.w2.parent = this.body;
+    //setting the position adequately avoids collisions when creating the hinge joint
+    this.w1.position.x = -4;//forwards/backwards
+    this.w1.position.y = +12;//higher/lower
+    this.w1.position.z = 12//left/right
+    this.w2.position.x = -4;
+    this.w2.position.y = +12;
+    this.w2.position.z = -12;
+  }
+
+  attachWheels()
+  {
+    this.w1.setParent(null);
+    //Adding physics to each wheel and attaching it
+    this.w1.physicsImpostor = new BABYLON.PhysicsImpostor(this.w1, BABYLON.PhysicsImpostor.CylinderImpostor,{mass:1, friction: this.wheelFriction, restitution: this.wheelRestitution}, this.scene);
+    var newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
         mainPivot: new Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
-        connectedPivot: new Vector3(
-          this.body.position.x + x,
-          y,
-          this.body.position.z + z
-        ), //(length,y,)
-        mainAxis: new Vector3(0, 0, 1), //axis of rotation for body 1
+        connectedPivot: new Vector3(-3.5,-2.5,10), //(length,y,)
+        mainAxis: new Vector3(0, -1, 0), //axis of rotation for body 1
         connectedAxis: new Vector3(0, 0, 1), //axis of rotation for body 2
       });
-      mesh.physicsImpostor.addJoint(this.body.physicsImpostor, newJoint);
-      this.motors.push(newJoint);
-    } else {
-      newJoint = new PhysicsJoint(PhysicsJoint.HingeJoint, {
+    this.w1.physicsImpostor.addJoint(this.body.physicsImpostor, newJoint);
+    this.motors.push(newJoint);
+    this.w2.setParent(null);
+    this.w2.physicsImpostor = new BABYLON.PhysicsImpostor(this.w2, BABYLON.PhysicsImpostor.CylinderImpostor,{mass:1, friction:this.wheelFriction, restitution: this.wheelRestitution}, this.scene)
+    newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
         mainPivot: new Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
-        connectedPivot: new Vector3(
-          this.body.position.x + x,
-          y,
-          this.body.position.z + z
-        ), //(length,y,)
-        mainAxis: new Vector3(0, 0, 1), //axis of rotation for body 1
+        connectedPivot: new Vector3(-3.5,-2.5,-10), //(length,y,)
+        mainAxis: new Vector3(0, -1, 0), //axis of rotation for body 1
         connectedAxis: new Vector3(0, 0, 1), //axis of rotation for body 2
       });
-      mesh.physicsImpostor.addJoint(this.body.physicsImpostor, newJoint);
-    }
+    this.w2.physicsImpostor.addJoint(this.body.physicsImpostor, newJoint);
+    this.motors.push(newJoint);
   }
-  attachBearing(index, x, y, z, scene) {
-    var mesh = scene.getMeshByName(this.meshNames[index]);
-    var newJoint;
-    mesh.position = new Vector3(x, y, z);
-    mesh.physicsImpostor = new PhysicsImpostor(
-      mesh,
-      PhysicsImpostor.BoxImpostor,
-      { mass: 50, friction: 0 },
-      scene
-    );
-    newJoint = new PhysicsJoint(PhysicsJoint.LockJoint, {});
-    mesh.physicsImpostor.addJoint(this.body.physicsImpostor, newJoint);
+  
+  forwards() {
+    this.motors.map((x) => x.setMotor(+this.speed, this.torque*1.5));
   }
+  backwards() {
+    this.motors.map((x) => x.setMotor(-this.speed, this.torque*1.5));
+  }
+  right() {
+    this.motors[0].setMotor(this.speed, this.torque);
+    this.motors[1].setMotor(-this.speed, this.torque);
+  }
+  left() {
+    this.motors[0].setMotor(-this.speed, this.torque);
+    this.motors[1].setMotor(this.speed, this.torque);
+  }
+  releaseDrive() {
+    this.motors[0].setMotor(0, this.torque / 3);
+    this.motors[1].setMotor(0, this.torque / 3);
+  }
+  releaseSteering() {
+    this.motors[0].setMotor(0, this.torque / 3);
+    this.motors[1].setMotor(0, this.torque / 3);
+  }
+}
+
+class TankPrototype {
+  constructor(scene) {
+    
+  }
+
   forwards() {
     this.motors.map((x) => x.setMotor(-this.speed, this.torque));
   }
@@ -208,671 +278,43 @@ class MT {
   }
 }
 
-class TankPrototype {
-  constructor(scene) {
-    this.wheels = [];
-    this.joints = [];
-    this.wheelMass = 1;
-    this.wheelFriction = 50;
-    this.height = 10;
-    this.mass = 1500;
-    this.torque = 15;
-    this.maxSpeed = 100;
-    this.wheelDamping = 100;
-
-    this.tankBody = MeshBuilder.CreateBox(
-      "tankBody",
-      { width: 22.5, depth: 3, height: 10 },
-      scene
-    );
-    this.tankBody.position = new Vector3(0, this.height, 0);
-    this.tankBody.rotation = new Vector3(1.57, 0, 0);
-    this.tankBody.physicsImpostor = new PhysicsImpostor(
-      this.tankBody,
-      PhysicsImpostor.BoxImpostor,
-      { mass: this.mass, friction: 10 },
-      scene
-    );
-
-    this.buildWheels(scene);
-    this.addJoints();
-    this.colours();
-  }
-
-  buildWheels(scene) {
-    var wheelLength = 6; //Where wheels start from, front to back
-    var wheelWidth = -6; //wheel width from body
-    var wheelSpace = 4; //space between each wheel
-    var wheelHeight = this.height - 8;
-
-    for (var m = 0, newWheel; m < 4; m += 1) {
-      newWheel = MeshBuilder.CreateCylinder(
-        "",
-        { height: 1, diameter: 3 },
-        this.scene
-      );
-      newWheel.showBoundingBox = true;
-      newWheel.rotation = new Vector3(Math.PI / 2, 0, 0);
-      newWheel.position = new Vector3(
-        wheelLength - wheelSpace * m,
-        wheelHeight,
-        wheelWidth
-      );
-      newWheel.physicsImpostor = new PhysicsImpostor(
-        newWheel,
-        PhysicsImpostor.CylinderImpostor,
-        {
-          mass: this.wheelMass,
-          friction: this.wheelFriction,
-          damping: this.wheelDamping,
-        },
-        scene
-      );
-      this.wheels.push(newWheel);
-    }
-    for (m = 0, wheelWidth = 6; m < 4; m += 1) {
-      newWheel = MeshBuilder.CreateCylinder(
-        "",
-        { height: 1, diameter: 3 },
-        this.scene
-      );
-      newWheel.showBoundingBox = true;
-      newWheel.rotation = new Vector3(Math.PI / 2, 0, 0);
-      newWheel.position = new Vector3(
-        wheelLength - wheelSpace * m,
-        wheelHeight,
-        wheelWidth
-      );
-      newWheel.physicsImpostor = new PhysicsImpostor(
-        newWheel,
-        PhysicsImpostor.CylinderImpostor,
-        {
-          mass: this.wheelMass,
-          friction: this.wheelFriction,
-          damping: this.wheelDamping,
-        },
-        scene
-      );
-      this.wheels.push(newWheel);
-    }
-  }
-
-  colours(scene) {
-    var blueMat = new StandardMaterial("blue", scene);
-    this.tankBody.material = blueMat;
-    blueMat.diffuseColor = new Color3.Blue();
-
-    var material = new StandardMaterial("material", scene);
-    var texture = new NoiseProceduralTexture("perlin", 256, scene);
-    material.diffuseTexture = texture;
-    for (var x in this.wheels) {
-      this.wheels[x].material = material;
-    }
-  }
-
-  addJoints() {
-    var wheelSpace = 4; //space between each wheel in a row
-    var wheelLength = 6; //starting distance from front of vehicle
-    var newJoint;
-    var m;
-    for (m = 0; m < 4; m += 1) {
-      newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
-        mainPivot: new Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
-        connectedPivot: new Vector3(wheelLength - wheelSpace * m, -6, 5), //(front/back,???,ride height of vehcicle)
-        mainAxis: new Vector3(0, 1, 0), //axis of rotation for body 1
-        connectedAxis: new Vector3(0, 1, 0), //axis of rotation for body 2
-      });
-      this.wheels[m].physicsImpostor.addJoint(
-        this.tankBody.physicsImpostor,
-        newJoint
-      );
-      this.joints.push(newJoint);
-    }
-    for (m = 0; m < 4; m += 1) {
-      newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
-        mainPivot: new Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
-        connectedPivot: new Vector3(wheelLength - wheelSpace * m, 6, 5), //(front/back,???,ride height of vehcicle)
-        mainAxis: new Vector3(0, 1, 0), //axis of rotation for body 1
-        connectedAxis: new Vector3(0, 1, 0), //axis of rotation for body 2
-      });
-      this.wheels[m + 4].physicsImpostor.addJoint(
-        this.tankBody.physicsImpostor,
-        newJoint
-      );
-      this.joints.push(newJoint);
-    }
-  }
-
-  forwards() {
-    for (var x in this.joints) {
-      this.joints[x].setMotor(this.maxSpeed, this.torque);
-    }
-  }
-
-  backwards() {
-    for (var x in this.joints) {
-      this.joints[x].setMotor(-this.maxSpeed, this.torque);
-    }
-  }
-
-  left() {
-    for (var x in this.joints) {
-      x < 4
-        ? this.joints[x].setMotor(-this.maxSpeed, this.torque)
-        : this.joints[x].setMotor(this.maxSpeed, this.torque);
-    }
-  }
-
-  right() {
-    for (var x in this.joints) {
-      x > 4
-        ? this.joints[x].setMotor(-this.maxSpeed, this.torque)
-        : this.joints[x].setMotor(this.maxSpeed, this.torque);
-    }
-  }
-
-  releaseDrive() {
-    this.release();
-  }
-  releaseSteering() {
-    this.release();
-  }
-  release() {
-    for (var x in this.joints) {
-      this.joints[x].setMotor(0, 1);
-    }
-  }
-}
-
-class CarPrototype {
-  constructor(scene) {
-    this.frontWheels = false;
-    this.wheels = [];
-    this.joints = [];
-    this.steeringJoints = [];
-    this.steeringBoxes = [];
-    this.wheelFriction = 100;
-    this.height = 10;
-    this.mass = 1;
-    this.wheelMass = 1;
-    this.pivotMass = 1;
-    this.torque = (this.mass + this.pivotMass * 2 + this.wheelMass * 4) * 0.2; //Suggested values are 1/100 to 1/10 times the mass
-    this.maxSpeed = 100;
-    this.steeringTorque = 100;
-    this.restitution = 1;
-    this.wheelDiameter = 6;
-    this.connector;
-
-    this.body = MeshBuilder.CreateBox(
-      "body",
-      { width: 22.5, depth: 3, height: 10 },
-      scene
-    );
-    this.body.position = new Vector3(0, this.height, 0);
-    this.body.rotation = new Vector3(1.57, 0, 0);
-    this.body.physicsImpostor = new PhysicsImpostor(
-      this.body,
-      PhysicsImpostor.BoxImpostor,
-      { mass: this.mass, friction: 10 },
-      scene
-    );
-
-    this.buildWheels(scene);
-    this.addJoints();
-    this.colours();
-    //this.releaseSteering();
-  }
-
-  buildWheels(scene) {
-    let wheelWidth = 8;
-    let height = this.body.position.y - 2;
-    {
-      //Build wheels
-      var newWheel = MeshBuilder.CreateCylinder(
-        "",
-        { height: 1, diameter: this.wheelDiameter },
-        this.scene
-      );
-      newWheel.showBoundingBox = true;
-      newWheel.rotation = new Vector3(Math.PI / 2, 0, 0);
-      newWheel.position = new Vector3(
-        this.body.position.x + 8,
-        height,
-        wheelWidth
-      );
-      newWheel.physicsImpostor = new PhysicsImpostor(
-        newWheel,
-        PhysicsImpostor.CylinderImpostor,
-        {
-          mass: this.wheelMass,
-          friction: this.wheelFriction,
-          restitution: this.restitution,
-        },
-        scene
-      );
-      this.wheels.push(newWheel);
-
-      newWheel = MeshBuilder.CreateCylinder(
-        "",
-        { height: 1, diameter: this.wheelDiameter },
-        this.scene
-      );
-      newWheel.showBoundingBox = true;
-      newWheel.rotation = new Vector3(Math.PI / 2, 0, 0);
-      newWheel.position = new Vector3(
-        this.body.position.x + 8,
-        height,
-        -wheelWidth
-      );
-      newWheel.physicsImpostor = new PhysicsImpostor(
-        newWheel,
-        PhysicsImpostor.CylinderImpostor,
-        {
-          mass: this.wheelMass,
-          friction: this.wheelFriction,
-          restitution: this.restitution,
-        },
-        scene
-      );
-      this.wheels.push(newWheel);
-
-      newWheel = MeshBuilder.CreateCylinder(
-        "",
-        { height: 1, diameter: this.wheelDiameter },
-        this.scene
-      );
-      newWheel.showBoundingBox = true;
-      newWheel.rotation = new Vector3(Math.PI / 2, 0, 0);
-      newWheel.position = new Vector3(
-        this.body.position.x - 8,
-        height,
-        wheelWidth
-      );
-      newWheel.physicsImpostor = new PhysicsImpostor(
-        newWheel,
-        PhysicsImpostor.CylinderImpostor,
-        {
-          mass: this.wheelMass,
-          friction: this.wheelFriction,
-          restitution: this.restitution,
-        },
-        scene
-      );
-      this.wheels.push(newWheel);
-
-      newWheel = MeshBuilder.CreateCylinder(
-        "",
-        { height: 1, diameter: this.wheelDiameter },
-        this.scene
-      );
-      newWheel.showBoundingBox = true;
-      newWheel.rotation = new Vector3(Math.PI / 2, 0, 0);
-      newWheel.position = new Vector3(
-        this.body.position.x - 8,
-        height,
-        -wheelWidth
-      );
-      newWheel.physicsImpostor = new PhysicsImpostor(
-        newWheel,
-        PhysicsImpostor.CylinderImpostor,
-        {
-          mass: this.wheelMass,
-          friction: this.wheelFriction,
-          restitution: this.restitution,
-        },
-        scene
-      );
-      this.wheels.push(newWheel);
-    }
-    {
-      //Build steering boxes
-      var steeringBox = MeshBuilder.CreateBox(
-        "",
-        { depth: 0.2, width: 4, height: 3 },
-        this.scene
-      );
-      steeringBox.position = new Vector3(
-        this.body.position.x + 8,
-        this.height - 5,
-        wheelWidth - 2
-      );
-      steeringBox.physicsImpostor = new PhysicsImpostor(
-        steeringBox,
-        PhysicsImpostor.BoxImpostor,
-        { mass: this.pivotMass },
-        scene
-      );
-      this.steeringBoxes.push(steeringBox);
-      steeringBox = MeshBuilder.CreateBox(
-        "",
-        { depth: 0.2, width: 4, height: 3 },
-        this.scene
-      );
-      steeringBox.position = new Vector3(
-        this.body.position.x + 8,
-        this.height - 5,
-        -wheelWidth + 2
-      );
-      steeringBox.physicsImpostor = new PhysicsImpostor(
-        steeringBox,
-        PhysicsImpostor.BoxImpostor,
-        { mass: this.pivotMass },
-        scene
-      );
-      this.steeringBoxes.push(steeringBox);
-    }
-    {
-      //Build connector
-      this.connector = MeshBuilder.CreateBox(
-        "",
-        { width: 0.25, height: 0.25, depth: 12 },
-        this.scene
-      );
-      this.connector.position = new Vector3(6, 7, 0);
-      this.connector.physicsImpostor = new PhysicsImpostor(
-        this.connector,
-        PhysicsImpostor.BoxImpostor,
-        { mass: 1 },
-        scene
-      );
-    }
-  }
-
-  addJoints() {
-    //Add rear wheels as normal
-    let wheelWidth = 8;
-    var newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
-      mainPivot: new Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
-      connectedPivot: new Vector3(this.body.position.x - 8, wheelWidth, 2), //(front/back,???,ride height of vehcicle)
-      mainAxis: new Vector3(0, 1, 0), //axis of rotation for body 1
-      connectedAxis: new Vector3(0, 1, 0), //axis of rotation for body 2
-    });
-    this.wheels[2].physicsImpostor.addJoint(
-      this.body.physicsImpostor,
-      newJoint
-    );
-    this.joints.push(newJoint);
-    newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
-      mainPivot: new Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
-      connectedPivot: new Vector3(this.body.position.x - 8, -wheelWidth, 2), //(front/back,???,ride height of vehcicle)
-      mainAxis: new Vector3(0, 1, 0), //axis of rotation for body 1
-      connectedAxis: new Vector3(0, 1, 0), //axis of rotation for body 2
-    });
-    this.wheels[3].physicsImpostor.addJoint(
-      this.body.physicsImpostor,
-      newJoint
-    );
-    this.joints.push(newJoint);
-
-    //Add pivot to body
-    newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
-      mainPivot: new Vector3(0, 0, 0),
-      connectedPivot: new Vector3(this.body.position.x + 8, wheelWidth - 2, 2),
-      mainAxis: new Vector3(0, 1, 0), //axis of rotation for body 1
-      connectedAxis: new Vector3(0, 0, 1), //axis of rotation for body 2
-    });
-    this.steeringBoxes[0].physicsImpostor.addJoint(
-      this.body.physicsImpostor,
-      newJoint
-    );
-    this.steeringJoints.push(newJoint);
-    //newJoint.setMotor(0.1,10);
-    newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
-      mainPivot: new Vector3(0, 0, 0),
-      connectedPivot: new Vector3(this.body.position.x + 8, -wheelWidth + 2, 2),
-      mainAxis: new Vector3(0, 1, 0), //axis of rotation for body 1
-      connectedAxis: new Vector3(0, 0, 1), //axis of rotation for body 2
-    });
-    this.steeringBoxes[1].physicsImpostor.addJoint(
-      this.body.physicsImpostor,
-      newJoint
-    );
-    this.steeringJoints.push(newJoint);
-    //newJoint.setMotor(0.1,10);
-
-    //Add front wheels to pivot
-    newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
-      mainPivot: new Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
-      connectedPivot: new Vector3(0, 0, 2), //(front/back,y,width)
-      mainAxis: new Vector3(0, 1, 0), //axis of rotation for body 1
-      connectedAxis: new Vector3(0, 0, 1), //axis of rotation for body 2
-    });
-    this.wheels[0].physicsImpostor.addJoint(
-      this.steeringBoxes[0].physicsImpostor,
-      newJoint
-    );
-    //newJoint.setMotor(-1,1);
-    newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
-      mainPivot: new Vector3(0, 0, 0),
-      connectedPivot: new Vector3(0, 0, -2),
-      mainAxis: new Vector3(0, 1, 0), //axis of rotation for body 1
-      connectedAxis: new Vector3(0, 0, 1), //axis of rotation for body 2
-    });
-    this.wheels[1].physicsImpostor.addJoint(
-      this.steeringBoxes[1].physicsImpostor,
-      newJoint
-    );
-    //newJoint.setMotor(-1,1);
-
-    //Add connector joints
-    newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
-      mainPivot: new Vector3(0, 0, -6),
-      connectedPivot: new Vector3(-2, 0, 0),
-      mainAxis: new Vector3(0, 1, 0), //axis of rotation for body 1
-      connectedAxis: new Vector3(0, 1, 0), //axis of rotation for body 2
-    });
-    this.connector.physicsImpostor.addJoint(
-      this.steeringBoxes[1].physicsImpostor,
-      newJoint
-    );
-    //side 2
-    newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
-      mainPivot: new Vector3(0, 0, 6),
-      connectedPivot: new Vector3(-2, 0, 0),
-      mainAxis: new Vector3(0, 1, 0), //axis of rotation for body 1
-      connectedAxis: new Vector3(0, 1, 0), //axis of rotation for body 2
-    });
-    this.connector.physicsImpostor.addJoint(
-      this.steeringBoxes[0].physicsImpostor,
-      newJoint
-    );
-
-    //newJoint.setMotor(1,1);
-  }
-
-  forwards() {
-    this.joints[0].setMotor(-10, this.torque);
-    this.joints[1].setMotor(-10, this.torque);
-  }
-
-  releaseDrive() {
-    this.joints[0].setMotor(0, this.torque);
-    this.joints[1].setMotor(0, this.torque);
-  }
-
-  releaseSteering() {
-    this.steeringJoints[0].setMotor(0, this.steeringTorque);
-    this.steeringJoints[1].setMotor(0, this.steeringTorque);
-  }
-
-  backwards() {
-    this.joints[0].setMotor(10, this.torque);
-    this.joints[1].setMotor(10, this.torque);
-  }
-
-  left() {
-    this.steeringJoints.map((x) => x.setMotor(-1, this.steeringTorque));
-    console.log("steering leftt");
-  }
-
-  right() {
-    this.steeringJoints.map((x) => x.setMotor(1, this.steeringTorque));
-  }
-
-  colours(scene) {
-    var blueMat = new StandardMaterial("blue", scene);
-    this.body.material = blueMat;
-    blueMat.diffuseColor = new Color3.Blue();
-
-    var redMat = new StandardMaterial("red", scene);
-    this.connector.material = redMat;
-    redMat.diffuseColor - new Color3.Red();
-
-    var material = new StandardMaterial("material", scene);
-    var texture = new NoiseProceduralTexture("perlin", 256, scene);
-    material.diffuseTexture = texture;
-    for (var x in this.wheels) {
-      this.wheels[x].material = material;
-    }
-  }
-}
-
-class Omni {}
+class Omni 
+{}
 
 class Train {
   constructor(scene) {
-    this.meshNames = [
-      "TrainNoWheels",
-      "TL1",
-      "TL2",
-      "TL3",
-      "TR1",
-      "TR2",
-      "TR3",
-    ];
-    this.meshNames.map((x) => (scene.getMeshByName(x).parent = null));
-    this.wheels = [];
-    this.motors = [];
-    this.body = scene.getMeshByName("TrainNoWheels");
-    this.wheelMass = 1;
-    this.bodyMass = 100;
-    this.torque = 10;
-    this.speed = 10;
-    this.friction = 50;
-
-    var box = MeshBuilder.CreateBox("box", {}, scene);
-    box.position = new Vector3(this.body.x, 0, this.body.z);
-
-    //Creating physics imposter, joint and then adding the joint, one by one, to avoid collisions.
-    this.body.physicsImpostor = new PhysicsImpostor(
-      this.body,
-      PhysicsImpostor.BoxImpostor,
-      { mass: this.bodyMass, friction: 0 },
-      scene
-    );
-
-    this.attachWheel(1, -10, -7, 8, scene);
-    this.attachWheel(2, -3.5, -7, 8, scene);
-    this.attachWheel(3, 3, -7, 8, scene);
-    this.attachWheel(4, -10, -7, -8, scene);
-    this.attachWheel(5, -3.5, -7, -8, scene);
-    this.attachWheel(6, 3, -7, -8, scene);
-    //this.motors.map(x => x.setMotor(-10,100));
   }
-  attachWheel(index, x, y, z, scene) {
-    var mesh = scene.getMeshByName(this.meshNames[index]);
-    mesh.physicsImpostor = new PhysicsImpostor(
-      mesh,
-      PhysicsImpostor.SphereImpostor,
-      { mass: this.wheelMass, friction: this.friction },
-      scene
-    );
-    this.wheels.push(mesh);
-    var newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
-      mainPivot: new Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
-      connectedPivot: new Vector3(
-        this.body.position.x + x,
-        y,
-        this.body.position.z + z
-      ), //(length,y,)
-      mainAxis: new Vector3(0, 0, 1), //axis of rotation for body 1
-      connectedAxis: new Vector3(0, 0, 1), //axis of rotation for body 2
-    });
-    mesh.physicsImpostor.addJoint(this.body.physicsImpostor, newJoint);
-    this.motors.push(newJoint);
-  }
+  
   forwards() {
     this.motors.map((x) => x.setMotor(-this.speed, this.torque));
-  }
-  left() {
-    for (var x = 0; x < 6; x += 1) {
-      x < 3
-        ? this.motors[x].setMotor(this.speed, this.torque)
-        : this.motors[x].setMotor(-this.speed, this.torque);
-    }
-  }
-  right() {
-    for (var x = 0; x < 6; x += 1) {
-      x > 2
-        ? this.motors[x].setMotor(this.speed, this.torque)
-        : this.motors[x].setMotor(-this.speed, this.torque);
-    }
   }
   backwards() {
     this.motors.map((x) => x.setMotor(this.speed, this.torque));
   }
-  releaseSteering() {
-    this.motors.map((x) => x.setMotor(0, 5));
+  right() {
+    this.motors[0].setMotor(this.speed, this.torque);
+    this.motors[1].setMotor(-this.speed, this.torque);
+  }
+  left() {
+    this.motors[0].setMotor(-this.speed, this.torque);
+    this.motors[1].setMotor(this.speed, this.torque);
   }
   releaseDrive() {
-    this.motors.map((x) => x.setMotor(0, 5));
+    this.motors[0].setMotor(0, this.torque / 3);
+    this.motors[1].setMotor(0, this.torque / 3);
+  }
+  releaseSteering() {
+    this.motors[0].setMotor(0, this.torque / 3);
+    this.motors[1].setMotor(0, this.torque / 3);
   }
 }
 
 class Tank {
   constructor(scene) {
-    this.meshNames = [
-      "TankNoWheels",
-      "LS1",
-      "LS2",
-      "LS3",
-      "RS1",
-      "RS2",
-      "RS3",
-      "RF",
-      "LF",
-      "RR",
-      "LR",
-    ];
-    this.meshNames.map((x) => (scene.getMeshByName(x).parent = null));
-    this.wheels = [];
-    this.motors = [];
-    this.body = scene.getMeshByName("TankNoWheels");
-    this.wheelMass = 1;
-    this.bodyMass = 100;
-    this.torque = 10;
-    this.speed = 10;
-    this.friction = 50;
-    this.body.physicsImpostor = new PhysicsImpostor(
-      this.body,
-      PhysicsImpostor.BoxImpostor,
-      { mass: this.bodyMass },
-      scene
-    );
+    
   }
 
-  attachWheel(index, x, y, z, scene) {
-    var mesh = scene.getMeshByName(this.meshNames[index]);
-    mesh.physicsImpostor = new PhysicsImpostor(
-      mesh,
-      PhysicsImpostor.SphereImpostor,
-      { mass: this.wheelMass, friction: this.friction },
-      scene
-    );
-    this.wheels.push(mesh);
-    var newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
-      mainPivot: new Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
-      connectedPivot: new Vector3(
-        this.body.position.x + x,
-        y,
-        this.body.position.z + z
-      ), //(length,y,)
-      mainAxis: new Vector3(0, 0, 1), //axis of rotation for body 1
-      connectedAxis: new Vector3(0, 0, 1), //axis of rotation for body 2
-    });
-    mesh.physicsImpostor.addJoint(this.body.physicsImpostor, newJoint);
-    this.motors.push(newJoint);
-  }
+  
 }
 
 class BabylonApp {
