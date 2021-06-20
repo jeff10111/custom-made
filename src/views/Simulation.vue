@@ -2,9 +2,8 @@
 <div>
   <div>{{this.userSelection["body"]}} with {{this.userSelection.engine}} engine and {{this.userSelection.powerup}} powerup</div>
   <div><button @click="spinArm">Spin!</button></div>
-  <div><button @click="grabBox">Grab Box!</button></div>
-  <div><button @click="dropBox">Drop Box!</button></div>
-  <div><button @click="placeBox">Place Box!</button></div>
+  <div><button @click="grabBox">grabBox!</button></div>
+  <div><button @click="buildT">Build Model T!</button></div>
   <div><button @click="playCSV">Play CSV!</button></div>
   <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
 </div>
@@ -28,47 +27,56 @@ var createScene = async function (engine, canvas) {
   var camera =  new ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, Vector3.Zero(), scene);
   camera.attachControl(canvas, true);
   var light1 = new HemisphericLight("light1", new Vector3(1, 1, 0), scene);
-  SceneLoader.ImportMeshAsync("", "/assets/", "dornaRigged.glb").then((result) => {
+
+  SceneLoader.ImportMeshAsync("", "/assets/", "track.glb").then((result) => {
     console.log(result)
+    console.log("------------------------------")
+    
     for (var mesh in result.meshes) {
       var thisMesh = result.meshes[mesh]
-      console.log(thisMesh.name)
-      const rot = thisMesh.rotationQuaternion.toEulerAngles()
-      // Quaternions must be reset on imported models otherwise they will not be able to be rotated
-      thisMesh.rotationQuaternion = null;
-      // But we still want them in the original positions
-      const newRot = new Vector3(rot.x, rot.y, rot.z)
-      thisMesh.rotation = newRot;
+      if (thisMesh.name.startsWith("Dorna_") && !thisMesh.name.includes("primitive")) {
+        console.log("Dorna part: " + thisMesh.name)
+        const rot = thisMesh.rotationQuaternion.toEulerAngles()
+        // Quaternions must be reset on imported models otherwise they will not be able to be rotated
+        thisMesh.rotationQuaternion = null;
+        // But we still want them in the original positions
+        const newRot = new Vector3(rot.x, rot.y, rot.z)
+        thisMesh.rotation = newRot;
+      }
     }
 
-    // Need to reset the rotation for the bones also for animations to work
+        // Need to reset the rotation for the bones also for animations to work
     var boneList = ["ShoulderBone", "UpperarmBone", "ForearmBone", "HandBone"]
     for (var bone in boneList) {
       var sceneBone = runningApp.scene.getTransformNodeByName(boneList[bone])
+      console.log(sceneBone.name, sceneBone.rotation.x, sceneBone.rotation.y, sceneBone.rotation.z)
       sceneBone.rotation = new Vector3(sceneBone.rotation.x, sceneBone.rotation.y, sceneBone.rotation.z);
+      console.log("::", sceneBone.name, sceneBone.rotation.x, sceneBone.rotation.y, sceneBone.rotation.z)
     }
+    console.log("!!!!",runningApp.scene.getTransformNodeByName("ShoulderBone").absoluteRotationQuaternion)
+    runningApp.scene.getTransformNodeByName("ShoulderBone").absoluteRotationQuaternion = null
 
 
   });
 
   //Creating ground, sphere, cylinder
-  var groundMat = new StandardMaterial("groundMat", scene);
-  groundMat.diffuseColor = new Color3(1,0,0)
-  var ground = MeshBuilder.CreateGround("ground", {width: 30, height: 30}, scene);
-  ground.material = groundMat;
-  // var sphere = MeshBuilder.CreateSphere("sphere", {diameter: 3, segments: 32}, scene);
-  // var cylinder = MeshBuilder.CreateCylinder("cylinder", {height: 12, diameterTop: .5, diameterBottom: .1}, scene);
-  var cube = MeshBuilder.CreateBox("cube", {height: 2, width: 2, depth: 2}, scene);
-  var base = MeshBuilder.CreateBox("base", {height: 2, width: 2, depth: 2}, scene);
-  //creating boundary boxes
-  // var left = MeshBuilder.CreateBox("left", {height: 7, width: 24}, scene);
-  // var right = MeshBuilder.CreateBox("right", {height: 7, width: 24}, scene);
-  // var top = MeshBuilder.CreateBox("top", {height: 7, width: 24}, scene);
-  // var bottom = MeshBuilder.CreateBox("bottom", {height: 7, width: 24}, scene);
+  // var groundMat = new StandardMaterial("groundMat", scene);
+  // groundMat.diffuseColor = new Color3(1,0,0)
+  // var ground = MeshBuilder.CreateGround("ground", {width: 30, height: 30}, scene);
+  // ground.material = groundMat;
+  // // var sphere = MeshBuilder.CreateSphere("sphere", {diameter: 3, segments: 32}, scene);
+  // // var cylinder = MeshBuilder.CreateCylinder("cylinder", {height: 12, diameterTop: .5, diameterBottom: .1}, scene);
+  // var cube = MeshBuilder.CreateBox("cube", {height: 2, width: 2, depth: 2}, scene);
+  // var base = MeshBuilder.CreateBox("base", {height: 2, width: 2, depth: 2}, scene);
+  // //creating boundary boxes
+  // // var left = MeshBuilder.CreateBox("left", {height: 7, width: 24}, scene);
+  // // var right = MeshBuilder.CreateBox("right", {height: 7, width: 24}, scene);
+  // // var top = MeshBuilder.CreateBox("top", {height: 7, width: 24}, scene);
+  // // var bottom = MeshBuilder.CreateBox("bottom", {height: 7, width: 24}, scene);
 
-  //Setting coordinates for the meshes and camera target/radius
-  cube.position = new Vector3(0,1,10)
-  base.position = new Vector3(10,1,0)
+  // //Setting coordinates for the meshes and camera target/radius
+  // cube.position = new Vector3(0,1,10)
+  // base.position = new Vector3(10,1,0)
 
   // camera.setTarget(cylinder);
   camera.radius *= 2;
@@ -77,8 +85,8 @@ var createScene = async function (engine, canvas) {
   //Adding physics to objects
   scene.enablePhysics();
 
-  ground.physicsImpostor = new PhysicsImpostor(ground, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9}, scene);
-  cube.physicsImpostor = new PhysicsImpostor(cube, PhysicsImpostor.BoxImpostor, {mass: 1, restitution: 0.1, ignoreParent: true }, scene);
+  // ground.physicsImpostor = new PhysicsImpostor(ground, PhysicsImpostor.BoxImpostor, { mass: 0, restitution: 0.9}, scene);
+  // cube.physicsImpostor = new PhysicsImpostor(cube, PhysicsImpostor.BoxImpostor, {mass: 1, restitution: 0.1, ignoreParent: true }, scene);
 
   scene.ambientColor = new Color3(256,0,0);
   return scene;
@@ -127,7 +135,16 @@ export default {
     test: {one:"a",two:"a"}//should be passing values as props but don't know how yet
   },
   methods: {
+    rotateToDegrees(boneName, attribute, valueTo, autoStart = true) {
+      return this.rotateTo(boneName, attribute, valueTo*Math.PI/180, autoStart)
+    },
     rotateTo(boneName, attribute, valueTo, autoStart = true) {
+      // //TEMPLATE
+      // this.rotateTo("ShoulderBone", "rotation.z", Math.PI/4);
+      // this.rotateTo("UpperarmBone", "rotation.x", 1);
+      // this.rotateTo("ForearmBone", "rotation.x", 6.8DEG = 0.118682RAD);
+      // this.rotateTo("HandBone", "rotation.x", 0.118682);
+
       var thisBone = runningApp.scene.getTransformNodeByName(boneName);
 
       //Dynamically retrieve the selected value
@@ -157,7 +174,8 @@ export default {
       // otherwise:
       if (autoStart) {
         thisBone.animations.push(thisAnim)
-        runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
+        var runAnim = runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
+        return runAnim.waitAsync()
       }
       return thisAnim;
       
@@ -165,18 +183,6 @@ export default {
     
     },
     spinArm() {
-      console.log(runningApp);
-      console.log(runningApp.scene);
-      console.log(runningApp.scene.getMeshByName("__root__"));
-
-      // // Temp: reset all bone rotations so it doesn't fold up indefinitely
-      // var boneList = ["ShoulderBone", "UpperarmBone", "ForearmBone", "HandBone"]
-      // for (var bone in boneList) {
-      //   var sceneBone = runningApp.scene.getTransformNodeByName(boneList[bone])
-      //   sceneBone.rotation = new Vector3(0, 0, 0);
-      // }
-
-
       var test = Math.floor(Math.random() * 10 -5)
       if (test == 0) {test = 1}
       console.log("Shoulder spin amt: " + test)
@@ -198,34 +204,35 @@ export default {
 
     },
     async grabBox() {
-      var cube = runningApp.scene.getMeshByName("cube")
-      cube.physicsImpostor.mass = 0
+      // var cube = runningApp.scene.getMeshByName("cube")
+      // cube.physicsImpostor.mass = 0
       this.rotateTo("ShoulderBone", "rotation.z", Math.PI/2);
 
-      var animation = this.rotateTo("UpperarmBone", "rotation.x", 0.698132, false);
-      var thisBone = runningApp.scene.getTransformNodeByName("UpperarmBone");
-      thisBone.animations.push(animation)
-      var anim = runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
-      console.log("Start")
-      await anim.waitAsync();
-      console.log("Fin")
+      await this.rotateTo("UpperarmBone", "rotation.x", 0.698132);
+
 
       this.rotateTo("UpperarmBone", "rotation.x", 0.118682);
 
       this.rotateTo("ForearmBone", "rotation.x", -1.97222);
-      animation = this.rotateTo("HandBone", "rotation.x", 0.226893, false);
-      thisBone = runningApp.scene.getTransformNodeByName("HandBone");
-      thisBone.animations.push(animation)
-      anim = runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
-      console.log(typeof(anim))
-      // console.log("Start")
-      await anim.waitAsync();
-      // console.log("Fin")
+      await this.rotateTo("HandBone", "rotation.x", 0.226893);
+
 
       
 
-      cube.setParent(runningApp.scene.getTransformNodeByName("HandBone"))
-      cube.physicsImpostor.mass = 0
+      // cube.setParent(runningApp.scene.getTransformNodeByName("HandBone"))
+      // cube.physicsImpostor.mass = 0
+    },
+    async buildT() {
+      this.rotateToDegrees("ShoulderBone", "rotation.z", 50);
+      this.rotateToDegrees("UpperarmBone", "rotation.x", 57);
+      this.rotateToDegrees("ForearmBone", "rotation.x", 295);
+      await this.rotateToDegrees("HandBone", "rotation.x", 8);
+
+      this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
+      this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
+
+
+
     },
     async playCSV(){
       console.log("Yo")
