@@ -2,7 +2,6 @@
 <div>
   <div>{{this.userSelection["body"]}} with {{this.userSelection.engine}} engine and {{this.userSelection.powerup}} powerup</div>
   <div><button @click="spinArm">Spin!</button></div>
-  <div><button @click="grabBox">grabBox!</button></div>
   <div><button @click="buildT">Build Model T!</button></div>
   <div><button @click="playCSV">Play CSV!</button></div>
   <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
@@ -223,15 +222,46 @@ export default {
       // cube.physicsImpostor.mass = 0
     },
     async buildT() {
+      var engine = runningApp.scene.getTransformNodeByName("Engine_PetrolEngine1")
+      var powerup = runningApp.scene.getTransformNodeByName("Powerup_SpeedBoost1")
+
+      // this.neutralPose() or something like that for the reset
+      this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
+      await this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
+
       this.rotateToDegrees("ShoulderBone", "rotation.z", 50);
       this.rotateToDegrees("UpperarmBone", "rotation.x", 57);
-      this.rotateToDegrees("ForearmBone", "rotation.x", 295);
+      this.rotateToDegrees("ForearmBone", "rotation.x", -65);
       await this.rotateToDegrees("HandBone", "rotation.x", 8);
+      engine.setParent(runningApp.scene.getTransformNodeByName("HandBone"))
 
       this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
+      await this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
+
+      this.rotateToDegrees("UpperarmBone", "rotation.x", 20.4);
+      this.rotateToDegrees("ForearmBone", "rotation.x", -75);
+      await this.rotateToDegrees("HandBone", "rotation.x", 47.5);
+      engine.setParent(null)
+
       this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
+      await this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
 
+      this.rotateToDegrees("ShoulderBone", "rotation.z", 350);
+      this.rotateToDegrees("UpperarmBone", "rotation.x", 57);
+      this.rotateToDegrees("ForearmBone", "rotation.x", -65);
+      await this.rotateToDegrees("HandBone", "rotation.x", 8);
+      powerup.setParent(runningApp.scene.getTransformNodeByName("HandBone"))
 
+      this.rotateToDegrees("ShoulderBone", "rotation.z", 165);
+      await this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
+
+      this.rotateToDegrees("UpperarmBone", "rotation.x", 20.4);
+      this.rotateToDegrees("ForearmBone", "rotation.x", -75);
+      await this.rotateToDegrees("HandBone", "rotation.x", 47.5);
+      powerup.setParent(null)
+
+      this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
+      await this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
 
     },
     async playCSV(){
@@ -250,36 +280,13 @@ export default {
             x=0
             console.log(row)
             lastrow = row
-            for (var angle of row) {
-              var anim
-              // console.log("Shoulder Angle ", row[0], parseInt(row[0]) * (Math.PI/180))
-              var animation = this.rotateTo("ShoulderBone", "rotation.z", parseInt(row[0]) * (Math.PI/180), false);
-              var thisBone = runningApp.scene.getTransformNodeByName("ShoulderBone");
-              thisBone.animations.push(animation)
-              anim = runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
-              // console.log("Start Shoulder")
-              await anim.waitAsync()
-  
-              // console.log("Upperarm Angle ", row[0], parseInt(row[0]) * (Math.PI/180))
-              animation = this.rotateTo("UpperarmBone", "rotation.x", parseInt(row[1]) * (Math.PI/180), false);
-              thisBone = runningApp.scene.getTransformNodeByName("UpperarmBone");
-              thisBone.animations.push(animation)
-              anim = runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
-              // console.log("Start Upperarm")
-              // await anim.waitAsync()
-  
-              animation = this.rotateTo("ForearmBone", "rotation.x", parseInt(row[2]) * (Math.PI/180), false);
-              thisBone = runningApp.scene.getTransformNodeByName("ForearmBone");
-              thisBone.animations.push(animation)
-              anim = runningApp.scene.beginAnimation(thisBone, 0, 2*frameRate, false)
-              // console.log("Start Forearm")
-              // await anim.waitAsync()
-  
-              // for (var anim of anims) {
-              //   await anim.waitAsync();
-              //   console.log("Fin")
-              // }
-            }
+
+              this.rotateToDegrees("ShoulderBone", "rotation.z", parseInt(row[0]));
+              this.rotateToDegrees("UpperarmBone", "rotation.x", parseInt(row[1]));
+              this.rotateToDegrees("ForearmBone", "rotation.x", parseInt(row[2]));
+              await this.rotateToDegrees("HandBone", "rotation.x", parseInt(row[3]));
+              console.log("Hey")
+              console.log("Yo")
           }
         }
       }
