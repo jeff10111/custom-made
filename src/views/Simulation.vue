@@ -102,6 +102,15 @@ var createScene = async function (engine, canvas, vehicle) {
 };
 class MT {
   constructor(scene) {
+    // this.attr = {speed: 10, torque: 10, motors:[],wheelDiam: 5.5, wheelHeight: 1, wheelRestitution: 1, bodyMass: 20};
+    // this.meshes = {
+    //   body: BABYLON.MeshBuilder.CreateBox(this.body, {width: 15, depth:20, height:6}, scene),
+    //   front: BABYLON.MeshBuilder.CreateBox(this.body, {width: 8, depth:20, height:6}, scene),
+    //   wheel1: BABYLON.MeshBuilder.CreateCylinder(this.w1, {diameter: this.wheelDiam, height: this.wheelHeight}, scene),
+    //   wheel2: BABYLON.MeshBuilder.CreateCylinder(this.w2, {diameter: this.wheelDiam, height: this.wheelHeight}, scene),
+    //   b1: BABYLON.MeshBuilder.CreateBox(this.b1, {size:2, height: 2.4}, scene),
+    //   b2: BABYLON.MeshBuilder.CreateBox(this.b1, {size:2, height: 2.4}, scene),
+    // };
     this.scene = scene;
     this.speed = 10;
     this.torque = 10;
