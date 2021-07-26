@@ -96,7 +96,6 @@ var createScene = async function (engine, canvas, vehicle) {
     scene
   );
 
-  //Test function
   scene.ambientColor = new Color3(256, 0, 0);
 
   return scene;
