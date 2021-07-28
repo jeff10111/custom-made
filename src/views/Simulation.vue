@@ -113,6 +113,8 @@ class MT {
     this.attachBodyParts();
     //Wheel part
     this.attachWheels();
+    //make babylon meshes invisible
+    Object.entries(this.meshes).map((x) => x[1].isVisible = false);
   }
   attachBodyParts()
   {
@@ -235,9 +237,9 @@ class Train {
   constructor(scene,x,z) {
     this.scene = scene;
     this.attr = {
-      speed: 10, torque: 10,
+      speed: 10, torque: 5,
       wheelDiam: 5.5, wheelHeight: 1, wheelRestitution: 1, 
-      bodyMass: 20, wheelFriction: 50
+      bodyMass: 50, wheelFriction: 50
     };
     this.meshes = {
       body: BABYLON.MeshBuilder.CreateBox(null, {width: 20, depth:15, height:6}, scene),
@@ -248,6 +250,8 @@ class Train {
       wheelR1: BABYLON.MeshBuilder.CreateCylinder(null, {diameter: this.attr.wheelDiam, height: this.attr.wheelHeight}, scene),
       wheelR2: BABYLON.MeshBuilder.CreateCylinder(null, {diameter: this.attr.wheelDiam, height: this.attr.wheelHeight}, scene),
       wheelR3: BABYLON.MeshBuilder.CreateCylinder(null, {diameter: this.attr.wheelDiam, height: this.attr.wheelHeight}, scene),
+      arm: BABYLON.MeshBuilder.CreateBox(null, {width: 14.5, depth:1, height:1}, scene),
+      arm2: BABYLON.MeshBuilder.CreateBox(null, {width: 14.5, depth:1, height:1}, scene),
     };
     this.motors = [];
     //Offset
@@ -257,7 +261,66 @@ class Train {
     this.attachBodyParts();
     //Wheel positioning and physics
     this.attachWheels();
+    //attach the arm connecting wheels on each side
+    this.attachArms();
     //Make all physics meshes invisible
+    Object.entries(this.meshes).map((x) => x[1].isVisible = false);
+   
+  }
+
+  attachArms()
+  {
+    //Creating the arm and adding the MOD child mesh
+    let arm = this.meshes.arm;
+    var mesh = this.scene.getMeshByName("RightBar");
+    this.parentMeshToBar(mesh,arm,0.75,-7,-28.5);
+    this.positionBar(this.meshes.wheelL1, arm, 5.2, 1.2, 0);
+    arm.physicsImpostor = new BABYLON.PhysicsImpostor(arm, BABYLON.PhysicsImpostor.BoxImpostor,{mass:1},this.scene);
+    this.attachBar(this.meshes.wheelL1, arm, -5.2,1);
+    this.attachBar(this.meshes.wheelL2, arm, 1.3,1);
+    this.attachBar(this.meshes.wheelL3, arm, 7.8,1);
+
+    arm = this.meshes.arm2;
+    mesh = this.scene.getMeshByName("LeftBar");
+    this.parentMeshToBar(mesh,arm,0.75,-7,-10.4);
+    this.positionBar(this.meshes.wheelR1, arm, 5.2, -1.2, 0);
+    arm.physicsImpostor = new BABYLON.PhysicsImpostor(arm, BABYLON.PhysicsImpostor.BoxImpostor,{mass:1},this.scene);
+    this.attachBar(this.meshes.wheelR1, arm, -5.2,-1);
+    this.attachBar(this.meshes.wheelR2, arm, 1.3,-1);
+    this.attachBar(this.meshes.wheelR3, arm, 7.8,-1);
+  }
+
+  parentMeshToBar(mesh, bar,x,y,z)
+  {
+    bar.addChild(mesh);
+    mesh.setParent(bar);
+    mesh.position.x = x;
+    mesh.position.y = y;
+    mesh.position.z = z;
+  }
+
+  positionBar(wheel, bar, x,y,z)
+  {
+    bar.parent = wheel;
+    bar.position.x = x;
+    bar.position.y = y;
+    bar.position.z = z;
+    bar.setParent(null);
+    bar.rotate(BABYLON.Axis.X, (Math.PI/2)*3, BABYLON.Space.LOCAL);
+  }
+
+  attachBar(wheel, bar, pob, otherSide)
+  {
+    var distanceFromCenter = -1.2;
+    var projection = -1.2*otherSide;
+    var positionOnBar = pob + distanceFromCenter;
+    var newJoint = new MotorEnabledJoint(PhysicsJoint.HingeJoint, {
+      mainPivot: new Vector3(distanceFromCenter, 0, 0),
+      connectedPivot: new Vector3(positionOnBar,0,projection),
+      mainAxis: new Vector3(0, 1, 0), 
+      connectedAxis: new Vector3(0, 0, 1), 
+    });
+    wheel.physicsImpostor.addJoint(bar.physicsImpostor, newJoint);
   }
 
   attachBodyParts()
@@ -310,7 +373,7 @@ class Train {
    
     //Adding cylinder parent for mod wheel mesh, positioning relatively
     this.wheelMeshParent(this.scene.getMeshByName("TL1"),L1,4,11.5,-7.1);
-    this.wheelMeshParent(this.scene.getMeshByName("TL2"),L2,-2.3,11.5,-7.1);
+    this.wheelMeshParent(this.scene.getMeshByName("TL2"),L2,-2.3,11.3,-7.1);
     this.wheelMeshParent(this.scene.getMeshByName("TL3"),L3,-9,11.5,-7.1);
     this.wheelMeshParent(this.scene.getMeshByName("TR1"),R1,4,27.5,-7.1);
     this.wheelMeshParent(this.scene.getMeshByName("TR2"),R2,-2.3,27.5,-7.1);
@@ -411,12 +474,12 @@ class Tank {
   constructor(scene,x,z) {
     this.scene = scene;
     this.attr = {
-      speed: 10, torque: 10,
-      wheelDiam: 5.5, wheelHeight: 1, wheelRestitution: 1, 
-      bodyMass: 0, wheelFriction: 50
+      speed: 20, torque: 10,
+      wheelDiam: 2.5, wheelHeight: 1, wheelRestitution: 1, 
+      bodyMass: 20, wheelFriction: 50
     };
     this.meshes = {
-      body: BABYLON.MeshBuilder.CreateBox(null, {width: 20, depth:15, height:6}, scene),
+      body: BABYLON.MeshBuilder.CreateBox(null, {width: 22, depth:20, height:6}, scene),
       wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, {diameter: this.attr.wheelDiam, height: this.attr.wheelHeight}, scene),
       wheelL2: BABYLON.MeshBuilder.CreateCylinder(null, {diameter: this.attr.wheelDiam, height: this.attr.wheelHeight}, scene),
       wheelL3: BABYLON.MeshBuilder.CreateCylinder(null, {diameter: this.attr.wheelDiam, height: this.attr.wheelHeight}, scene),
@@ -435,16 +498,17 @@ class Tank {
     //Wheel positioning and physics
     this.attachWheels();
     //Make all physics meshes invisible
-    
+    Object.entries(this.meshes).map((x) => x[1].isVisible = false);
   }
   attachBodyParts()
   {
     let body = this.meshes.body;
     var mesh = this.scene.getMeshByName("TankBody");
+    body.position.y = 20;
     mesh.parent = body;
     //Positioning the MOD mesh relative to the babylon mesh
-    mesh.position.y -= 8.2;
-    mesh.position.z -= 19.5;
+    mesh.position.y -= 4;
+    mesh.position.z -= 23;
     mesh.position.x -= 2;
     //Adding physics imposter to body mesh (the parent of the mod mesh)
     this.meshes.body.physicsImpostor = 
@@ -452,6 +516,58 @@ class Tank {
   }
   attachWheels()
   {
+    let L1 = this.meshes.wheelL1;
+    let L2 = this.meshes.wheelL2;
+    let L3 = this.meshes.wheelL3;
+    let L4 = this.meshes.wheelL4;
+    let R1 = this.meshes.wheelR1;
+    let R2 = this.meshes.wheelR2;
+    let R3 = this.meshes.wheelR3;
+    let R4 = this.meshes.wheelR4;
+    let body = this.meshes.body;
+    let wheelWidth = 10.5;
+    let wheelHeight = -3;
+
+    //Rotating all the wheels so the face is parralel with the ground
+    L1.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
+    L2.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
+    L3.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
+    L4.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
+    R1.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
+    R2.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
+    R3.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
+    R4.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
+
+    //positioning the mod wheel meshes relative to babylon wheel mesh
+    this.wheelMeshParent(this.scene.getMeshByName("TankL1"),L1,3.2,13,-2);
+    this.wheelMeshParent(this.scene.getMeshByName("TankL2"),L2,-0.5,13,-2);
+    this.wheelMeshParent(this.scene.getMeshByName("TankL3"),L3,-3.7,13,-2);
+    this.wheelMeshParent(this.scene.getMeshByName("TankL4"),L4,-7.2,13,-2);
+    this.wheelMeshParent(this.scene.getMeshByName("TankR1"),R1,3.2,33,-2);
+    this.wheelMeshParent(this.scene.getMeshByName("TankR2"),R2,-0.5,33,-2);
+    this.wheelMeshParent(this.scene.getMeshByName("TankR3"),R3,-3.7,33,-2);
+    this.wheelMeshParent(this.scene.getMeshByName("TankR4"),R4,-7.2,33,-2);
+
+    //Positioning the babylon/parent meshes relative to the vehicle
+    this.wheelPositioning(body, L1, -5.3,wheelHeight,wheelWidth);
+    this.wheelPositioning(body, L2, -1.6,wheelHeight,wheelWidth);
+    this.wheelPositioning(body, L3, 2,wheelHeight,wheelWidth);
+    this.wheelPositioning(body, L4, 5.5,wheelHeight,wheelWidth);
+    this.wheelPositioning(body, R1, -5.3,wheelHeight,-wheelWidth);
+    this.wheelPositioning(body, R2, -1.6,wheelHeight,-wheelWidth);
+    this.wheelPositioning(body, R3, 2,wheelHeight,-wheelWidth);
+    this.wheelPositioning(body, R4, 5.5,wheelHeight,-wheelWidth);
+
+    //physics/hinge part
+    this.wheelJoint(body, L1, -5.3,wheelHeight,wheelWidth);
+    this.wheelJoint(body, L2, -1.6,wheelHeight,wheelWidth);
+    this.wheelJoint(body, L3, 2,wheelHeight,wheelWidth);
+    this.wheelJoint(body, L4, 5.5,wheelHeight,wheelWidth);
+    this.wheelJoint(body, R1, -5.3,wheelHeight,-wheelWidth);
+    this.wheelJoint(body, R2, -1.6,wheelHeight,-wheelWidth);
+    this.wheelJoint(body, R3, 2,wheelHeight,-wheelWidth);
+    this.wheelJoint(body, R4, 5.5,wheelHeight,-wheelWidth);
+
 
   }
 
@@ -465,6 +581,7 @@ class Tank {
 
   wheelMeshParent(mesh, parentMesh,x,y,z)
   {
+    parentMesh.setParent(null);
     mesh.parent = parentMesh;
     mesh.rotate(BABYLON.Axis.X, Math.PI/2, BABYLON.Space.LOCAL);
     mesh.position.y = y;//width
@@ -488,27 +605,42 @@ class Tank {
 
   forwards()
   {
-
+    this.motors.map((x) => x.setMotor(+this.attr.speed, this.attr.torque));
   }
   backwards()
   {
-
+    this.motors.map((x) => x.setMotor(-this.attr.speed, this.attr.torque));
   }
   left()
   {
+    this.motors[0].setMotor(-this.attr.speed, this.attr.torque);
+    this.motors[1].setMotor(-this.attr.speed, this.attr.torque);
+    this.motors[2].setMotor(-this.attr.speed, this.attr.torque);
+    this.motors[3].setMotor(-this.attr.speed, this.attr.torque);
+    this.motors[4].setMotor(this.attr.speed, this.attr.torque);
+    this.motors[5].setMotor(this.attr.speed, this.attr.torque);
+    this.motors[6].setMotor(this.attr.speed, this.attr.torque);
+    this.motors[7].setMotor(this.attr.speed, this.attr.torque);
 
   }
   right()
   {
-
+    this.motors[0].setMotor(this.attr.speed, this.attr.torque);
+    this.motors[1].setMotor(this.attr.speed, this.attr.torque);
+    this.motors[2].setMotor(this.attr.speed, this.attr.torque);
+    this.motors[3].setMotor(this.attr.speed, this.attr.torque);
+    this.motors[4].setMotor(-this.attr.speed, this.attr.torque);
+    this.motors[5].setMotor(-this.attr.speed, this.attr.torque);
+    this.motors[6].setMotor(-this.attr.speed, this.attr.torque);
+    this.motors[7].setMotor(-this.attr.speed, this.attr.torque);
   }
   releaseDrive()
   {
-
+    this.motors.map(x => x.setMotor(0, this.attr.torque/3));
   }
   releaseSteering()
   {
-
+    this.motors.map(x => x.setMotor(0, this.attr.torque/3));
   }
   
 }
@@ -542,7 +674,7 @@ class BabylonApp {
     scenePromise.then((returnedScene) => {
       scene = returnedScene;
       this.scene = returnedScene;
-      vehicles = {MT: new MT(scene,50,0), Train: new Train(scene,50,50), Tank: new Tank(scene,50,100)}
+      vehicles = {MT: new MT(scene,50,0), Train: new Train(scene,50,50), Tank: new Tank(scene,50,-50)}
       switchVehicle(vehicleName);  
       engine.runRenderLoop(() => {
         scene.render();
