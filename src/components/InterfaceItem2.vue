@@ -1,6 +1,6 @@
 <template>
     <div :id="partName" v-bind:class="{'.selectedDiv': selected}">
-    <button v-bind:class="{'btn-primary': selected, 'btn-secondary': !selected}" class="btn" @click="click">{{partName}}</button>
+    <button v-bind:class="{'btn-dark': selected, 'btn-secondary': !selected}" class="btn" @click="click">{{partName}}</button>
     </div>
 </template>
 
@@ -10,7 +10,8 @@ export default {
   props: {partName:String},
   methods: {
     click()
-    {this.$emit('send',this.partName)
+    {
+        this.$emit('send',this.partName)
         this.selected = !this.selected;
     },
     reset()
@@ -23,6 +24,7 @@ export default {
 </script>
 
 <style scoped>
-button{height: 5em; width: 5em;}
+button{height: 5em; width: 100%;}
 .selectedDiv{border-style: dotted;}
+.btn-dark{color:blueviolet;}
 </style>
