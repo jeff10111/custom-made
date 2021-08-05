@@ -1,5 +1,7 @@
 var vehicle;
 var vehicles = {};
+let offroadSection = { min: [0, 0], max: [1, 1] };
+
 import * as BABYLON from 'babylonjs';
 import * as Vehicles from "./Vehicles.js";
 import {
@@ -8,6 +10,11 @@ import {
     Scene,
   } from "@babylonjs/core";
 window.CANNON = require("cannon");
+
+function offroad(body) {
+    return (body.position.x >= offroadSection.min[0] && body.position.x <= offroadSection.max[0]
+        && body.position.y >= offroadSection.min[1] && body.position.y <= offroadSection.max[1]);
+}
 
 function switchVehicle(vehicleName)
 {
@@ -90,10 +97,13 @@ export class BabylonApp {
       scenePromise.then((returnedScene) => {
         scene = returnedScene;
         this.scene = returnedScene;
-        vehicles = {MT: new Vehicles.MT(scene,50,0,engineName,v), Train: new Vehicles.Train(scene,50,50,engineName,v), Tank: new Vehicles.Tank(scene,50,-50,engineName,v)}
+        vehicles = {MT: new Vehicles.MT(scene,50,0,engineName,v), Train: new Vehicles.Train(scene,50,50,engineName,v), Tank: new Vehicles.Tank(scene,50,-50,engineName, powerupName,v)}
         switchVehicle(vehicleName);  
         engine.runRenderLoop(() => {
           scene.render();
+          vehicle.attr.offroad = offroad(vehicle.meshes.body);
+          //TODO check if the vehicle has passed the start/finish line
+          //TODO check if the vehicle has ran a red light
         });
       });
   
@@ -146,14 +156,22 @@ export class BabylonApp {
         switch(this.powerUp)
         {
             case "Speed Boost":
+                //increases vehicle speed for a time duration
                 vehicle.attr.sbActivationTime = new Date().getTime();
                 console.log("Speed boost activated");
                 break;
             case "4 Wheel Drive":
+                //prevents noise through 4wd section
+                console.log("4 Wheel Drive boost activated");
                 break;
             case "Emergency Siren":
+                //prevents losing points for not stopping at traffic lights
+                //so this requires implementation of traffic lights first
+                console.log("Emergency boost activated");
                 break;
             case "Portal":
+                //this changes the track rather than the vehicle
+                console.log("Portal boost activated");
                 break;
         }
     }
