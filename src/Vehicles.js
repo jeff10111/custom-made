@@ -1,5 +1,6 @@
 import * as BABYLON from 'babylonjs';
 let sbDuration = 30000;//30 second power up duration
+let sbMultiplier = 2;
 function engine(e)
 {
     switch(e)
@@ -152,16 +153,20 @@ export class Tank {
   
     forwards()
     {
-      this.motors.map((x) => x.setMotor(+this.attr.speed, this.attr.torque));
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+        this.motors.map((x) => x.setMotor(+this.attr.speed*multi, this.attr.torque*multi));
     }
     backwards()
     {
-      this.motors.map((x) => x.setMotor(-this.attr.speed, this.attr.torque));
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+      this.motors.map((x) => x.setMotor(-this.attr.speed*multi, this.attr.torque*multi));
     }
     left()
     {
         var multi =
-        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? 10 : 1;
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
       this.motors[0].setMotor(-this.attr.speed*multi, this.attr.torque*multi);
       this.motors[1].setMotor(-this.attr.speed*multi, this.attr.torque*multi);
       this.motors[2].setMotor(-this.attr.speed*multi, this.attr.torque*multi);
@@ -174,14 +179,16 @@ export class Tank {
     }
     right()
     {
-      this.motors[0].setMotor(this.attr.speed, this.attr.torque);
-      this.motors[1].setMotor(this.attr.speed, this.attr.torque);
-      this.motors[2].setMotor(this.attr.speed, this.attr.torque);
-      this.motors[3].setMotor(this.attr.speed, this.attr.torque);
-      this.motors[4].setMotor(-this.attr.speed, this.attr.torque);
-      this.motors[5].setMotor(-this.attr.speed, this.attr.torque);
-      this.motors[6].setMotor(-this.attr.speed, this.attr.torque);
-      this.motors[7].setMotor(-this.attr.speed, this.attr.torque);
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+      this.motors[0].setMotor(this.attr.speed*multi, this.attr.torque*multi);
+      this.motors[1].setMotor(this.attr.speed*multi, this.attr.torque*multi);
+      this.motors[2].setMotor(this.attr.speed*multi, this.attr.torque*multi);
+      this.motors[3].setMotor(this.attr.speed*multi, this.attr.torque*multi);
+      this.motors[4].setMotor(-this.attr.speed*multi, this.attr.torque*multi);
+      this.motors[5].setMotor(-this.attr.speed*multi, this.attr.torque*multi);
+      this.motors[6].setMotor(-this.attr.speed*multi, this.attr.torque*multi);
+      this.motors[7].setMotor(-this.attr.speed*multi, this.attr.torque*multi);
     }
     releaseDrive()
     {
@@ -194,13 +201,13 @@ export class Tank {
     
   }
   
-export class Train {
+export class Train { 
     constructor(scene,x,z, engineName,visible) {
       this.scene = scene;
       this.attr = {
-        speed: 10, torque: 50*engine(engineName),
+        speed: 10, torque: 25*engine(engineName),
         wheelDiam: 5.5, wheelHeight: 1, wheelRestitution: 1, 
-        bodyMass: 50, wheelFriction: 50
+        bodyMass: 50, wheelFriction: 50, sbActivationTime: 0
       };
       this.meshes = {
         body: BABYLON.MeshBuilder.CreateBox(null, {width: 20, depth:15, height:6}, scene),
@@ -392,32 +399,40 @@ export class Train {
   
     forwards()
     {
-      this.motors.map((x) => x.setMotor(+this.attr.speed, this.attr.torque));
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+      this.motors.map((x) => x.setMotor(+this.attr.speed*multi, this.attr.torque*multi));
     }
   
     backwards()
     {
-      this.motors.map((x) => x.setMotor(-this.attr.speed, this.attr.torque*1.5));
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+      this.motors.map((x) => x.setMotor(-this.attr.speed*multi, this.attr.torque*multi));
     }
   
     left()
     {
-      this.motors[0].setMotor(-this.attr.speed,this.attr.torque);
-      this.motors[1].setMotor(-this.attr.speed,this.attr.torque);
-      this.motors[2].setMotor(-this.attr.speed,this.attr.torque);
-      this.motors[3].setMotor(this.attr.speed,this.attr.torque);
-      this.motors[4].setMotor(this.attr.speed,this.attr.torque);
-      this.motors[5].setMotor(this.attr.speed,this.attr.torque);
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+      this.motors[0].setMotor(-this.attr.speed*multi,this.attr.torque*multi);
+      this.motors[1].setMotor(-this.attr.speed*multi,this.attr.torque*multi);
+      this.motors[2].setMotor(-this.attr.speed*multi,this.attr.torque*multi);
+      this.motors[3].setMotor(this.attr.speed*multi,this.attr.torque*multi);
+      this.motors[4].setMotor(this.attr.speed*multi,this.attr.torque*multi);
+      this.motors[5].setMotor(this.attr.speed*multi,this.attr.torque*multi);
     }
   
     right()
     {
-      this.motors[0].setMotor(this.attr.speed,this.attr.torque);
-      this.motors[1].setMotor(this.attr.speed,this.attr.torque);
-      this.motors[2].setMotor(this.attr.speed,this.attr.torque);
-      this.motors[3].setMotor(-this.attr.speed,this.attr.torque);
-      this.motors[4].setMotor(-this.attr.speed,this.attr.torque);
-      this.motors[5].setMotor(-this.attr.speed,this.attr.torque);
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+      this.motors[0].setMotor(this.attr.speed*multi,this.attr.torque*multi);
+      this.motors[1].setMotor(this.attr.speed*multi,this.attr.torque*multi);
+      this.motors[2].setMotor(this.attr.speed*multi,this.attr.torque*multi);
+      this.motors[3].setMotor(-this.attr.speed*multi,this.attr.torque*multi);
+      this.motors[4].setMotor(-this.attr.speed*multi,this.attr.torque*multi);
+      this.motors[5].setMotor(-this.attr.speed*multi,this.attr.torque*multi);
     }
   
     releaseDrive()
@@ -438,7 +453,7 @@ export class MT {
       this.attr = {
         speed: 10, torque: 10*engine(engineName),
         wheelDiam: 5.5, wheelHeight: 1, wheelRestitution: 1, 
-        bodyMass: 20, wheelFriction: 50
+        bodyMass: 20, wheelFriction: 50, sbActivationTime: 0
       };
 
       this.meshes = {
@@ -552,24 +567,36 @@ export class MT {
     }
     
     forwards() {
-      this.motors.map((x) => x.setMotor(+this.attr.speed, this.attr.torque));
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+      this.motors.map((x) => x.setMotor(+this.attr.speed*multi, this.attr.torque*multi));
     }
     backwards() {
-      this.motors.map((x) => x.setMotor(-this.attr.speed, this.attr.torque*1.5));
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+      this.motors.map((x) => x.setMotor(-this.attr.speed*multi, this.attr.torque*multi));
     }
     right() {
-      this.motors[0].setMotor(this.attr.speed, this.attr.torque);
-      this.motors[1].setMotor(-this.attr.speed, this.attr.torque);
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+      this.motors[0].setMotor(this.attr.speed*multi, this.attr.torque*multi);
+      this.motors[1].setMotor(-this.attr.speed*multi, this.attr.torque*multi);
     }
     left() {
-      this.motors[0].setMotor(-this.attr.speed, this.attr.torque);
-      this.motors[1].setMotor(this.attr.speed, this.attr.torque);
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+      this.motors[0].setMotor(-this.attr.speed*multi, this.attr.torque*multi);
+      this.motors[1].setMotor(this.attr.speed*multi, this.attr.torque*multi);
     }
     releaseDrive() {
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
       this.motors[0].setMotor(0, this.attr.torque / 3);
       this.motors[1].setMotor(0, this.attr.torque / 3);
     }
     releaseSteering() {
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
       this.motors[0].setMotor(0, this.attr.torque / 3);
       this.motors[1].setMotor(0, this.attr.torque / 3);
     }
