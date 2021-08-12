@@ -10,7 +10,7 @@
   "dependencies": {
     "babylonjs": "^4.2.0",
     "cannon": "^0.6.2",
-    "core-js": "^3.6.5",
+    "core-js": "^3.16.1",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0"
   },
@@ -48,5 +48,17 @@
     "> 1%",
     "last 2 versions",
     "not dead"
-  ]
+  ],
+  "description": "## Project setup ``` npm install ```",
+  "main": "babel.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jeff10111/custom-made.git"
+  },
+  "author": "jeff and casey",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jeff10111/custom-made/issues"
+  },
+  "homepage": "https://github.com/jeff10111/custom-made#readme"
 }

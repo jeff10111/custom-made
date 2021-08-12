@@ -5,8 +5,8 @@
       {{ this.userSelection.engine }} engine and
       {{ this.userSelection.powerup }} powerup
     </div>
-    <div><button @click="powerUp">Activate Powerup!!</button></div>
-    <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
+    <div><button @click="powerUp">Activate Powerup!!</button><button @click="somethingElse">umm!!</button></div>
+    <canvas id="gameCanvas" width="1920px" height="1080px"></canvas>
   </div>
 </template>
 
@@ -21,6 +21,9 @@ export default {
     powerUp() {
       this.Application.powerUpActivation();
     },
+    somethingElse() {
+      console.log("Something else");
+    }
   },
   data() {
     return { userSelection: { body: "", engine: "", powerup: "" }, mode: 0 };

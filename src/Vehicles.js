@@ -3,6 +3,8 @@ let sbDuration = 30000;//30 second power up duration
 let sbMultiplier = 2;
 //once the track is implemented we will know what this is
 
+
+
 function engine(e) {
     switch (e) {
         case "Steam":
@@ -18,6 +20,79 @@ function engine(e) {
     }
 }
 
+export class Omni {
+    constructor(scene, x, z, engineName, powerupName, visible) {
+        console.log("From the omni constructor");
+        this.scene = scene;
+        this.attr = {
+            speed: 20, torque: 200 * engine(engineName),
+            wheelDiam: 2.5, wheelHeight: 1, wheelRestitution: 1,
+            bodyMass: 10, wheelFriction: 50, sbActivationTime: 0, powerupName: powerupName, offroad: false
+        };
+        this.meshes = {
+            body: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: 23, height: 10}, scene),
+        }
+        this.meshes.body.position.x = x;
+        this.meshes.body.position.z = z;
+        this.attachBodyParts();
+        if (!visible)
+        Object.entries(this.meshes).map((x) => x[1].isVisible = false);
+    }
+
+    attachBodyParts()
+    {
+        let body = this.meshes.body;
+        var mesh = this.scene.getMeshByName("Omni");
+        console.log("OMNI: " + this.scene.getMeshByName("Omni"));
+        body.position.y = 25;
+        mesh.parent = body;
+        mesh.position.z = 0;
+        mesh.position.y = -5;
+        body.physicsImpostor = new BABYLON.PhysicsImpostor(body, BABYLON.PhysicsImpostor.CylinderImpostor, { mass: this.attr.bodyMass, friction: 0.01, restitution: 0 }, this.scene);
+    }
+
+    userInput(keys)
+    {
+        //console.log("ok");
+        var impulseVector = new BABYLON.Vector3(0,0,0);
+        if(keys['s'])//north?
+        {
+            if(keys['a'])//east?
+            {
+                impulseVector = new BABYLON.Vector3(1,0,1);
+            } else if (keys["d"])//west?
+            {
+                impulseVector = new BABYLON.Vector3(-1,0,1);
+            }
+            else{
+                impulseVector = new BABYLON.Vector3(0,0,1);
+            }
+        } else if (keys['w'])
+        {
+            if(keys['a'])//east?
+            {
+                impulseVector = new BABYLON.Vector3(1,0,-1);
+            } else if (keys["d"])//west?
+            {
+                impulseVector = new BABYLON.Vector3(-1,0,-1);
+            }
+            else{
+                impulseVector = new BABYLON.Vector3(0,0,-1);
+            }            
+        } else if (keys['d'])
+        {
+            impulseVector = new BABYLON.Vector3(-1,0,0);
+        } else if (keys['a'])
+        {
+            impulseVector = new BABYLON.Vector3(1,0,0);
+        }
+        this.meshes.body.physicsImpostor.applyImpulse(impulseVector.scale(this.attr.bodyMass), this.meshes.body.getAbsolutePosition());
+    }
+
+
+
+}
+
 export class Tank {
     constructor(scene, x, z, engineName, powerupName, visible) {
         this.scene = scene;
@@ -26,7 +101,6 @@ export class Tank {
             wheelDiam: 2.5, wheelHeight: 1, wheelRestitution: 1,
             bodyMass: 20, wheelFriction: 50, sbActivationTime: 0, powerupName: powerupName, offroad: false
         };
-        console.log("Power up from attr.powerUp" + this.attr.powerupName);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox(null, { width: 22, depth: 20, height: 6 }, scene),
             wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
@@ -147,6 +221,24 @@ export class Tank {
         this.motors.push(newJoint);
     }
 
+    userInput(keys)
+    {
+        if(keys["w"]){
+            this.forwards();
+        } else if (keys["a"])
+        {
+            this.left();
+        } else if (keys["s"])
+        {
+            this.backwards();
+        } else if (keys["d"] )
+        {
+            this.right();
+        } else {
+            this.releaseDrive();
+        }
+    }
+
     forwards() {
         //If the power-up is not 4wd and the vehicle is offroad 
         //alternate handling characteristics
@@ -216,7 +308,7 @@ export class Train {
         this.attr = {
             speed: 10, torque: 25 * engine(engineName),
             wheelDiam: 5.5, wheelHeight: 1, wheelRestitution: 1,
-            bodyMass: 50, wheelFriction: 50, sbActivationTime: 0
+            bodyMass: 100, wheelFriction: 50, sbActivationTime: 0
         };
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox(null, { width: 20, depth: 15, height: 6 }, scene),
@@ -397,6 +489,24 @@ export class Train {
         this.motors.push(newJoint);
     }
 
+    userInput(keys)
+    {
+        if(keys["w"]){
+            this.forwards();
+        } else if (keys["a"])
+        {
+            this.left();
+        } else if (keys["s"])
+        {
+            this.backwards();
+        } else if (keys["d"] )
+        {
+            this.right();
+        } else {
+            this.releaseDrive();
+        }
+    }
+
     forwards() {
         if (this.attr.offroad && this.attr.powerupName != "4 Wheel Drive") {
             //do something different
@@ -569,6 +679,24 @@ export class MT {
         });
         wheel.physicsImpostor.addJoint(body.physicsImpostor, newJoint);
         this.motors.push(newJoint);
+    }
+
+    userInput(keys)
+    {
+        if(keys["w"]){
+            this.forwards();
+        } else if (keys["a"])
+        {
+            this.left();
+        } else if (keys["s"])
+        {
+            this.backwards();
+        } else if (keys["d"] )
+        {
+            this.right();
+        } else {
+            this.releaseDrive();
+        }
     }
 
     forwards() {

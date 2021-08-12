@@ -1,5 +1,6 @@
 var vehicle;
 var vehicles = {};
+var keysPressed = {"w":0,"a":0,"s":0,"d":0};
 let offroadSection = { min: [0, 0], max: [1, 1] };
 
 import * as BABYLON from 'babylonjs';
@@ -86,10 +87,11 @@ var createScene = async function (engine, canvas) {
 
 export class BabylonApp {
     constructor(vehicleName, engineName, powerupName) {
+      console.log(vehicleName);
         this.powerUp = powerupName;
       // create the canvas html element and attach it to the webpage
       var canvas = document.getElementById("gameCanvas");
-      var v = true;//visibility
+      var v = false;//visibility
       // initialize babylon scene and engine
       var engine = new Engine(canvas, true);
       var scene;
@@ -97,18 +99,17 @@ export class BabylonApp {
       scenePromise.then((returnedScene) => {
         scene = returnedScene;
         this.scene = returnedScene;
-        vehicles = {MT: new Vehicles.MT(scene,50,0,engineName,v), Train: new Vehicles.Train(scene,50,50,engineName,v), Tank: new Vehicles.Tank(scene,50,-50,engineName, powerupName,v)}
+        vehicles = {MT: new Vehicles.MT(scene,50,0,engineName,v), Train: new Vehicles.Train(scene,50,50,engineName,v), Tank: new Vehicles.Tank(scene,50,-50,engineName, powerupName,v), Omni: new Vehicles.Omni(scene,50,-100,engineName, powerupName,v)}
         switchVehicle(vehicleName);  
         engine.runRenderLoop(() => {
           scene.render();
           vehicle.attr.offroad = offroad(vehicle.meshes.body);
+          vehicle.userInput(keysPressed);
           //TODO check if the vehicle has passed the start/finish line
           //TODO check if the vehicle has ran a red light
         });
       });
-  
       window.addEventListener("keydown", (ev) => {
-        // Shift+Ctrl+Alt+I
         if (ev.shiftKey && ev.ctrlKey && ev.altKey && ev.keyCode === 73) {
           if (scene.debugLayer.isVisible()) {
             scene.debugLayer.hide();
@@ -116,34 +117,35 @@ export class BabylonApp {
             scene.debugLayer.show();
           }
         } else if (ev.key == "ArrowUp" || ev.key == "w") {
-          vehicle.forwards();
+          keysPressed["w"] = 1;
         } else if (ev.key == "ArrowDown" || ev.key == "s") {
-          vehicle.backwards();
+          keysPressed["s"] = 1;
         } else if (ev.key == "ArrowRight" || ev.key == "d") {
-          vehicle.right();
+          keysPressed["d"] = 1;
         } else if (ev.key == "ArrowLeft" || ev.key == "a") {
-          vehicle.left();
+          keysPressed["a"] = 1;
         } else if (ev.key == "c") {
           new BABYLON.FollowCamera();
-        }
+        }       
       });
   
       window.addEventListener("keyup", (ev) => {
-        if (
-          ev.key == "ArrowUp" ||
-          ev.key == "w" ||
-          ev.key == "ArrowDown" ||
-          ev.key == "s"
-        ) {
-          vehicle.releaseDrive();
-        } else if (
-          ev.key == "ArrowRight" ||
-          ev.key == "d" ||
-          ev.key == "ArrowLeft" ||
-          ev.key == "a"
-        ) {
-          vehicle.releaseSteering();
-        }
+        if (ev.shiftKey && ev.ctrlKey && ev.altKey && ev.keyCode === 73) {
+          if (scene.debugLayer.isVisible()) {
+            scene.debugLayer.hide();
+          } else {
+            scene.debugLayer.show();
+          }
+        } else if (ev.key == "ArrowUp" || ev.key == "w") {
+          keysPressed["w"] = 0;
+        } else if (ev.key == "ArrowDown" || ev.key == "s") {
+          keysPressed["s"] = 0;
+        } else if (ev.key == "ArrowRight" || ev.key == "d") {
+          keysPressed["d"] = 0;
+        } else if (ev.key == "ArrowLeft" || ev.key == "a") {
+          keysPressed["a"] = 0;
+        } 
+        vehicle.userInput(keysPressed);
       });
   
       window.addEventListener("resize", function () {
@@ -152,7 +154,6 @@ export class BabylonApp {
     }
     powerUpActivation()
     {
-        console.log("Powerup call");
         switch(this.powerUp)
         {
             case "Speed Boost":
