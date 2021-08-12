@@ -66,7 +66,7 @@ var addCollider = function(scene, thisMesh, visible = false) {
     if (!visible) {
       thisMesh.visibility = 0;
     }
-    box.visibility = 0.01;
+    box.visibility = 0;
 
     box.physicsImpostor = new PhysicsImpostor(
       box,
@@ -162,6 +162,9 @@ var createScene = async function(engine, canvas) {
           // But we still want them in the original positions
           const newRot = new Vector3(rot.x, rot.y, rot.z);
           thisMesh.rotation = newRot;
+        }
+        if (thisMesh.name.startsWith("Trigger_")) {
+          thisMesh.visibility = 0.1;
         }
         if (
           thisMesh.name.startsWith("MapCollide") &&
