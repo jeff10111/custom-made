@@ -101,16 +101,16 @@ var createScene = async function(engine, canvas) {
 
   scene.enablePhysics();
   console.log(scene.clearColor);
-  var camera = new BABYLON.ArcRotateCamera(
-    "Camera",
-    Math.PI / 5,
-    Math.PI / 3,
-    250,
-    BABYLON.Vector3.Zero(),
-    scene
-  );
-  camera.useFramingBehavior = true;
-  camera.attachControl(canvas, true);
+  // var camera = new BABYLON.ArcRotateCamera(
+  //   "Camera",
+  //   Math.PI / 5,
+  //   Math.PI / 3,
+  //   250,
+  //   BABYLON.Vector3.Zero(),
+  //   scene
+  // );
+  // camera.useFramingBehavior = true;
+  // camera.attachControl(canvas, true);
   new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
 
   //Importing assets
@@ -234,13 +234,14 @@ export class BabylonApp {
       this.scene = returnedScene;
 
       vehicles = { 
-        MT: new Vehicles.MT(scene, 50, 0, engineName, v), 
-        Train: new Vehicles.Train(scene, 50, 50, engineName, v), 
-        Tank: new Vehicles.Tank(scene, 50, -50, engineName, powerupName, v), 
-        Omni: new Vehicles.Omni(scene, 50, -100, engineName, powerupName, v) 
+        MT: new Vehicles.MT(scene, 210, 20, engineName, v), 
+        Train: new Vehicles.Train(scene, 240, 20, engineName, v), 
+        Tank: new Vehicles.Tank(scene, 270, 20, engineName, powerupName, v), 
+        Omni: new Vehicles.Omni(scene, 300, 20, engineName, powerupName, v) 
       };
 
       switchVehicle(vehicleName);
+      console.log(vehicleName);
       engine.runRenderLoop(() => {
         scene.render();
         vehicle.attr.offroad = offroad(vehicle.meshes.body);
@@ -419,6 +420,7 @@ export class BabylonApp {
     return thisAnim;
   }
   spinArm() {
+    console.log(vehicle.meshes.body.position);
     var test = Math.floor(Math.random() * 10 - 5);
     if (test == 0) {
       test = 1;

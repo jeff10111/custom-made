@@ -35,6 +35,7 @@ export class Omni {
         }
         this.meshes.body.position.x = x;
         this.meshes.body.position.z = z;
+        this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
         this.attachBodyParts();
         if (!visible)
             Object.entries(this.meshes).map((x) => x[1].isVisible = false);
@@ -114,6 +115,7 @@ export class Tank {
         //Offset
         this.meshes.body.position.x = x;
         this.meshes.body.position.z = z;
+        this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
         //Body positioning and physics
         this.attachBodyParts();
         //Wheel positioning and physics
@@ -320,6 +322,7 @@ export class Train {
         //Offset
         this.meshes.body.position.x = x;
         this.meshes.body.position.z = z;
+        this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
         //Body positioning and physics
         this.attachBodyParts();
         //Wheel positioning and physics
@@ -569,6 +572,8 @@ export class MT {
         //Offset
         this.meshes.body.position.x = x;
         this.meshes.body.position.z = z;
+        //this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
+
         //Body part
         this.attachBodyParts();
         //Wheel part
