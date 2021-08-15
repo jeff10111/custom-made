@@ -1,4 +1,5 @@
 import * as BABYLON from 'babylonjs';
+//import { FollowCamera } from 'babylonjs/Cameras/followCamera';
 let sbDuration = 30000;//30 second power up duration
 let sbMultiplier = 2;
 //once the track is implemented we will know what this is
@@ -30,17 +31,16 @@ export class Omni {
             bodyMass: 10, wheelFriction: 50, sbActivationTime: 0, powerupName: powerupName, offroad: false
         };
         this.meshes = {
-            body: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: 23, height: 10}, scene),
+            body: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: 23, height: 10 }, scene),
         }
         this.meshes.body.position.x = x;
         this.meshes.body.position.z = z;
         this.attachBodyParts();
         if (!visible)
-        Object.entries(this.meshes).map((x) => x[1].isVisible = false);
+            Object.entries(this.meshes).map((x) => x[1].isVisible = false);
     }
 
-    attachBodyParts()
-    {
+    attachBodyParts() {
         let body = this.meshes.body;
         var mesh = this.scene.getMeshByName("Omni");
         console.log("OMNI: " + this.scene.getMeshByName("Omni"));
@@ -49,44 +49,42 @@ export class Omni {
         mesh.position.z = 0;
         mesh.position.y = -5;
         body.physicsImpostor = new BABYLON.PhysicsImpostor(body, BABYLON.PhysicsImpostor.CylinderImpostor, { mass: this.attr.bodyMass, friction: 0.01, restitution: 0 }, this.scene);
+        //new FollowCamera(name: string, position: Vector3, scene: Scene, lockedTarget?: Nullable<AbstractMesh>)
     }
 
-    userInput(keys)
-    {
-        //console.log("ok");
-        var impulseVector = new BABYLON.Vector3(0,0,0);
-        if(keys['s'])//north?
+    userInput(keys) {
+        var impulseVector = new BABYLON.Vector3(0, 0, 0);
+        if (keys['s'])//north?
         {
-            if(keys['a'])//east?
+            if (keys['a'])//east?
             {
-                impulseVector = new BABYLON.Vector3(1,0,1);
+                impulseVector = new BABYLON.Vector3(1, 0, 1);
             } else if (keys["d"])//west?
             {
-                impulseVector = new BABYLON.Vector3(-1,0,1);
+                impulseVector = new BABYLON.Vector3(-1, 0, 1);
             }
-            else{
-                impulseVector = new BABYLON.Vector3(0,0,1);
+            else {
+                impulseVector = new BABYLON.Vector3(0, 0, 1);
             }
-        } else if (keys['w'])
-        {
-            if(keys['a'])//east?
+        } else if (keys['w']) {
+            if (keys['a'])//east?
             {
-                impulseVector = new BABYLON.Vector3(1,0,-1);
+                impulseVector = new BABYLON.Vector3(1, 0, -1);
             } else if (keys["d"])//west?
             {
-                impulseVector = new BABYLON.Vector3(-1,0,-1);
+                impulseVector = new BABYLON.Vector3(-1, 0, -1);
             }
-            else{
-                impulseVector = new BABYLON.Vector3(0,0,-1);
-            }            
-        } else if (keys['d'])
-        {
-            impulseVector = new BABYLON.Vector3(-1,0,0);
-        } else if (keys['a'])
-        {
-            impulseVector = new BABYLON.Vector3(1,0,0);
+            else {
+                impulseVector = new BABYLON.Vector3(0, 0, -1);
+            }
+        } else if (keys['d']) {
+            impulseVector = new BABYLON.Vector3(-1, 0, 0);
+        } else if (keys['a']) {
+            impulseVector = new BABYLON.Vector3(1, 0, 0);
         }
-        this.meshes.body.physicsImpostor.applyImpulse(impulseVector.scale(this.attr.bodyMass), this.meshes.body.getAbsolutePosition());
+        var multi =
+        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+        this.meshes.body.physicsImpostor.applyImpulse(impulseVector.scale(this.attr.bodyMass * sbMultiplier), this.meshes.body.getAbsolutePosition());
     }
 
 
@@ -221,18 +219,14 @@ export class Tank {
         this.motors.push(newJoint);
     }
 
-    userInput(keys)
-    {
-        if(keys["w"]){
+    userInput(keys) {
+        if (keys["w"]) {
             this.forwards();
-        } else if (keys["a"])
-        {
+        } else if (keys["a"]) {
             this.left();
-        } else if (keys["s"])
-        {
+        } else if (keys["s"]) {
             this.backwards();
-        } else if (keys["d"] )
-        {
+        } else if (keys["d"]) {
             this.right();
         } else {
             this.releaseDrive();
@@ -306,12 +300,12 @@ export class Train {
     constructor(scene, x, z, engineName, visible) {
         this.scene = scene;
         this.attr = {
-            speed: 10, torque: 25 * engine(engineName),
+            speed: 20, torque: 5 * engine(engineName),
             wheelDiam: 5.5, wheelHeight: 1, wheelRestitution: 1,
-            bodyMass: 100, wheelFriction: 50, sbActivationTime: 0
+            bodyMass: 50, wheelFriction: 15, sbActivationTime: 0, wheelMass: 1
         };
         this.meshes = {
-            body: BABYLON.MeshBuilder.CreateBox(null, { width: 20, depth: 15, height: 6 }, scene),
+            body: BABYLON.MeshBuilder.CreateBox(null, { width: 25, depth: 15, height: 6 }, scene),
             front: BABYLON.MeshBuilder.CreateBox(null, { width: 8, depth: 15, height: 6 }, scene),
             wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
             wheelL2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
@@ -391,14 +385,9 @@ export class Train {
 
     attachBodyParts() {
         let body = this.meshes.body;
-        let front = this.meshes.front;
         //pull body out of the ground
         body.position.y += 20;
-        //positioning front part relative to main body mass then removing 
-        front.parent = body;
-        front.position.y = 0;
-        front.position.x += 13;
-        front.setParent(null);
+
         //Attaching mod mesh to babylon mesh
         var mesh = this.scene.getMeshByName("TrainBody");
         mesh.parent = body;
@@ -409,11 +398,7 @@ export class Train {
         //Adding physics imposter to body mesh (the parent of the mod mesh)
         this.meshes.body.physicsImpostor =
             new BABYLON.PhysicsImpostor(body, BABYLON.PhysicsImpostor.BoxImpostor, { mass: this.attr.bodyMass }, this.scene);
-        //Adding physics to front part
-        front.physicsImpostor =
-            new BABYLON.PhysicsImpostor(front, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 1 }, this.scene);
-        var newJoint = new BABYLON.PhysicsJoint(BABYLON.PhysicsJoint.LockJoint, {});
-        this.meshes.body.physicsImpostor.addJoint(front.physicsImpostor, newJoint);
+
     }
 
     attachWheels() {
@@ -478,7 +463,7 @@ export class Train {
 
     wheelJoint(body, wheel, x, y, z) {
         wheel.setParent(null);
-        wheel.physicsImpostor = new BABYLON.PhysicsImpostor(wheel, BABYLON.PhysicsImpostor.CylinderImpostor, { mass: 1, friction: this.attr.wheelFriction, restitution: this.attr.wheelRestitution }, this.scene);
+        wheel.physicsImpostor = new BABYLON.PhysicsImpostor(wheel, BABYLON.PhysicsImpostor.CylinderImpostor, { mass: this.attr.wheelMass, friction: this.attr.wheelFriction, restitution: this.attr.wheelRestitution }, this.scene);
         var newJoint = new BABYLON.MotorEnabledJoint(BABYLON.PhysicsJoint.HingeJoint, {
             mainPivot: new BABYLON.Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
             connectedPivot: new BABYLON.Vector3(x, y, z), //(length,y,)
@@ -489,18 +474,14 @@ export class Train {
         this.motors.push(newJoint);
     }
 
-    userInput(keys)
-    {
-        if(keys["w"]){
+    userInput(keys) {
+        if (keys["w"]) {
             this.forwards();
-        } else if (keys["a"])
-        {
+        } else if (keys["a"]) {
             this.left();
-        } else if (keys["s"])
-        {
+        } else if (keys["s"]) {
             this.backwards();
-        } else if (keys["d"] )
-        {
+        } else if (keys["d"]) {
             this.right();
         } else {
             this.releaseDrive();
@@ -681,18 +662,14 @@ export class MT {
         this.motors.push(newJoint);
     }
 
-    userInput(keys)
-    {
-        if(keys["w"]){
+    userInput(keys) {
+        if (keys["w"]) {
             this.forwards();
-        } else if (keys["a"])
-        {
+        } else if (keys["a"]) {
             this.left();
-        } else if (keys["s"])
-        {
+        } else if (keys["s"]) {
             this.backwards();
-        } else if (keys["d"] )
-        {
+        } else if (keys["d"]) {
             this.right();
         } else {
             this.releaseDrive();
