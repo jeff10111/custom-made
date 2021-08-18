@@ -1,22 +1,36 @@
 let vehicle;
 let vehicles = {};
-let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
+let keysPressed = { w: 0, a: 0, s: 0, d: 0 };
 let offroadSection = { min: [0, 0], max: [1, 1] };
 let powerUpHasBeenActivated = false;
 let userHasRunRedLight = false;
 let startTime;
 let endTime;
+let bestLap;
+let fourWheelDrivePassed;
+let laps = [];
 
 var scene;
-const frameRate = 1000;
+const frameRate = Number.POSITIVE_INFINITY;
 
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
 import * as BABYLON from "babylonjs";
 import { PhysicsImpostor } from "@babylonjs/core/Physics";
 import * as Vehicles from "./Vehicles.js";
-import { SceneLoader, Engine, Scene } from "@babylonjs/core";
-import { Animation, Vector3, Quaternion, MeshBuilder } from "@babylonjs/core";
+import { Hud } from "./gui";
+import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/";
+import {
+  Animation,
+  ActionManager,
+  Engine,
+  ExecuteCodeAction,
+  MeshBuilder,
+  Quaternion,
+  SceneLoader,
+  Scene,
+  Vector3,
+} from "@babylonjs/core";
 import { readCsv } from "@/utils/csvHelper.js";
 window.CANNON = require("cannon");
 
@@ -46,14 +60,19 @@ function switchVehicle(vehicleName) {
       console.log(vehicle.attr);
       break;
   }
-  var camera = new BABYLON.FollowCamera("vehicleCam", new BABYLON.Vector3(0,10,10), scene, vehicle.meshes.body);
+  var camera = new BABYLON.FollowCamera(
+    "vehicleCam",
+    new BABYLON.Vector3(0, 10, 10),
+    scene,
+    vehicle.meshes.body
+  );
   camera.lowerRadiusLimit = 150;
   camera.lowerHeightOffsetLimit = 50;
   camera.maxCameraSpeed = 50;
   camera.rotationOffset = -90;
 }
 
-var addCollider = function(scene, thisMesh, visible = false) {
+var addCollider = function(scene, thisMesh, visible = false, friction = 0.2) {
   try {
     thisMesh = scene.getMeshByName(thisMesh.name);
     thisMesh.scaling.x = Math.abs(thisMesh.scaling.x);
@@ -81,7 +100,7 @@ var addCollider = function(scene, thisMesh, visible = false) {
     box.physicsImpostor = new PhysicsImpostor(
       box,
       PhysicsImpostor.BoxImpostor,
-      { mass: 0, restitution: 0 },
+      { mass: 0, restitution: 0, friction: friction },
       scene
     );
     console.log("Making bb of " + thisMesh.name);
@@ -92,6 +111,87 @@ var addCollider = function(scene, thisMesh, visible = false) {
   } catch (e) {
     console.log(e);
   }
+};
+
+var startLap = function(gui) {
+  gui.startTimer();
+};
+
+var stopLap = function(gui) {
+  gui.stopTimer();
+  if (!bestLap || gui.time < bestLap) {
+    bestLap = gui.time;
+  }
+  laps.push(gui.time);
+
+  console.log(bestLap);
+  console.log(laps);
+};
+
+var addTriggers = function(gui, scene, vehicle) {
+  console.log(vehicle.name + "Body");
+  var stopSignTrigger = scene.getMeshByName("Trigger_StopSign");
+  stopSignTrigger.actionManager = new ActionManager(scene);
+  stopSignTrigger.visibility = 0.1;
+  stopSignTrigger.actionManager.registerAction(
+    new ExecuteCodeAction(
+      {
+        trigger: ActionManager.OnIntersectionEnterTrigger,
+        parameter: scene.getMeshByName(vehicle.name + "Body"),
+      },
+      () => {
+        console.log("RedLightArea");
+      }
+    )
+  );
+
+  var fourWheelDriveTrigger = scene.getMeshByName("Trigger_4WDStart");
+  fourWheelDriveTrigger.actionManager = new ActionManager(scene);
+  fourWheelDriveTrigger.visibility = 0.1;
+  fourWheelDriveTrigger.actionManager.registerAction(
+    new ExecuteCodeAction(
+      {
+        trigger: ActionManager.OnIntersectionEnterTrigger,
+        parameter: scene.getMeshByName(vehicle.name + "Body"),
+      },
+      () => {
+        fourWheelDrivePassed = true;
+      }
+    )
+  );
+
+  var startTrigger = scene.getMeshByName("Trigger_Start");
+  startTrigger.actionManager = new ActionManager(scene);
+  startTrigger.visibility = 0.1;
+  startTrigger.actionManager.registerAction(
+    new ExecuteCodeAction(
+      {
+        trigger: ActionManager.OnIntersectionEnterTrigger,
+        parameter: scene.getMeshByName(vehicle.name + "Body"),
+      },
+      () => {
+        startLap(gui);
+        fourWheelDrivePassed = false;
+      }
+    )
+  );
+
+  var finishTrigger = scene.getMeshByName("Trigger_Finish");
+  finishTrigger.actionManager = new ActionManager(scene);
+  finishTrigger.visibility = 0.1;
+  finishTrigger.actionManager.registerAction(
+    new ExecuteCodeAction(
+      {
+        trigger: ActionManager.OnIntersectionEnterTrigger,
+        parameter: scene.getMeshByName(vehicle.name + "Body"),
+      },
+      () => {
+        if (fourWheelDrivePassed) {
+          stopLap(gui);
+        }
+      }
+    )
+  );
 };
 
 var createScene = async function(engine, canvas) {
@@ -119,9 +219,6 @@ var createScene = async function(engine, canvas) {
   await SceneLoader.ImportMeshAsync("", "/assets/", "Train.glb", scene);
   await SceneLoader.ImportMeshAsync("", "/assets/", "Tank.glb", scene);
   //importing track
-
-  // var track = scene.getMeshByName("Track");
-  // track.position = new BABYLON.Vector3(-125, -480, -760);
 
   //Creating the ground and enabling physics
 
@@ -173,18 +270,17 @@ var createScene = async function(engine, canvas) {
           const newRot = new Vector3(rot.x, rot.y, rot.z);
           thisMesh.rotation = newRot;
         }
-        if (thisMesh.name.startsWith("Trigger_")) {
-          thisMesh.visibility = 0.1;
-        }
-        if (
-          thisMesh.name.startsWith("MapCollide") &&
-          !thisMesh.name.includes("Support")
-        ) {
+
+        if (thisMesh.name.startsWith("MapCollide")) {
           console.log("Collider: " + thisMesh.name);
+          var friction = 0.01;
+          if (thisMesh.name.includes("Ground")) {
+            friction = 0.2;
+          }
           if (thisMesh.name.includes("Visible")) {
-            addCollider(scene, thisMesh, true);
+            addCollider(scene, thisMesh, true, friction);
           } else {
-            addCollider(scene, thisMesh);
+            addCollider(scene, thisMesh, false, friction);
           }
         }
       }
@@ -226,6 +322,7 @@ export class BabylonApp {
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
     var v = true; //visibility
+
     // initialize babylon scene and engine
     var engine = new Engine(canvas, true);
     var scenePromise = createScene(engine, canvas);
@@ -233,19 +330,27 @@ export class BabylonApp {
       scene = returnedScene;
       this.scene = returnedScene;
 
-      vehicles = { 
-        MT: new Vehicles.MT(scene, 210, 20, engineName, v), 
-        Train: new Vehicles.Train(scene, 240, 20, engineName, v), 
-        Tank: new Vehicles.Tank(scene, 270, 20, engineName, powerupName, v), 
-        Omni: new Vehicles.Omni(scene, 300, 20, engineName, powerupName, v) 
+      vehicles = {
+        MT: new Vehicles.MT(scene, 210, 20, engineName, v),
+        Train: new Vehicles.Train(scene, 240, 20, engineName, v),
+        Tank: new Vehicles.Tank(scene, 270, 20, engineName, powerupName, v),
+        Omni: new Vehicles.Omni(scene, 300, 20, engineName, powerupName, v),
       };
 
+      // GUI
+      this.gui = new Hud(scene);
+
       switchVehicle(vehicleName);
-      console.log(vehicleName);
+      addTriggers(this.gui, scene, vehicle);
+      console.log(this);
+
       engine.runRenderLoop(() => {
         scene.render();
         vehicle.attr.offroad = offroad(vehicle.meshes.body);
         vehicle.userInput(keysPressed);
+        // if (!this._ui.gamePaused) {
+        this.gui.updateHud();
+        // }
         //TODO check if the vehicle has passed the start/finish line
         //TODO check if the vehicle has ran a red light
       });
@@ -319,6 +424,7 @@ export class BabylonApp {
         break;
     }
   }
+
   rotateToDegrees(boneName, attribute, valueTo, autoStart = true) {
     return this.rotateTo(
       boneName,
