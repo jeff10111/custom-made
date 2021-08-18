@@ -122,7 +122,7 @@ var stopLap = function(gui) {
   if (!bestLap || gui.time < bestLap) {
     bestLap = gui.time;
   }
-  laps.push(gui.time);
+  laps.push([gui.time, vehicle]);
 
   console.log(bestLap);
   console.log(laps);
