@@ -27,11 +27,17 @@ const routes = [
     path: '/simulation',
     name: 'Simulation',
     component: () => import('../views/Simulation.vue')
-  }
+  },
+  {
+    path: '/leaderboard',
+    name: 'Leaderboard',
+    component: () => import('../views/Leaderboard.vue')
+  },
 ]
 
 const router = new VueRouter({
-  routes
+  routes: routes,
+  mode: 'abstract'
 })
 
 export default router

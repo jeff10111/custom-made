@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<body>
+<p>Paragraph.</p>
+</body>
+<script type='text/javascript'>
+
+//Url and test data
+const url = "http://localhost:3000/example+url";
+var xhr = new XMLHttpRequest();
+
+xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+        console.log(this.responseText);
+    }
+};
+
+xhr.open("POST", url, true);
+xhr.setRequestHeader('Content-Type', 'text/plain');
+xhr.send(JSON.stringify({
+    value: "Hello, I have sent this data via a post", value2: "My nam jefsddfgdsfgfsfdgff"
+}));
+xhr.close();
+</script>
+</html>

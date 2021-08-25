@@ -20,6 +20,25 @@ import { Animation, Vector3, Quaternion, MeshBuilder } from "@babylonjs/core";
 import { readCsv } from "@/utils/csvHelper.js";
 window.CANNON = require("cannon");
 
+function sendScoreToServer(vehicle, powerup, engine) {
+  const url = "http://localhost:3000/example+url";
+  var xhr = new XMLHttpRequest();
+
+  xhr.onreadystatechange = function () {
+    if (this.readyState != 4) return;
+
+    if (this.status == 200) {
+      console.log(this.responseText);
+    }
+  };
+
+  xhr.open("POST", url, true);
+  xhr.setRequestHeader('Content-Type', 'text/plain');
+  xhr.send(JSON.stringify({
+    body: vehicle, powerup: powerup, engine: engine,
+  }));
+}
+
 function offroad(body) {
   return (
     body.position.x >= offroadSection.min[0] &&
@@ -46,14 +65,25 @@ function switchVehicle(vehicleName) {
       console.log(vehicle.attr);
       break;
   }
-  var camera = new BABYLON.FollowCamera("vehicleCam", new BABYLON.Vector3(0,10,10), scene, vehicle.meshes.body);
-  camera.lowerRadiusLimit = 150;
-  camera.lowerHeightOffsetLimit = 50;
-  camera.maxCameraSpeed = 50;
-  camera.rotationOffset = -90;
+  // var camera = new BABYLON.FollowCamera("vehicleCam", new BABYLON.Vector3(0,10,10), scene, vehicle.meshes.body);
+  // camera.lowerRadiusLimit = 150;
+  // camera.lowerHeightOffsetLimit = 50;
+  // camera.maxCameraSpeed = 50;
+  // camera.rotationOffset = -90;
+  //new BABYLON.ArcFollowCamera("vehicleCam",0,0,150,vehicle.meshes.body,scene);
+  var camera = new BABYLON.ArcRotateCamera(
+    "Camera",
+    Math.PI / 5,
+    Math.PI / 3,
+    250,
+    vehicle.meshes.body,
+    scene
+  );
+  camera.useFramingBehavior = true;
+  camera.attachControl(document.getElementById("gameCanvas"), true);
 }
 
-var addCollider = function(scene, thisMesh, visible = false) {
+var addCollider = function (scene, thisMesh, visible = false) {
   try {
     thisMesh = scene.getMeshByName(thisMesh.name);
     thisMesh.scaling.x = Math.abs(thisMesh.scaling.x);
@@ -94,12 +124,12 @@ var addCollider = function(scene, thisMesh, visible = false) {
   }
 };
 
-var createScene = async function(engine, canvas) {
+var createScene = async function (engine, canvas) {
   //Creating scene, camera and lighting
   var scene = new Scene(engine);
-  scene.debugLayer.show();
+  //scene.debugLayer.show();
 
-  scene.enablePhysics();
+  scene.enablePhysics(new BABYLON.Vector3(0, -15.8, 0));
   console.log(scene.clearColor);
   // var camera = new BABYLON.ArcRotateCamera(
   //   "Camera",
@@ -127,7 +157,7 @@ var createScene = async function(engine, canvas) {
 
   var mat = new BABYLON.StandardMaterial("green", scene);
   mat.diffuseColor = new BABYLON.Color3.Green();
-  scene.enablePhysics();
+  scene.enablePhysics(new BABYLON.Vector3(10, -9.8, 0));
 
   await SceneLoader.ImportMeshAsync("", "/assets/", "track.glb").then(
     (result) => {
@@ -225,20 +255,21 @@ export class BabylonApp {
     this.powerUp = powerupName;
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
-    var v = true; //visibility
+    var v = false; //visibility
     // initialize babylon scene and engine
     var engine = new Engine(canvas, true);
     var scenePromise = createScene(engine, canvas);
     scenePromise.then((returnedScene) => {
       scene = returnedScene;
       this.scene = returnedScene;
-
-      vehicles = { 
-        MT: new Vehicles.MT(scene, 210, 20, engineName, v), 
-        Train: new Vehicles.Train(scene, 240, 20, engineName, v), 
-        Tank: new Vehicles.Tank(scene, 270, 20, engineName, powerupName, v), 
-        Omni: new Vehicles.Omni(scene, 300, 20, engineName, powerupName, v) 
+      vehicles = {
+        MT: new Vehicles.MT(scene, 230, 20, engineName, v),
+        Train: new Vehicles.Train(scene, 260, 20, engineName, v),
+        Tank: new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v),
+        Omni: new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v)
       };
+
+      sendScoreToServer("Car", "Emergency Siren", "Nuclear Fusion");
 
       switchVehicle(vehicleName);
       console.log(vehicleName);
@@ -289,7 +320,7 @@ export class BabylonApp {
       vehicle.userInput(keysPressed);
     });
 
-    window.addEventListener("resize", function() {
+    window.addEventListener("resize", function () {
       engine.resize();
     });
   }
@@ -351,7 +382,7 @@ export class BabylonApp {
       frameRate,
       Animation.ANIMATIONTYPE_FLOAT
     );
-    thisAnim.onAnimationLoop = function() {
+    thisAnim.onAnimationLoop = function () {
       console.error("HEYO");
     };
     const keyFrames = [];
@@ -396,7 +427,7 @@ export class BabylonApp {
       Animation.ANIMATIONTYPE_FLOAT,
       Animation.ANIMATIONLOOPMODE_CYCLE
     );
-    thisAnim.onAnimationLoop = function() {
+    thisAnim.onAnimationLoop = function () {
       console.error("HEYO");
     };
     const keyFrames = [];
@@ -595,7 +626,7 @@ var roadblockSet = false;
 export default {
   name: "Simulation",
   props: {
-    test: { one: "a", two: "a" }, //should be passing values as props but don't know how yet
+    test: { one: "a", two: "a" },
   },
   methods: {},
 };
