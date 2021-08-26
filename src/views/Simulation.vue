@@ -5,12 +5,14 @@
       {{ this.userSelection.engine }} engine and
       {{ this.userSelection.powerup }} powerup
     </div>
-    <div><button @click="spinArm">Spin!</button>
-    <button @click="buildT">Build Model T!</button>
-    <button @click="playCSV">Play CSV!</button>
-    <button @click="raiseBlocks">Raise Blocks!</button>
-    <button @click="lowerBlocks">Lower Blocks!</button>
-    <button @click="powerUp">Activate Powerup!!</button></div>
+    <div>
+      <button @click="spinArm">Spin!</button>
+      <button @click="buildVehicle">Build Selected Vehicle!</button>
+      <button @click="playCSV">Play CSV!</button>
+      <button @click="raiseBlocks">Raise Blocks!</button>
+      <button @click="lowerBlocks">Lower Blocks!</button>
+      <button @click="powerUp">Activate Powerup!!</button>
+    </div>
     <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
   </div>
 </template>
@@ -28,8 +30,8 @@ export default {
     spinArm() {
       this.Application.spinArm();
     },
-    buildT() {
-      this.Application.buildT();
+    buildVehicle() {
+      this.Application.buildVehicle();
     },
     playCSV() {
       this.Application.playCSV();

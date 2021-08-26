@@ -1,14 +1,18 @@
 let vehicle;
 let vehicles = {};
 let keysPressed = { w: 0, a: 0, s: 0, d: 0 };
-let offroadSection = { min: [0, 0], max: [1, 1] };
-let powerUpHasBeenActivated = false;
-let userHasRunRedLight = false;
 let startTime;
 let endTime;
 let bestLap;
-let fourWheelDrivePassed;
 let laps = [];
+
+let powerUpHasBeenActivated = false;
+let offroadSection = { min: [0, 0], max: [1, 1] };
+let userHasRunRedLight = false;
+let fourWheelDrivePassed;
+var roadblockBottom = 0;
+var roadblockTop = 6;
+var roadblockSet = false;
 
 var scene;
 const frameRate = 1000;
@@ -128,7 +132,7 @@ var stopLap = function(gui) {
   console.log(laps);
 };
 
-var addTriggers = function(gui, scene, vehicle) {
+var addTriggers = function(gui, scene, vehicle, powerup, app) {
   console.log(vehicle.name + "Body");
   var stopSignTrigger = scene.getMeshByName("Trigger_StopSign");
   stopSignTrigger.actionManager = new ActionManager(scene);
@@ -156,6 +160,9 @@ var addTriggers = function(gui, scene, vehicle) {
       },
       () => {
         fourWheelDrivePassed = true;
+        if (powerup != "Portal") {
+          app.raiseBlock("RoadBlock2");
+        }
       }
     )
   );
@@ -172,6 +179,7 @@ var addTriggers = function(gui, scene, vehicle) {
       () => {
         startLap(gui);
         fourWheelDrivePassed = false;
+        app.raiseBlock("RoadBlock1");
       }
     )
   );
@@ -188,6 +196,7 @@ var addTriggers = function(gui, scene, vehicle) {
       () => {
         if (fourWheelDrivePassed) {
           stopLap(gui);
+          app.lowerBlocks();
         }
       }
     )
@@ -319,9 +328,10 @@ var createScene = async function(engine, canvas) {
 export class BabylonApp {
   constructor(vehicleName, engineName, powerupName) {
     this.powerUp = powerupName;
+    this.engineType = engineName;
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
-    var v = true; //visibility
+    var v = false; //visibility
 
     // initialize babylon scene and engine
     var engine = new Engine(canvas, true);
@@ -341,7 +351,7 @@ export class BabylonApp {
       this.gui = new Hud(scene);
 
       switchVehicle(vehicleName);
-      addTriggers(this.gui, scene, vehicle);
+      addTriggers(this.gui, scene, vehicle, this.powerUp, this);
       console.log(this);
 
       engine.runRenderLoop(() => {
@@ -553,15 +563,63 @@ export class BabylonApp {
     console.log("Hand spin amt: " + test);
     this.rotateTo("HandBone", "rotation.x", Math.PI / test);
   }
-  async buildT() {
-    var engine = scene.getMeshByName("Engine_PetrolEngine1");
-    var powerup = scene.getMeshByName("Powerup_SpeedBoost1");
+  async buildVehicle() {
+    var engine;
+    var engineAngle;
+
+    console.log(this.engineType);
+
+    switch (this.engineType) {
+      case "Nuclear Fusion":
+        engine = scene.getMeshByName("Engine_NuclearFusion1");
+        engineAngle = 10;
+        break;
+      case "Jet":
+        engine = scene.getMeshByName("Engine_JetEngine1");
+        engineAngle = 30;
+        break;
+      case "Petrol":
+        engine = scene.getMeshByName("Engine_PetrolEngine1");
+        engineAngle = 50;
+        break;
+      case "Steam":
+      default:
+        engine = scene.getMeshByName("Engine_SteamEngine1");
+        engineAngle = 70;
+        break;
+    }
+
+    var powerup;
+    var powerupAngle;
+
+    switch (this.powerUp) {
+      case "Speed Boost":
+        powerup = scene.getMeshByName("Powerup_SpeedBoost1");
+        powerupAngle = 350;
+        break;
+      case "Emergency Siren":
+        powerup = scene.getMeshByName("Powerup_EmergencySiren1");
+        powerupAngle = 330;
+        break;
+      case "4 Wheel Drive":
+        powerup = scene.getMeshByName("Powerup_4WheelDrive1");
+        powerupAngle = 310;
+        break;
+      // case "Portal":
+      //   powerup = scene.getMeshByName("Powerup_Portal1");
+      //   powerupAngle = 290;
+      default:
+        powerup = scene.getMeshByName("Powerup_SpeedBoost1");
+        powerupAngle = 350;
+        break;
+    }
+    console.log(engine.name, engineAngle, powerup, powerupAngle);
 
     // this.neutralPose() or something like that for the reset
     this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
     await this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
 
-    this.rotateToDegrees("ShoulderBone", "rotation.z", 50);
+    this.rotateToDegrees("ShoulderBone", "rotation.z", engineAngle);
     this.rotateToDegrees("UpperarmBone", "rotation.x", 57);
     this.rotateToDegrees("ForearmBone", "rotation.x", -65);
     await this.rotateToDegrees("HandBone", "rotation.x", 8);
@@ -578,7 +636,7 @@ export class BabylonApp {
     this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
     await this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
 
-    this.rotateToDegrees("ShoulderBone", "rotation.z", 350);
+    this.rotateToDegrees("ShoulderBone", "rotation.z", powerupAngle);
     this.rotateToDegrees("UpperarmBone", "rotation.x", 57);
     this.rotateToDegrees("ForearmBone", "rotation.x", -65);
     await this.rotateToDegrees("HandBone", "rotation.x", 8);
@@ -626,77 +684,61 @@ export class BabylonApp {
     }
   }
   raiseBlocks() {
-    var roadblock1 = scene.getMeshByName("RoadBlock1");
-    var roadblock2 = scene.getMeshByName("RoadBlock2");
+    this.raiseBlock("RoadBlock1");
+    this.raiseBlock("RoadBlock2");
+  }
 
-    if (scene.getMeshByName(roadblock1.name + "_bb")) {
-      scene.getMeshByName(roadblock1.name + "_bb").dispose();
-    }
+  raiseBlock(blockname) {
+    var roadblock = scene.getMeshByName(blockname);
 
-    if (scene.getMeshByName(roadblock2.name + "_bb")) {
-      scene.getMeshByName(roadblock2.name + "_bb").dispose();
+    if (scene.getMeshByName(roadblock.name + "_bb")) {
+      scene.getMeshByName(roadblock.name + "_bb").dispose();
     }
 
     // Set the default position
     if (!roadblockSet) {
-      roadblockBottom = roadblock1.position.y;
+      roadblockBottom = roadblock.position.y;
       roadblockSet = true;
     }
 
     Promise.all([
       this.moveMesh(
-        "RoadBlock1",
+        blockname,
         "position.y",
-        roadblock1.position.y,
-        roadblockTop
-      ),
-      this.moveMesh(
-        "RoadBlock2",
-        "position.y",
-        roadblock2.position.y,
+        roadblock.position.y,
         roadblockTop
       ),
     ]).then((vals) => {
-      addCollider(scene, roadblock1, true);
-      addCollider(scene, roadblock2, true);
+      addCollider(scene, roadblock, true);
     });
   }
+
   lowerBlocks() {
-    var roadblock1 = scene.getMeshByName("RoadBlock1");
-    var roadblock2 = scene.getMeshByName("RoadBlock2");
+    this.lowerBlock("RoadBlock1");
+    this.lowerBlock("RoadBlock2");
+  }
 
-    if (scene.getMeshByName(roadblock1.name + "_bb")) {
-      scene.getMeshByName(roadblock1.name + "_bb").dispose();
-    }
+  lowerBlock(blockname) {
+    var roadblock = scene.getMeshByName(blockname);
 
-    if (scene.getMeshByName(roadblock2.name + "_bb")) {
-      scene.getMeshByName(roadblock2.name + "_bb").dispose();
+    if (scene.getMeshByName(roadblock.name + "_bb")) {
+      scene.getMeshByName(roadblock.name + "_bb").dispose();
     }
 
     // Set the default position
     if (!roadblockSet) {
-      roadblockBottom = roadblock1.position.y;
+      roadblockBottom = roadblock.position.y;
       roadblockSet = true;
     }
 
     this.moveMesh(
-      "RoadBlock1",
+      blockname,
       "position.y",
-      roadblock1.position.y,
-      roadblockBottom
-    );
-    this.moveMesh(
-      "RoadBlock2",
-      "position.y",
-      roadblock2.position.y,
+      roadblock.position.y,
       roadblockBottom
     );
   }
 }
-
-var roadblockBottom = 0;
-var roadblockTop = 5;
-var roadblockSet = false;
 
 export default {
   name: "Simulation",
