@@ -11,7 +11,7 @@ let fourWheelDrivePassed;
 let laps = [];
 
 var scene;
-const frameRate = Number.POSITIVE_INFINITY;
+const frameRate = 1000;
 
 import "@babylonjs/core/Debug/debugLayer";
 import "@babylonjs/inspector";
