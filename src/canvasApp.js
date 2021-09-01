@@ -20,8 +20,8 @@ import { Animation, Vector3, Quaternion, MeshBuilder } from "@babylonjs/core";
 import { readCsv } from "@/utils/csvHelper.js";
 window.CANNON = require("cannon");
 
-function sendScoreToServer(vehicle, powerup, engine) {
-  const url = "http://localhost:3000/example+url";
+function sendScoreToServer(name, score, vehicle, powerup, engine) {
+  const url = `http://localhost:3000/LOL`;
   var xhr = new XMLHttpRequest();
 
   xhr.onreadystatechange = function () {
@@ -35,7 +35,7 @@ function sendScoreToServer(vehicle, powerup, engine) {
   xhr.open("POST", url, true);
   xhr.setRequestHeader('Content-Type', 'text/plain');
   xhr.send(JSON.stringify({
-    body: vehicle, powerup: powerup, engine: engine,
+    name: name, score: score, body: vehicle, powerup: powerup, engine: engine,
   }));
 }
 
@@ -268,8 +268,16 @@ export class BabylonApp {
         Tank: new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v),
         Omni: new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v)
       };
-
-      sendScoreToServer("Car", "Emergency Siren", "Nuclear Fusion");
+      // sendScoreToServer("Athena", 55, "Car", "Emergency Siren", "Nuclear Fusion")
+      // sendScoreToServer("Bella", 999, "Spaceship", "Portal", "Jet")
+      // sendScoreToServer("Cara", 34, "Tank", "Speed Boost", "Petrol")
+      // sendScoreToServer("Diana", 45, "Car", "4 Wheel Drive", "Steam")
+      // sendScoreToServer("Emilia", 12, "Train", "Emergency Siren", "Nuclear Fusion")
+      // sendScoreToServer("Felicia", 11, "Spaceship", "Emergency Siren", "Steam")
+      // sendScoreToServer("Gloria", 90, "Tank", "Speed Boost", "Nuclear Fusion")
+      // sendScoreToServer("Hadria", 66, "Tank", "Portal", "Nuclear Fusion")
+      // sendScoreToServer("Nelia", 32, "Spaceship", "Portal", "Nuclear Fusion")
+      // sendScoreToServer("Octavia", 19, "Train", "4 Wheel Drive","Nuclear Fusion")
 
       switchVehicle(vehicleName);
       console.log(vehicleName);

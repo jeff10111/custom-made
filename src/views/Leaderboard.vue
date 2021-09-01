@@ -2,11 +2,13 @@
   <div>
     <table class="table" id="leaderTable">
       <th>Name</th>
+      <th>Score</th>
       <th>Body</th>
       <th>Power-up</th>
       <th>Engine</th>
       <tr v-for="object in this.scores" :key="object.name">
         <td>{{ object.name }}</td>
+        <td>{{ object.score }}</td>
         <td>{{ object.body }}</td>
         <td>{{ object.powerup }}</td>
         <td>{{ object.engine }}</td>
@@ -21,7 +23,8 @@ export default {
   props: {},
   methods: {
     getRequest() {
-      const url = "http://localhost:3000/example+url";
+      var name = "testName";var score = 555;var vehicle = "Car"; var powerup = "Emergency Siren";var engine = "Jet";
+      const url = `http://localhost:3000/"name":"${name}"x"score":"${score}"x"vehicle":"${vehicle}"x"powerup":"${powerup}"x"engine":"${engine}"`;
       var xhr = new XMLHttpRequest();
       const u = this.update;
 
@@ -37,6 +40,7 @@ export default {
       xhr.send();
     },
     update(data) {
+      console.log("hello?????" + data);
         this.scores = JSON.parse(data).scores;
         return this.scores;
     },
@@ -44,14 +48,7 @@ export default {
   data() {
     return {
       something: { property: "Before Get" },
-      scores: [
-        {
-          name: "Athena",
-          body: "Car",
-          powerup: "Emergency Siren",
-          engine: "Nuclear Fusion",
-        }
-      ],
+      scores: [],
       header: "Name"
     };
   },

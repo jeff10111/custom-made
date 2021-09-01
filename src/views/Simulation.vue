@@ -1,7 +1,7 @@
 <template>
   <div>
     <div>
-      {{ this.userSelection["body"] }} with
+      {{ this.userSelection.body }} with
       {{ this.userSelection.engine }} engine and
       {{ this.userSelection.powerup }} powerup
     </div>
