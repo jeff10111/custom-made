@@ -1,0 +1,6 @@
+CREATE TABLE leaderboard (
+   ...> score INT NOT NULL,
+   ...> name char(20) NOT NULL,
+   ...> body INT NOT NULL,
+   ...> powerup INT NOT NULL,
+   ...> engine INT NOT NULL);
