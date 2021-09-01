@@ -3,7 +3,8 @@
     <div id="nav">
       <router-link to="/">Home</router-link> |
       <router-link to="/about">About</router-link> |
-      <router-link to="/selection">Selection Interface</router-link>
+      <router-link to="/selection">Selection Interface</router-link> |
+      <router-link to="/leaderboard">Leader Board</router-link>
     </div>
     <router-view/>
   </div>
@@ -16,6 +17,10 @@
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #e9e9e9;
+  background-color: #000000;
+}
+
+html {
   background-color: #000000;
 }
 
