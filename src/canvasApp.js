@@ -6,6 +6,9 @@ let powerUpHasBeenActivated = false;
 let userHasRunRedLight = false;
 let startTime;
 let endTime;
+let fourWheelDrivePassed;
+let bestLap;
+let laps = [];
 
 var scene;
 const frameRate = 1000;
@@ -15,8 +18,10 @@ import "@babylonjs/inspector";
 import * as BABYLON from "babylonjs";
 import { PhysicsImpostor } from "@babylonjs/core/Physics";
 import * as Vehicles from "./Vehicles.js";
-import { SceneLoader, Engine, Scene } from "@babylonjs/core";
+import { SceneLoader, Engine, Scene, ActionManager, ExecuteCodeAction } from "@babylonjs/core";
 import { Animation, Vector3, Quaternion, MeshBuilder } from "@babylonjs/core";
+import { Hud } from "./gui";
+import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/";
 import { readCsv } from "@/utils/csvHelper.js";
 window.CANNON = require("cannon");
 
@@ -124,6 +129,92 @@ var addCollider = function (scene, thisMesh, visible = false) {
   }
 };
 
+var startLap = function(gui) {
+  gui.startTimer();
+};
+
+var stopLap = function(gui) {
+  gui.stopTimer();
+  if (!bestLap || gui.time < bestLap) {
+    bestLap = gui.time;
+  }
+  laps.push([gui.time, vehicle]);
+
+  console.log(bestLap);
+  console.log(laps);
+};
+
+var addTriggers = function(gui, scene, vehicle, powerup, app) {
+  console.log(vehicle.name + "Body");
+  var stopSignTrigger = scene.getMeshByName("Trigger_StopSign");
+  stopSignTrigger.actionManager = new ActionManager(scene);
+  stopSignTrigger.visibility = 0.1;
+  stopSignTrigger.actionManager.registerAction(
+    new ExecuteCodeAction(
+      {
+        trigger: ActionManager.OnIntersectionEnterTrigger,
+        parameter: scene.getMeshByName(vehicle.name + "Body"),
+      },
+      () => {
+        console.log("RedLightArea");
+      }
+    )
+  );
+
+  var fourWheelDriveTrigger = scene.getMeshByName("Trigger_4WDStart");
+  fourWheelDriveTrigger.actionManager = new ActionManager(scene);
+  fourWheelDriveTrigger.visibility = 0.1;
+  fourWheelDriveTrigger.actionManager.registerAction(
+    new ExecuteCodeAction(
+      {
+        trigger: ActionManager.OnIntersectionEnterTrigger,
+        parameter: scene.getMeshByName(vehicle.name + "Body"),
+      },
+      () => {
+        fourWheelDrivePassed = true;
+        if (powerup != "Portal") {
+          app.raiseBlock("RoadBlock2");
+        }
+      }
+    )
+  );
+
+  var startTrigger = scene.getMeshByName("Trigger_Start");
+  startTrigger.actionManager = new ActionManager(scene);
+  startTrigger.visibility = 0.1;
+  startTrigger.actionManager.registerAction(
+    new ExecuteCodeAction(
+      {
+        trigger: ActionManager.OnIntersectionEnterTrigger,
+        parameter: scene.getMeshByName(vehicle.name + "Body"),
+      },
+      () => {
+        startLap(gui);
+        fourWheelDrivePassed = false;
+        app.raiseBlock("RoadBlock1");
+      }
+    )
+  );
+
+  var finishTrigger = scene.getMeshByName("Trigger_Finish");
+  finishTrigger.actionManager = new ActionManager(scene);
+  finishTrigger.visibility = 0.1;
+  finishTrigger.actionManager.registerAction(
+    new ExecuteCodeAction(
+      {
+        trigger: ActionManager.OnIntersectionEnterTrigger,
+        parameter: scene.getMeshByName(vehicle.name + "Body"),
+      },
+      () => {
+        if (fourWheelDrivePassed) {
+          stopLap(gui);
+          app.lowerBlocks();
+        }
+      }
+    )
+  );
+};
+
 var createScene = async function (engine, canvas) {
   //Creating scene, camera and lighting
   var scene = new Scene(engine);
@@ -203,18 +294,17 @@ var createScene = async function (engine, canvas) {
           const newRot = new Vector3(rot.x, rot.y, rot.z);
           thisMesh.rotation = newRot;
         }
-        if (thisMesh.name.startsWith("Trigger_")) {
-          thisMesh.visibility = 0.1;
-        }
-        if (
-          thisMesh.name.startsWith("MapCollide") &&
-          !thisMesh.name.includes("Support")
-        ) {
+
+        if (thisMesh.name.startsWith("MapCollide")) {
           console.log("Collider: " + thisMesh.name);
+          var friction = 100;
+          if (thisMesh.name.includes("Ground")) {
+            friction = 100;
+          }
           if (thisMesh.name.includes("Visible")) {
-            addCollider(scene, thisMesh, true);
+            addCollider(scene, thisMesh, true, friction);
           } else {
-            addCollider(scene, thisMesh);
+            addCollider(scene, thisMesh, false, friction);
           }
         }
       }
@@ -253,6 +343,7 @@ var createScene = async function (engine, canvas) {
 export class BabylonApp {
   constructor(vehicleName, engineName, powerupName) {
     this.powerUp = powerupName;
+    this.engineType = engineName;
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
     var v = false; //visibility
@@ -278,13 +369,15 @@ export class BabylonApp {
       // sendScoreToServer("Hadria", 66, "Tank", "Portal", "Nuclear Fusion")
       // sendScoreToServer("Nelia", 32, "Spaceship", "Portal", "Nuclear Fusion")
       // sendScoreToServer("Octavia", 19, "Train", "4 Wheel Drive","Nuclear Fusion")
-
+      this.gui = new Hud(scene);
       switchVehicle(vehicleName);
+      //addTriggers(this.gui, scene, vehicle, this.powerUp, this);
       console.log(vehicleName);
       engine.runRenderLoop(() => {
         scene.render();
-        vehicle.attr.offroad = offroad(vehicle.meshes.body);
-        vehicle.userInput(keysPressed);
+        if(vehicle != undefined)
+          vehicle.userInput(keysPressed);
+          this.gui.updateHud();
         //TODO check if the vehicle has passed the start/finish line
         //TODO check if the vehicle has ran a red light
       });
@@ -486,15 +579,63 @@ export class BabylonApp {
     console.log("Hand spin amt: " + test);
     this.rotateTo("HandBone", "rotation.x", Math.PI / test);
   }
-  async buildT() {
-    var engine = scene.getMeshByName("Engine_PetrolEngine1");
-    var powerup = scene.getMeshByName("Powerup_SpeedBoost1");
+  async buildVehicle() {
+    var engine;
+    var engineAngle;
+
+    console.log(this.engineType);
+
+    switch (this.engineType) {
+      case "Nuclear Fusion":
+        engine = scene.getMeshByName("Engine_NuclearFusion1");
+        engineAngle = 10;
+        break;
+      case "Jet":
+        engine = scene.getMeshByName("Engine_JetEngine1");
+        engineAngle = 30;
+        break;
+      case "Petrol":
+        engine = scene.getMeshByName("Engine_PetrolEngine1");
+        engineAngle = 50;
+        break;
+      case "Steam":
+      default:
+        engine = scene.getMeshByName("Engine_SteamEngine1");
+        engineAngle = 70;
+        break;
+    }
+
+    var powerup;
+    var powerupAngle;
+
+    switch (this.powerUp) {
+      case "Speed Boost":
+        powerup = scene.getMeshByName("Powerup_SpeedBoost1");
+        powerupAngle = 350;
+        break;
+      case "Emergency Siren":
+        powerup = scene.getMeshByName("Powerup_EmergencySiren1");
+        powerupAngle = 330;
+        break;
+      case "4 Wheel Drive":
+        powerup = scene.getMeshByName("Powerup_4WheelDrive1");
+        powerupAngle = 310;
+        break;
+      // case "Portal":
+      //   powerup = scene.getMeshByName("Powerup_Portal1");
+      //   powerupAngle = 290;
+      default:
+        powerup = scene.getMeshByName("Powerup_SpeedBoost1");
+        powerupAngle = 350;
+        break;
+    }
+    console.log(engine.name, engineAngle, powerup, powerupAngle);
 
     // this.neutralPose() or something like that for the reset
     this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
     await this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
 
-    this.rotateToDegrees("ShoulderBone", "rotation.z", 50);
+    this.rotateToDegrees("ShoulderBone", "rotation.z", engineAngle);
     this.rotateToDegrees("UpperarmBone", "rotation.x", 57);
     this.rotateToDegrees("ForearmBone", "rotation.x", -65);
     await this.rotateToDegrees("HandBone", "rotation.x", 8);
@@ -511,7 +652,7 @@ export class BabylonApp {
     this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
     await this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
 
-    this.rotateToDegrees("ShoulderBone", "rotation.z", 350);
+    this.rotateToDegrees("ShoulderBone", "rotation.z", powerupAngle);
     this.rotateToDegrees("UpperarmBone", "rotation.x", 57);
     this.rotateToDegrees("ForearmBone", "rotation.x", -65);
     await this.rotateToDegrees("HandBone", "rotation.x", 8);
@@ -559,69 +700,57 @@ export class BabylonApp {
     }
   }
   raiseBlocks() {
-    var roadblock1 = scene.getMeshByName("RoadBlock1");
-    var roadblock2 = scene.getMeshByName("RoadBlock2");
+    this.raiseBlock("RoadBlock1");
+    this.raiseBlock("RoadBlock2");
+  }
 
-    if (scene.getMeshByName(roadblock1.name + "_bb")) {
-      scene.getMeshByName(roadblock1.name + "_bb").dispose();
-    }
+  raiseBlock(blockname) {
+    var roadblock = scene.getMeshByName(blockname);
 
-    if (scene.getMeshByName(roadblock2.name + "_bb")) {
-      scene.getMeshByName(roadblock2.name + "_bb").dispose();
+    if (scene.getMeshByName(roadblock.name + "_bb")) {
+      scene.getMeshByName(roadblock.name + "_bb").dispose();
     }
 
     // Set the default position
     if (!roadblockSet) {
-      roadblockBottom = roadblock1.position.y;
+      roadblockBottom = roadblock.position.y;
       roadblockSet = true;
     }
 
     Promise.all([
       this.moveMesh(
-        "RoadBlock1",
+        blockname,
         "position.y",
-        roadblock1.position.y,
-        roadblockTop
-      ),
-      this.moveMesh(
-        "RoadBlock2",
-        "position.y",
-        roadblock2.position.y,
+        roadblock.position.y,
         roadblockTop
       ),
     ]).then((vals) => {
-      addCollider(scene, roadblock1, true);
-      addCollider(scene, roadblock2, true);
+      addCollider(scene, roadblock, true);
     });
   }
+
   lowerBlocks() {
-    var roadblock1 = scene.getMeshByName("RoadBlock1");
-    var roadblock2 = scene.getMeshByName("RoadBlock2");
+    this.lowerBlock("RoadBlock1");
+    this.lowerBlock("RoadBlock2");
+  }
 
-    if (scene.getMeshByName(roadblock1.name + "_bb")) {
-      scene.getMeshByName(roadblock1.name + "_bb").dispose();
-    }
+  lowerBlock(blockname) {
+    var roadblock = scene.getMeshByName(blockname);
 
-    if (scene.getMeshByName(roadblock2.name + "_bb")) {
-      scene.getMeshByName(roadblock2.name + "_bb").dispose();
+    if (scene.getMeshByName(roadblock.name + "_bb")) {
+      scene.getMeshByName(roadblock.name + "_bb").dispose();
     }
 
     // Set the default position
     if (!roadblockSet) {
-      roadblockBottom = roadblock1.position.y;
+      roadblockBottom = roadblock.position.y;
       roadblockSet = true;
     }
 
     this.moveMesh(
-      "RoadBlock1",
+      blockname,
       "position.y",
-      roadblock1.position.y,
-      roadblockBottom
-    );
-    this.moveMesh(
-      "RoadBlock2",
-      "position.y",
-      roadblock2.position.y,
+      roadblock.position.y,
       roadblockBottom
     );
   }
