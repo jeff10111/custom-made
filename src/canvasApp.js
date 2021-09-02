@@ -44,15 +44,6 @@ function sendScoreToServer(name, score, vehicle, powerup, engine) {
   }));
 }
 
-function offroad(body) {
-  return (
-    body.position.x >= offroadSection.min[0] &&
-    body.position.x <= offroadSection.max[0] &&
-    body.position.y >= offroadSection.min[1] &&
-    body.position.y <= offroadSection.max[1]
-  );
-}
-
 function switchVehicle(vehicleName) {
   switch (vehicleName) {
     case "Car":
@@ -70,12 +61,7 @@ function switchVehicle(vehicleName) {
       console.log(vehicle.attr);
       break;
   }
-  // var camera = new BABYLON.FollowCamera("vehicleCam", new BABYLON.Vector3(0,10,10), scene, vehicle.meshes.body);
-  // camera.lowerRadiusLimit = 150;
-  // camera.lowerHeightOffsetLimit = 50;
-  // camera.maxCameraSpeed = 50;
-  // camera.rotationOffset = -90;
-  //new BABYLON.ArcFollowCamera("vehicleCam",0,0,150,vehicle.meshes.body,scene);
+
   var camera = new BABYLON.ArcRotateCamera(
     "Camera",
     Math.PI / 5,
@@ -144,7 +130,7 @@ var stopLap = function(gui) {
   console.log(laps);
 };
 
-var addTriggers = function(gui, scene, vehicle, powerup, app) {
+var addTriggers = function(gui, scene, vehicleName, powerup, app) {
   console.log(vehicle.name + "Body");
   var stopSignTrigger = scene.getMeshByName("Trigger_StopSign");
   stopSignTrigger.actionManager = new ActionManager(scene);
@@ -153,7 +139,7 @@ var addTriggers = function(gui, scene, vehicle, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName(vehicle.name + "Body"),
+        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName]),
       },
       () => {
         console.log("RedLightArea");
@@ -168,7 +154,7 @@ var addTriggers = function(gui, scene, vehicle, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName(vehicle.name + "Body"),
+        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName])
       },
       () => {
         fourWheelDrivePassed = true;
@@ -186,7 +172,7 @@ var addTriggers = function(gui, scene, vehicle, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName(vehicle.name + "Body"),
+        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName])
       },
       () => {
         startLap(gui);
@@ -203,7 +189,7 @@ var addTriggers = function(gui, scene, vehicle, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName(vehicle.name + "Body"),
+        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName])
       },
       () => {
         if (fourWheelDrivePassed) {
@@ -371,7 +357,7 @@ export class BabylonApp {
       // sendScoreToServer("Octavia", 19, "Train", "4 Wheel Drive","Nuclear Fusion")
       this.gui = new Hud(scene);
       switchVehicle(vehicleName);
-      //addTriggers(this.gui, scene, vehicle, this.powerUp, this);
+      addTriggers(this.gui, scene, vehicleName, this.powerUp, this);
       console.log(vehicleName);
       engine.runRenderLoop(() => {
         scene.render();
