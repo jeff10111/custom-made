@@ -4,7 +4,7 @@
       <th>Name</th>
       <th>Score</th>
       <th>Body</th>
-      <th>Power-up</th>
+      <th>Power-up!</th>
       <th>Engine</th>
       <tr v-for="object in this.scores" :key="object.name">
         <td>{{ object.name }}</td>
