@@ -1,17 +1,14 @@
 let vehicle;
 let vehicles = {};
-let keysPressed = { w: 0, a: 0, s: 0, d: 0 };
+let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
+let offroadSection = { min: [0, 0], max: [1, 1] };
+let powerUpHasBeenActivated = false;
+let userHasRunRedLight = false;
 let startTime;
 let endTime;
+let fourWheelDrivePassed;
 let bestLap;
 let laps = [];
-let powerUpHasBeenActivated = false;
-let offroadSection = { min: [0, 0], max: [1, 1] };
-let userHasRunRedLight = false;
-let fourWheelDrivePassed;
-var roadblockBottom = 0;
-var roadblockTop = 6;
-var roadblockSet = false;
 
 var scene;
 const frameRate = 1000;
@@ -89,7 +86,6 @@ function switchVehicle(vehicleName) {
   );
   camera.useFramingBehavior = true;
   camera.attachControl(document.getElementById("gameCanvas"), true);
-  console.log("End of vehicle switch, vehicle is: " + vehicle);
 }
 
 var addCollider = function (scene, thisMesh, visible = false) {
@@ -120,7 +116,7 @@ var addCollider = function (scene, thisMesh, visible = false) {
     box.physicsImpostor = new PhysicsImpostor(
       box,
       PhysicsImpostor.BoxImpostor,
-      { mass: 0, restitution: 0, friction: 0 },
+      { mass: 0, restitution: 0 },
       scene
     );
     console.log("Making bb of " + thisMesh.name);
@@ -244,6 +240,9 @@ var createScene = async function (engine, canvas) {
   await SceneLoader.ImportMeshAsync("", "/assets/", "Train.glb", scene);
   await SceneLoader.ImportMeshAsync("", "/assets/", "Tank.glb", scene);
   //importing track
+
+  // var track = scene.getMeshByName("Track");
+  // track.position = new BABYLON.Vector3(-125, -480, -760);
 
   //Creating the ground and enabling physics
 
@@ -452,7 +451,6 @@ export class BabylonApp {
         break;
     }
   }
-
   rotateToDegrees(boneName, attribute, valueTo, autoStart = true) {
     return this.rotateTo(
       boneName,
@@ -757,6 +755,10 @@ export class BabylonApp {
     );
   }
 }
+
+var roadblockBottom = 0;
+var roadblockTop = 5;
+var roadblockSet = false;
 
 export default {
   name: "Simulation",

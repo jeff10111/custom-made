@@ -730,15 +730,7 @@ export class MT {
     }
     attachBodyParts() {
         let body = this.meshes.body;
-        //let front = this.meshes.front;
-        let b1 = this.meshes.b1;
-        let b2 = this.meshes.b2;
-        //Moving body off ground a bit to avoid collisions with the ground
         body.position.y = -15;
-        // front.parent = this.meshes.body;
-        // front.position.y = 0;
-        // front.position.x = 10;
-        // front.setParent(null);
         //attaching MOD mesh to babylon mesh, creating a physics imposter for babylon mesh
         var mesh = this.scene.getMeshByName("MTBody");
         mesh.parent = body;
@@ -749,26 +741,7 @@ export class MT {
         //Adding physics imposter to babylon mesh (the parent of the mod mesh)
         this.meshes.body.physicsImpostor =
             new BABYLON.PhysicsImpostor(body, BABYLON.PhysicsImpostor.BoxImpostor, { mass: this.attr.bodyMass, friction:0,  restitution: 0}, this.scene);
-        //creating box physics for front part
-        // front.physicsImpostor =
-        //     new BABYLON.PhysicsImpostor(front, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 5 }, this.scene);
-        var newJoint = new BABYLON.PhysicsJoint(BABYLON.PhysicsJoint.LockJoint, {});
-        // this.meshes.body.physicsImpostor.addJoint(front.physicsImpostor, newJoint);
-        //bearings
-        // b1.parent = body;
-        // b1.position.y = -3.5;
-        // b1.position.x = 8.5;
-        // b1.position.z = 6.5;//width
-        // b1.setParent(null);
-        // b1.physicsImpostor = new BABYLON.PhysicsImpostor(b1, BABYLON.PhysicsImpostor.BoxImpostor, { friction: 5, mass: 10 }, this.scene);
-        // body.physicsImpostor.addJoint(b1.physicsImpostor, newJoint);
-        // b2.parent = body;
-        // b2.position.y = -3.5;
-        // b2.position.x = 8.5;
-        // b2.position.z = -6.5;//width
-        // b2.setParent(null);
-        // b2.physicsImpostor = new BABYLON.PhysicsImpostor(b2, BABYLON.PhysicsImpostor.BoxImpostor, { friction: 0.01, mass: 1 }, this.scene);
-        // body.physicsImpostor.addJoint(b2.physicsImpostor, newJoint);
+
     }
 
     attachWheels() {
