@@ -99,6 +99,7 @@ function switchVehicle(vehicleName) {
   );
   camera.useFramingBehavior = true;
   camera.attachControl(document.getElementById("gameCanvas"), true);
+  console.log("End of vehicle switch, vehicle is: " + vehicle);
 }
 
 var addCollider = function (scene, thisMesh, visible = false) {
@@ -307,9 +308,9 @@ var createScene = async function(engine, canvas) {
 
         if (thisMesh.name.startsWith("MapCollide")) {
           console.log("Collider: " + thisMesh.name);
-          var friction = 0.01;
+          var friction = 100;
           if (thisMesh.name.includes("Ground")) {
-            friction = 0.2;
+            friction = 100;
           }
           if (thisMesh.name.includes("Visible")) {
             addCollider(scene, thisMesh, true, friction);
