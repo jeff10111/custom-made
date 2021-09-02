@@ -7,6 +7,10 @@ let db = new sqlite3.Database("custom-made-db", sqlite3.OPEN_READWRITE, (err) =>
   }
   console.log("successfully connected to the database");
 });
+//Valid options
+var validBodies = {"Train":0,"Car":1,"Tank":2,"Spaceship":3};
+var validPowerups = {};
+var validEngines = {};
 //Store results of db requests for sending to clients
 var selectAllString = "";
 var selectWhereStrings = {};

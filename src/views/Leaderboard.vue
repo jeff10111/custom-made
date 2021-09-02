@@ -9,9 +9,9 @@
       <tr v-for="object in this.scores" :key="object.name">
         <td>{{ object.name }}</td>
         <td>{{ object.score }}</td>
-        <td>{{ object.body }}</td>
-        <td>{{ object.powerup }}</td>
-        <td>{{ object.engine }}</td>
+        <td>{{ ["Train", "Car", "Tank", "Spaceship"][object.body] }}</td>
+        <td>{{ ["4 Wheel Drive", "Emergency Siren", "Portal", "Speed Boost"][object.powerup] }}</td>
+        <td>{{ ["Steam", "Petrol", "Jet", "Nuclear Fusion"][object.engine] }}</td>
       </tr>
     </table>
   </div>
