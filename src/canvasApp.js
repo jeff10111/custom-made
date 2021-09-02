@@ -385,8 +385,8 @@ export class BabylonApp {
       this.gui = new Hud(scene);
 
       switchVehicle(vehicleName);
-      addTriggers(this.gui, scene, vehicle, this.powerUp, this);
-      console.log(this);
+      //addTriggers(this.gui, scene, vehicle, this.powerUp, this);
+      //console.log(this);
 
       engine.runRenderLoop(() => {
         scene.render();
