@@ -5,7 +5,6 @@ let startTime;
 let endTime;
 let bestLap;
 let laps = [];
-
 let powerUpHasBeenActivated = false;
 let offroadSection = { min: [0, 0], max: [1, 1] };
 let userHasRunRedLight = false;
@@ -22,19 +21,10 @@ import "@babylonjs/inspector";
 import * as BABYLON from "babylonjs";
 import { PhysicsImpostor } from "@babylonjs/core/Physics";
 import * as Vehicles from "./Vehicles.js";
+import { SceneLoader, Engine, Scene, ActionManager, ExecuteCodeAction } from "@babylonjs/core";
+import { Animation, Vector3, Quaternion, MeshBuilder } from "@babylonjs/core";
 import { Hud } from "./gui";
 import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/";
-import {
-  Animation,
-  ActionManager,
-  Engine,
-  ExecuteCodeAction,
-  MeshBuilder,
-  Quaternion,
-  SceneLoader,
-  Scene,
-  Vector3,
-} from "@babylonjs/core";
 import { readCsv } from "@/utils/csvHelper.js";
 window.CANNON = require("cannon");
 
@@ -229,7 +219,7 @@ var addTriggers = function(gui, scene, vehicle, powerup, app) {
   );
 };
 
-var createScene = async function(engine, canvas) {
+var createScene = async function (engine, canvas) {
   //Creating scene, camera and lighting
   var scene = new Scene(engine);
   //scene.debugLayer.show();
@@ -380,21 +370,15 @@ export class BabylonApp {
       // sendScoreToServer("Hadria", 66, "Tank", "Portal", "Nuclear Fusion")
       // sendScoreToServer("Nelia", 32, "Spaceship", "Portal", "Nuclear Fusion")
       // sendScoreToServer("Octavia", 19, "Train", "4 Wheel Drive","Nuclear Fusion")
-
-      // GUI
       this.gui = new Hud(scene);
-
       switchVehicle(vehicleName);
       //addTriggers(this.gui, scene, vehicle, this.powerUp, this);
-      //console.log(this);
-
+      console.log(vehicleName);
       engine.runRenderLoop(() => {
         scene.render();
-        vehicle.attr.offroad = offroad(vehicle.meshes.body);
-        vehicle.userInput(keysPressed);
-        // if (!this._ui.gamePaused) {
-        this.gui.updateHud();
-        // }
+        if(vehicle != undefined)
+          vehicle.userInput(keysPressed);
+          this.gui.updateHud();
         //TODO check if the vehicle has passed the start/finish line
         //TODO check if the vehicle has ran a red light
       });
