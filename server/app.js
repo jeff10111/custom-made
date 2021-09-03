@@ -9,8 +9,8 @@ let db = new sqlite3.Database("custom-made-db", sqlite3.OPEN_READWRITE, (err) =>
 });
 //Valid options
 var validBodies = {"Train":0,"Car":1,"Tank":2,"Spaceship":3};
-var validPowerups = {};
-var validEngines = {};
+var validPowerups = {"4 Wheel Drive":0, "Emergency Siren":1, "Portal":2, "Speed Boost":3};
+var validEngines = {"Steam":0, "Petrol":1, "Jet":2, "Nuclear Fusion":3};
 //Store results of db requests for sending to clients
 var selectAllString = "";
 var selectWhereStrings = {};
@@ -30,23 +30,53 @@ server.on('request', (request, response) => {
       'Access-Control-Allow-Headers': '*'
     });
 
-  console.log("Request received");
-
   //Used for leaderboard requesting scores
   if (request.method == "GET") {
+    console.log("\nGet request received");
     var string = request.url.slice(1,request.url.length);
-    string = `{${string.replace(/%20/g, " ").replace(/x/g, ", ").replace(/%22/g, "\"")}}`;
-    console.log("Get request received");
-    try {
-      string = JSON.parse(string);
-    } catch (e) {
-      console.error(e);
+    if(string.length == 0)
+    {
+      response.write(selectAllString);
+    }
+    else {
+      //Select where object -> {name:, body:, engine:, powerup:,}
+      //Transforming the url into potentially valid json
+      string = `{${string.replace(/%20/g, " ").replace(/x/g, ", ").replace(/%22/g, "\"")}}`;
+      //Parsing the json string into JSON object
+      try {
+        string = JSON.parse(string);
+        if("name" in string){
+           string.name.replace(/[^0-9a-zA-Z]/g, '').slice(0,20);
+        }
+      } catch (e) {
+        console.error(e);
+        return;
+      }
+      console.log("JSON object from url: ");
+      console.log(string);
+      //Generating key for cache:
+      var key = (string["name"] || "X").toString() + (string["body"] || "X").toString() + (string["engine"] || "X").toString() + (string["powerup"] || "X").toString();
+      console.log("Key is: " + key);
+      //The keys are empty
+      if(key == "XXXX")
+      {
+        console.log("Writing selectAllString");
+        response.write(selectAllString);
+      }
+      //response is already cached
+      else if(selectWhereStrings[key] != undefined){
+        console.log("Writing cached selectWhereResult")
+        response.write(selectWhereStrings[key])
+      //Response has not been cached
+      } else {
+        console.log("Writing re since not cached");
+        response.write("Re");
+        selectWhere(string, key);
+      }
     }
     console.log(string);
-    response.write(selectAllString);
     response.end();
   }
-
   //Used for sending new scores
   else if (request.method == "POST") {
     console.log("Post request received");
@@ -58,23 +88,24 @@ server.on('request', (request, response) => {
     }).on('end', () => {
       try {
         vehicle = JSON.parse(Buffer.concat(vehicle).toString());
+        vehicle.name.replace(/[^0-9a-zA-Z]/g, '').slice(0,20);
         //todo make sure name is submitted, make sure score is submitted as number, convert body/engine/powerup to ints
-        if (!('body' in vehicle && 'powerup' in vehicle && 'engine' in vehicle && 'name' in vehicle && 'score' in vehicle)) {
+        if (!('body' in vehicle && 'powerup' in vehicle && 'engine' in vehicle && 'name' in vehicle && 'score' in vehicle && Object.keys(vehicle) == 5)) {
           throw 'Invalid KEYS: ' + Object.keys(vehicle);
         }
-        if (!(vehicle.body == "Car" || vehicle.body == "Spaceship" || vehicle.body == "Train" || vehicle.body == "Tank")) {
+        if (validBodies[vehicle.body] == undefined) {
           throw 'Invalid BODY: ' + vehicle.body;
         }
-        if (!(vehicle.powerup == "4 Wheel Drive" || vehicle.powerup == "Emergency Siren" || vehicle.powerup == "Portal" || vehicle.powerup == "Speed Boost")) {
+        if (validPowerups[vehicle.powerup] == undefined) {
           throw 'Invalid POWERUP: ' + vehicle.powerup;
         }
-        if (!(vehicle.engine == "Steam" || vehicle.engine == "Petrol" || vehicle.engine == "Jet" || vehicle.engine == "Nuclear Fusion")) {
+        if (validEngines[vehicle.engine] == undefined) {
           throw 'Invalid ENGINE: ' + vehicle.engine;
         }
         if (isNaN(parseInt(vehicle.score))) {
           throw 'Invalid SCORE: ' + vehicle.score;
         }
-        if (vehicle.name.replace(/[^0-9a-zA-Z]/g, '').length < 1) {
+        if (vehicle.name.length < 1 || !wordFilter(vehicle.name)) {
           throw "Invalid NAME: " + vehicle.name;
         }
       } catch (e) {
@@ -84,10 +115,10 @@ server.on('request', (request, response) => {
       if (!badPost) {
         dbInsert(
           parseInt(vehicle.score),
-          vehicle.name.replace(/[^0-9a-zA-Z]/g, '').slice(0,20),
-          (vehicle.body == "Train") ? 0 : (vehicle.body == "Car") ? 1 : (vehicle.body == "Tank") ? 2 : 3,
-          (vehicle.powerup == "4 Wheel Drive") ? 0 : (vehicle.powerup == "Emergency Siren") ? 1 : (vehicle.powerup == "Portal") ? 2 : 3,
-          (vehicle.engine == "Steam") ? 0 : (vehicle.engine == "Petrol") ? 1 : (vehicle.engine == "Jet") ? 2 : 3,
+          vehicle.name,
+          validBodies[vehicle.body],
+          validPowerups[vehicle.powerup],
+          validEngines[vehicle.engine],
         );
         console.log("Completed Database Insertion");
         selectAll();
@@ -122,18 +153,25 @@ function selectAll() {
   });
 }
 
-function selectWhere(values) {
+function selectWhere(values, key) {//Expects words as values, not numbers which are stored in the database
   //values = {body: "", powerup: "", engine: ""}
   var scores = {scores: []};
+  //None of the keys are valid
   if(!("body" in values || "powerup" in values || "engine" in values)){
-    selectAll();
     return;
   }
+  //Converting the strings to ints (as the database has)
   values = 
   {
     body: ["Train", "Car", "Tank", "Spaceship"].findIndex(x => x == values.body),
     powerup: ["4 Wheel Drive", "Emergency Siren", "Portal", "Speed Boost"].findIndex(x => x == values.powerup),
-    engine: ["Steam", "Petrol", "Jet", "Nuclear Fusion"].findIndex(x => x == values.engine)
+    engine: ["Steam", "Petrol", "Jet", "Nuclear Fusion"].findIndex(x => x == values.engine),
+    name: (values.name != undefined && values.name != "") ? values.name : -1,
+  }
+  //None of the values are valid -> findIndex() returns -1 if not found
+  if(values.body + values.powerup + values.engine + values.name == -4)
+  {
+    return;
   }
 
   let sql = `SELECT * FROM leaderboard WHERE`;
@@ -152,17 +190,35 @@ function selectWhere(values) {
     }
     sql += ` engine = ${values.engine}`;
   }
-  sql += `;`;
+  if(values.name != -1){
+    if (sql.slice(sql.length-5,sql.length) != "WHERE") {
+      sql +=  ` AND`
+    }
+    sql += ` name = "${values.name}"`;
+  }
+  sql += ` ORDER BY score DESC LIMIT 10;`;
+  console.log("SQL QUERY IS: " + sql)
   db.all(sql, (err, rows) => {
     rows.forEach((row) => {
       scores.scores.push({name:row.name, body:row.body, engine:row.engine, powerup:row.powerup, score:row.score});
     });
-    selectWhereStrings[values.body.toString() + values.powerup.toString() + values.engine.toString()] = JSON.stringify(scores);
+    selectWhereStrings[key] = JSON.stringify(scores);
+    console.log(JSON.stringify(scores));
   });
+}
+
+function wordFilter(name){
+  var wordList = ["fuck","cunt"];
+  wordList.forEach(x => {
+    if(x.includes(name.toLowerCase()))
+      return false;
+  });
+  return true;
 }
 
 // Start the server on port 3000
 server.listen(3000, '127.0.0.1');
 console.log('Node server running on port 3000');
 selectAll();
-//selectWhere({body: "Train", powerup: "", engine: ""});
+//TODO
+//Import a bad word list for checking usernames

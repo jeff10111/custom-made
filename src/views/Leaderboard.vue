@@ -1,19 +1,51 @@
 <template>
-  <div>
-    <table class="table" id="leaderTable">
-      <th>Name</th>
-      <th>Score</th>
-      <th>Body</th>
-      <th>Power-up!</th>
-      <th>Engine</th>
-      <tr v-for="object in this.scores" :key="object.name">
-        <td>{{ object.name }}</td>
-        <td>{{ object.score }}</td>
-        <td>{{ ["Train", "Car", "Tank", "Spaceship"][object.body] }}</td>
-        <td>{{ ["4 Wheel Drive", "Emergency Siren", "Portal", "Speed Boost"][object.powerup] }}</td>
-        <td>{{ ["Steam", "Petrol", "Jet", "Nuclear Fusion"][object.engine] }}</td>
-      </tr>
-    </table>
+  <div class="container">
+    <div class="row">
+      <div class="col">
+        <table class="table" id="leaderTable">
+          <th>Name</th>
+          <th>Score</th>
+          <th>Body</th>
+          <th>Power-up</th>
+          <th>Engine</th>
+          <tr v-for="object in this.scores" :key="object.name">
+            <td>{{ object.name }}</td>
+            <td>{{ object.score }}</td>
+            <td>{{ ["Train", "Car", "Tank", "Spaceship"][object.body] }}</td>
+            <td>
+              {{
+                ["4 Wheel Drive", "Emergency Siren", "Portal", "Speed Boost"][
+                  object.powerup
+                ]
+              }}
+            </td>
+            <td>
+              {{ ["Steam", "Petrol", "Jet", "Nuclear Fusion"][object.engine] }}
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div class="col-2" id="options">
+        <h5>Search Options</h5>
+        <p class="searchHead">Body</p>
+        <button v-on:click="click('body', 'Train')" id="Train">Train</button>
+        <button v-on:click="click('body', 'Car')" id="Car">Car</button>
+        <button v-on:click="click('body', 'Tank')" id="Tank">Tank</button>
+        <button v-on:click="click('body', 'Spaceship')" id="Spaceship">Space Ship</button>
+        <p class="searchHead">Powerup</p>
+        <button v-on:click="click('powerup', '4 Wheel Drive')" id="4 Wheel Drive">4 Wheel Drive</button>
+        <button v-on:click="click('powerup', 'Emergency Siren')" id="Emergency Siren">Emergency Siren</button>
+        <button v-on:click="click('powerup', 'Portal')" id="Portal">Portal</button>
+        <button v-on:click="click('powerup', 'Speed Boost')" id="Speed Boost">Speed Boost</button>
+        <p class="searchHead">Engine</p>
+        <button v-on:click="click('engine', 'Steam')" id="Steam">Steam</button>
+        <button v-on:click="click('engine', 'Petrol')" id="Petrol">Petrol</button>
+        <button v-on:click="click('engine', 'Jet')" id="Jet">Jet</button>
+        <button v-on:click="click('engine', 'Nuclear Fusion')" id="Nuclear Fusion">Nuclear Fusion</button>
+        <p class="searchHead">Name</p>
+        <div v-on:click="text()" contenteditable="true" id="nameInput">Enter name here...</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -22,17 +54,14 @@ export default {
   name: "Leaderboard",
   props: {},
   methods: {
-    getRequest() {
-      var name = "testName";var score = 555;var vehicle = "Car"; var powerup = "Emergency Siren";var engine = "Jet";
-      const url = `http://localhost:3000/"name":"${name}"x"score":"${score}"x"vehicle":"${vehicle}"x"powerup":"${powerup}"x"engine":"${engine}"`;
+    getRequest(update, repeat) {
+      const url = `http://localhost:3000/"name":"${this.getReq.name}"x"body":"${this.getReq.body}"x"powerup":"${this.getReq.powerup}"x"engine":"${this.getReq.engine}"`;
       var xhr = new XMLHttpRequest();
-      const u = this.update;
 
       xhr.onreadystatechange = function () {
         if (this.readyState != 4) return;
-
         if (this.status == 200) {
-          console.log("Response text: ", u(this.responseText));
+          (this.responseText == "Re") ? repeat() : update(this.responseText);
         }
       };
       xhr.open("GET", url, true);
@@ -40,29 +69,75 @@ export default {
       xhr.send();
     },
     update(data) {
-      console.log("hello?????" + data);
-        this.scores = JSON.parse(data).scores;
-        return this.scores;
-    },
+      this.scores = JSON.parse(data).scores; //Object: {name:, score:, body:, powerup:, engine:}
+    }, 
+    repeat(){
+        setTimeout(() => {
+          this.getRequest(this.update, this.repeat);
+        }, 50);
+    }
   },
   data() {
     return {
-      something: { property: "Before Get" },
       scores: [],
-      header: "Name"
+      getReq: {name: "", body: "", engine: "", powerup: "" },
+      click: function (param, input) {        
+        var element = document.getElementById(input);
+        if(element.classList.contains("pressed")){
+          this.getReq[param] = "";
+          element.classList.remove("pressed");
+        } else {
+          this.getReq[param] = input;
+          let remove = function(idArray) {
+            idArray.map(x => document.getElementById(x).classList.remove("pressed"));
+          }
+          remove({body:["Train","Car","Tank","Spaceship"], powerup:["4 Wheel Drive", "Emergency Siren", "Portal", "Speed Boost"],engine:["Steam", "Petrol", "Jet", "Nuclear Fusion"]}[param]);
+          element.classList.add("pressed");
+        }
+        this.getRequest(this.update, this.repeat);
+      },
+      text: function(){
+        console.log("Text clicked");
+        document.getElementById("nameInput").textContent = "";
+        this.getReq["name"] = "";
+      }
     };
   },
   mounted() {
-    this.getRequest();
+    this.getRequest(this.update, this.repeat);
+    document.getElementById('nameInput').addEventListener('keydown', (evt) => {
+      if (evt.key === "Enter") {
+        evt.preventDefault();
+        this.getReq["name"] = document.getElementById("nameInput").textContent;
+        this.getRequest(this.update, this.repeat);
+      }
+});
   },
 };
 </script>
 
 <style scoped>
+@import "~@/components/bootstrap.css";
 #leaderTable {
   font-family: Arial, Helvetica, sans-serif;
   border-collapse: collapse;
   width: 100%;
+}
+
+.searchHead{
+  color:white;
+}
+
+#nameInput{
+  background-color: rosybrown;
+}
+
+.pressed{
+  background-color: rosybrown;
+}
+
+#options {
+  background-color: blueviolet;
 }
 
 #leaderTable td,
@@ -76,11 +151,11 @@ export default {
 }
 
 #leaderTable tr {
-    color: #000;
+  color: #000;
 }
 
 #leaderTable tr:nth-child(odd) {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
 }
 
 #leaderTable tr:hover {
