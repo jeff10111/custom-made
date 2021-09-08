@@ -132,7 +132,7 @@ export class Tank {
     }
     attachBodyParts() {
         let body = this.meshes.body;
-        var mesh = this.scene.getMeshByName("TankBody");
+        var mesh = this.scene.getTransformNodeByName("TankBody");
         body.position.y = -15;
         mesh.parent = body;
         //Positioning the MOD mesh relative to the babylon mesh

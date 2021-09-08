@@ -1,6 +1,6 @@
 let vehicle;
 let vehicles = {};
-let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
+let keysPressed = { w: 0, a: 0, s: 0, d: 0 };
 let offroadSection = { min: [0, 0], max: [1, 1] };
 let powerUpHasBeenActivated = false;
 let userHasRunRedLight = false;
@@ -18,7 +18,13 @@ import "@babylonjs/inspector";
 import * as BABYLON from "babylonjs";
 import { PhysicsImpostor } from "@babylonjs/core/Physics";
 import * as Vehicles from "./Vehicles.js";
-import { SceneLoader, Engine, Scene, ActionManager, ExecuteCodeAction } from "@babylonjs/core";
+import {
+  SceneLoader,
+  Engine,
+  Scene,
+  ActionManager,
+  ExecuteCodeAction,
+} from "@babylonjs/core";
 import { Animation, Vector3, Quaternion, MeshBuilder } from "@babylonjs/core";
 import { Hud } from "./gui";
 import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/";
@@ -29,7 +35,7 @@ function sendScoreToServer(name, score, vehicle, powerup, engine) {
   const url = `http://localhost:3000/LOL`;
   var xhr = new XMLHttpRequest();
 
-  xhr.onreadystatechange = function () {
+  xhr.onreadystatechange = function() {
     if (this.readyState != 4) return;
 
     if (this.status == 200) {
@@ -38,10 +44,16 @@ function sendScoreToServer(name, score, vehicle, powerup, engine) {
   };
 
   xhr.open("POST", url, true);
-  xhr.setRequestHeader('Content-Type', 'text/plain');
-  xhr.send(JSON.stringify({
-    name: name, score: score, body: vehicle, powerup: powerup, engine: engine,
-  }));
+  xhr.setRequestHeader("Content-Type", "text/plain");
+  xhr.send(
+    JSON.stringify({
+      name: name,
+      score: score,
+      body: vehicle,
+      powerup: powerup,
+      engine: engine,
+    })
+  );
 }
 
 function switchVehicle(vehicleName) {
@@ -74,7 +86,7 @@ function switchVehicle(vehicleName) {
   camera.attachControl(document.getElementById("gameCanvas"), true);
 }
 
-var addCollider = function (scene, thisMesh, visible = false) {
+var addCollider = function(scene, thisMesh, visible = false) {
   try {
     thisMesh = scene.getMeshByName(thisMesh.name);
     thisMesh.scaling.x = Math.abs(thisMesh.scaling.x);
@@ -131,7 +143,12 @@ var stopLap = function(gui) {
 };
 
 var addTriggers = function(gui, scene, vehicleName, powerup, app) {
-  console.log(vehicle.name + "Body");
+  var vehicleMesh = scene.getMeshByName(
+    { Car: "MTBody", Train: "TrainBody", Omni: "Omni", Tank: "TankL1" }[
+      vehicleName
+    ]
+  );
+
   var stopSignTrigger = scene.getMeshByName("Trigger_StopSign");
   stopSignTrigger.actionManager = new ActionManager(scene);
   stopSignTrigger.visibility = 0.1;
@@ -139,7 +156,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName]),
+        parameter: vehicleMesh,
       },
       () => {
         console.log("RedLightArea");
@@ -154,7 +171,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName])
+        parameter: vehicleMesh,
       },
       () => {
         fourWheelDrivePassed = true;
@@ -172,7 +189,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName])
+        parameter: vehicleMesh,
       },
       () => {
         startLap(gui);
@@ -189,7 +206,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName])
+        parameter: vehicleMesh,
       },
       () => {
         if (fourWheelDrivePassed) {
@@ -201,7 +218,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
   );
 };
 
-var createScene = async function (engine, canvas) {
+var createScene = async function(engine, canvas) {
   //Creating scene, camera and lighting
   var scene = new Scene(engine);
   //scene.debugLayer.show();
@@ -332,7 +349,7 @@ export class BabylonApp {
     this.engineType = engineName;
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
-    var v = false; //visibility
+    var v = true; // Vehicle physics boxes visibility
     // initialize babylon scene and engine
     var engine = new Engine(canvas, true);
     var scenePromise = createScene(engine, canvas);
@@ -343,7 +360,7 @@ export class BabylonApp {
         MT: new Vehicles.MT(scene, 230, 20, engineName, v),
         Train: new Vehicles.Train(scene, 260, 20, engineName, v),
         Tank: new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v),
-        Omni: new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v)
+        Omni: new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v),
       };
       // sendScoreToServer("Athena", 55, "Car", "Emergency Siren", "Nuclear Fusion")
       // sendScoreToServer("Bella", 999, "Spaceship", "Portal", "Jet")
@@ -358,12 +375,11 @@ export class BabylonApp {
       this.gui = new Hud(scene);
       switchVehicle(vehicleName);
       addTriggers(this.gui, scene, vehicleName, this.powerUp, this);
-      console.log(vehicleName);
+
       engine.runRenderLoop(() => {
         scene.render();
-        if(vehicle != undefined)
-          vehicle.userInput(keysPressed);
-          this.gui.updateHud();
+        if (vehicle != undefined) vehicle.userInput(keysPressed);
+        this.gui.updateHud();
         //TODO check if the vehicle has passed the start/finish line
         //TODO check if the vehicle has ran a red light
       });
@@ -407,7 +423,7 @@ export class BabylonApp {
       vehicle.userInput(keysPressed);
     });
 
-    window.addEventListener("resize", function () {
+    window.addEventListener("resize", function() {
       engine.resize();
     });
   }
@@ -469,7 +485,7 @@ export class BabylonApp {
       frameRate,
       Animation.ANIMATIONTYPE_FLOAT
     );
-    thisAnim.onAnimationLoop = function () {
+    thisAnim.onAnimationLoop = function() {
       console.error("HEYO");
     };
     const keyFrames = [];
@@ -514,7 +530,7 @@ export class BabylonApp {
       Animation.ANIMATIONTYPE_FLOAT,
       Animation.ANIMATIONLOOPMODE_CYCLE
     );
-    thisAnim.onAnimationLoop = function () {
+    thisAnim.onAnimationLoop = function() {
       console.error("HEYO");
     };
     const keyFrames = [];
