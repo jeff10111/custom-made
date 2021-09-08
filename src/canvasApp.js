@@ -86,24 +86,25 @@ function switchVehicle(vehicleName) {
   camera.attachControl(document.getElementById("gameCanvas"), true);
 }
 
-var addCollider = function(scene, thisMesh, visible = false) {
+var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
   try {
     thisMesh = scene.getMeshByName(thisMesh.name);
     thisMesh.scaling.x = Math.abs(thisMesh.scaling.x);
     thisMesh.scaling.y = Math.abs(thisMesh.scaling.y);
     thisMesh.scaling.z = Math.abs(thisMesh.scaling.z);
 
+    console.log(scaleFactor);
     var bb = thisMesh.getBoundingInfo().boundingBox;
     // Don't really know why I have to double the scale but it works
-    var width = (bb.maximum.x - bb.minimum.x) * 2;
-    var height = (bb.maximum.y - bb.minimum.y) * 2;
-    var depth = (bb.maximum.z - bb.minimum.z) * 2;
+    var width = (bb.maximum.x - bb.minimum.x) * scaleFactor;
+    var height = (bb.maximum.y - bb.minimum.y) * scaleFactor;
+    var depth = (bb.maximum.z - bb.minimum.z) * scaleFactor;
     console.log(thisMesh.name + " " + width + " " + depth + " " + height);
     console.log(bb.centerWorld, bb.directions);
 
     var box = MeshBuilder.CreateBox(
       thisMesh.name + "_bb",
-      { width: width, height: height, depth: depth },
+      { width: width, height: height, depth: depth, friction: friction },
       scene
     );
     if (!visible) {
@@ -301,13 +302,14 @@ var createScene = async function(engine, canvas) {
         if (thisMesh.name.startsWith("MapCollide")) {
           console.log("Collider: " + thisMesh.name);
           var friction = 100;
+          var scaleFactor = 2.5;
           if (thisMesh.name.includes("Ground")) {
             friction = 100;
           }
           if (thisMesh.name.includes("Visible")) {
-            addCollider(scene, thisMesh, true, friction);
+            addCollider(scene, thisMesh, true, friction, scaleFactor);
           } else {
-            addCollider(scene, thisMesh, false, friction);
+            addCollider(scene, thisMesh, false, friction, scaleFactor);
           }
         }
       }
@@ -349,7 +351,7 @@ export class BabylonApp {
     this.engineType = engineName;
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
-    var v = true; // Vehicle physics boxes visibility
+    var v = false; // Vehicle physics boxes visibility
     // initialize babylon scene and engine
     var engine = new Engine(canvas, true);
     var scenePromise = createScene(engine, canvas);
@@ -716,6 +718,7 @@ export class BabylonApp {
     // Set the default position
     if (!roadblockSet) {
       roadblockBottom = roadblock.position.y;
+      roadblockTop = roadblockBottom + roadblockOffset;
       roadblockSet = true;
     }
 
@@ -727,7 +730,7 @@ export class BabylonApp {
         roadblockTop
       ),
     ]).then((vals) => {
-      addCollider(scene, roadblock, true);
+      addCollider(scene, roadblock, true, 100, 1);
     });
   }
 
@@ -746,6 +749,7 @@ export class BabylonApp {
     // Set the default position
     if (!roadblockSet) {
       roadblockBottom = roadblock.position.y;
+      roadblockTop = roadblockBottom + roadblockOffset;
       roadblockSet = true;
     }
 
@@ -758,8 +762,9 @@ export class BabylonApp {
   }
 }
 
+var roadblockOffset = 13;
 var roadblockBottom = 0;
-var roadblockTop = 5;
+var roadblockTop = 0;
 var roadblockSet = false;
 
 export default {
