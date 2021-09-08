@@ -43,12 +43,13 @@ export class Omni {
 
     attachBodyParts() {
         let body = this.meshes.body;
-        var mesh = this.scene.getMeshByName("Omni");
-        console.log("OMNI: " + this.scene.getMeshByName("Omni"));
+        var mesh = this.scene.getTransformNodeByName("Omni");
+        // console.log("OMNI: " + this.scene.getMeshByName("Omni"));
         body.position.y = -15;
         mesh.parent = body;
         mesh.position.z = 0;
         mesh.position.y = -5;
+        // var triggerMesh = new BABYLON.MeshBuilder.CreateCylinder("OmniBody")
         body.physicsImpostor = new BABYLON.PhysicsImpostor(body, BABYLON.PhysicsImpostor.CylinderImpostor, { mass: this.attr.bodyMass, friction: 0.01, restitution: 0 }, this.scene);
         //new FollowCamera(name: string, position: Vector3, scene: Scene, lockedTarget?: Nullable<AbstractMesh>)
     }
@@ -469,7 +470,7 @@ export class Train {
         body.position.y = -15;
 
         //Attaching mod mesh to babylon mesh
-        var mesh = this.scene.getMeshByName("TrainBody");
+        var mesh = this.scene.getTransformNodeByName("TrainBody");
         mesh.parent = body;
         //Positioning the MOD mesh relative to the babylon mesh
         mesh.position.y -= 8.2;
@@ -501,12 +502,12 @@ export class Train {
         R3.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
 
         //Adding cylinder parent for mod wheel mesh, positioning relatively
-        this.wheelMeshParent(this.scene.getMeshByName("TL1"), L1, 4, 11.5, -7.1);
-        this.wheelMeshParent(this.scene.getMeshByName("TL2"), L2, -2.3, 11.3, -7.1);
-        this.wheelMeshParent(this.scene.getMeshByName("TL3"), L3, -9, 11.5, -7.1);
-        this.wheelMeshParent(this.scene.getMeshByName("TR1"), R1, 4, 27.5, -7.1);
-        this.wheelMeshParent(this.scene.getMeshByName("TR2"), R2, -2.3, 27.5, -7.1);
-        this.wheelMeshParent(this.scene.getMeshByName("TR3"), R3, -9, 27.5, -7.1);
+        this.wheelMeshParent(this.scene.getTransformNodeByName("TL1"), L1, 4, 11.5, -7.1);
+        this.wheelMeshParent(this.scene.getTransformNodeByName("TL2"), L2, -2.3, 11.3, -7.1);
+        this.wheelMeshParent(this.scene.getTransformNodeByName("TL3"), L3, -9, 11.5, -7.1);
+        this.wheelMeshParent(this.scene.getTransformNodeByName("TR1"), R1, 4, 27.5, -7.1);
+        this.wheelMeshParent(this.scene.getTransformNodeByName("TR2"), R2, -2.3, 27.5, -7.1);
+        this.wheelMeshParent(this.scene.getTransformNodeByName("TR3"), R3, -9, 27.5, -7.1);
 
         //Positioning the babylon/parent meshes relative to the vehicle
         this.wheelPositioning(body, L1, -6, wheelHeight, wheelWidth);

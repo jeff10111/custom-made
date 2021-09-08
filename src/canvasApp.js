@@ -145,7 +145,7 @@ var stopLap = function(gui) {
 
 var addTriggers = function(gui, scene, vehicleName, powerup, app) {
   var vehicleMesh = scene.getMeshByName(
-    { Car: "MTLeft", Train: "TrainBody", Omni: "Omni", Tank: "TankL1" }[
+    { Car: "MTLeft", Train: "LeftBar", Omni: "Omni", Tank: "TankL1" }[
       vehicleName
     ]
   );
