@@ -145,7 +145,7 @@ var stopLap = function(gui) {
 
 var addTriggers = function(gui, scene, vehicleName, powerup, app) {
   var vehicleMesh = scene.getMeshByName(
-    { Car: "MTBody", Train: "TrainBody", Omni: "Omni", Tank: "TankL1" }[
+    { Car: "MTLeft", Train: "TrainBody", Omni: "Omni", Tank: "TankL1" }[
       vehicleName
     ]
   );
@@ -257,32 +257,6 @@ var createScene = async function(engine, canvas) {
   await SceneLoader.ImportMeshAsync("", "/assets/", "track.glb").then(
     (result) => {
       console.log(result);
-
-      console.log(scene.getTransformNodeByName("MainTrack").parent);
-      var rootNode = scene.getTransformNodeByName("MainTrack").parent;
-
-      var sphere = MeshBuilder.CreateSphere(
-        "sphere",
-        { diameter: 10, segments: 32 },
-        scene
-      );
-      sphere.PhysicsImpostor = new PhysicsImpostor(
-        sphere,
-        PhysicsImpostor.SphereImpostor,
-        { mass: 1, restitution: 0.1 },
-        scene
-      );
-      sphere.position.y += 150;
-      console.log(sphere.position);
-
-      var impulseDirection = new Vector3(1, 1, 0);
-      var impulseMagnitude = 5;
-      var contactLocalRefPoint = Vector3.Zero();
-
-      sphere.PhysicsImpostor.applyImpulse(
-        impulseDirection.scale(impulseMagnitude),
-        sphere.getAbsolutePosition().add(contactLocalRefPoint)
-      );
       for (var mesh in result.meshes) {
         var thisMesh = result.meshes[mesh];
         console.log("Mesh " + thisMesh.name);

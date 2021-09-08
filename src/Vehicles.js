@@ -732,7 +732,7 @@ export class MT {
         let body = this.meshes.body;
         body.position.y = -15;
         //attaching MOD mesh to babylon mesh, creating a physics imposter for babylon mesh
-        var mesh = this.scene.getMeshByName("MTBody");
+        var mesh = this.scene.getTransformNodeByName("MTBody");
         mesh.parent = body;
         //Positioning the MOD mesh relative to the babylon mesh
         mesh.position.y = -12;
