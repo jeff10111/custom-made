@@ -1,6 +1,6 @@
 let vehicle;
 let vehicles = {};
-let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
+let keysPressed = { w: 0, a: 0, s: 0, d: 0 };
 let offroadSection = { min: [0, 0], max: [1, 1] };
 let powerUpHasBeenActivated = false;
 let userHasRunRedLight = false;
@@ -18,7 +18,13 @@ import "@babylonjs/inspector";
 import * as BABYLON from "babylonjs";
 import { PhysicsImpostor } from "@babylonjs/core/Physics";
 import * as Vehicles from "./Vehicles.js";
-import { SceneLoader, Engine, Scene, ActionManager, ExecuteCodeAction } from "@babylonjs/core";
+import {
+  SceneLoader,
+  Engine,
+  Scene,
+  ActionManager,
+  ExecuteCodeAction,
+} from "@babylonjs/core";
 import { Animation, Vector3, Quaternion, MeshBuilder } from "@babylonjs/core";
 import { Hud } from "./gui";
 import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/";
@@ -29,7 +35,7 @@ function sendScoreToServer(name, score, vehicle, powerup, engine) {
   const url = `http://localhost:3000/LOL`;
   var xhr = new XMLHttpRequest();
 
-  xhr.onreadystatechange = function () {
+  xhr.onreadystatechange = function() {
     if (this.readyState != 4) return;
 
     if (this.status == 200) {
@@ -38,43 +44,60 @@ function sendScoreToServer(name, score, vehicle, powerup, engine) {
   };
 
   xhr.open("POST", url, true);
-  xhr.setRequestHeader('Content-Type', 'text/plain');
-  xhr.send(JSON.stringify({
-    name: name, score: score, body: vehicle, powerup: powerup, engine: engine,
-  }));
+  xhr.setRequestHeader("Content-Type", "text/plain");
+  xhr.send(
+    JSON.stringify({
+      name: name,
+      score: score,
+      body: vehicle,
+      powerup: powerup,
+      engine: engine,
+    })
+  );
 }
 
 function switchVehicle(vehicleName) {
-  switch (vehicleName) {
-    case "Car":
-      vehicle = vehicles.MT;
-      break;
-    case "Train":
-      vehicle = vehicles.Train;
-      break;
-    case "Spaceship":
-      vehicle = vehicles.Omni;
-      break;
-    case "Tank":
-      vehicle = vehicles.Tank;
-      console.log("Set vehicle to tank");
-      console.log(vehicle.attr);
-      break;
-  }
+  // switch (vehicleName) {
+  //   case "Car":
+  //     vehicle = vehicles.MT;
+  //     break;
+  //   case "Train":
+  //     vehicle = vehicles.Train;
+  //     break;
+  //   case "Spaceship":
+  //     vehicle = vehicles.Omni;
+  //     break;
+  //   case "Tank":
+  //     vehicle = vehicles.Tank;
+  //     console.log("Set vehicle to tank");
+  //     console.log(vehicle.attr);
+  //     break;
+  // }
 
-  var camera = new BABYLON.ArcRotateCamera(
-    "Camera",
-    Math.PI / 5,
-    Math.PI / 3,
-    250,
-    vehicle.meshes.body,
+  // var camera = new BABYLON.ArcRotateCamera(
+  //   "Camera",
+  //   Math.PI / 5,
+  //   Math.PI / 3,
+  //   250,
+  //   vehicle.meshes.body,
+  //   scene
+  // );
+  // camera.useFramingBehavior = true;
+  var camera = new BABYLON.UniversalCamera(
+    "UniversalCamera",
+    new BABYLON.Vector3(0, 0, -10),
     scene
   );
-  camera.useFramingBehavior = true;
   camera.attachControl(document.getElementById("gameCanvas"), true);
 }
 
-var addCollider = function (scene, thisMesh, visible = false) {
+var addCollider = function(
+  scene,
+  thisMesh,
+  visible = false,
+  friction = 0,
+  scaleAdjust = 1
+) {
   try {
     thisMesh = scene.getMeshByName(thisMesh.name);
     thisMesh.scaling.x = Math.abs(thisMesh.scaling.x);
@@ -83,9 +106,9 @@ var addCollider = function (scene, thisMesh, visible = false) {
 
     var bb = thisMesh.getBoundingInfo().boundingBox;
     // Don't really know why I have to double the scale but it works
-    var width = (bb.maximum.x - bb.minimum.x) * 2;
-    var height = (bb.maximum.y - bb.minimum.y) * 2;
-    var depth = (bb.maximum.z - bb.minimum.z) * 2;
+    var width = (bb.maximum.x - bb.minimum.x) * scaleAdjust;
+    var height = (bb.maximum.y - bb.minimum.y) * scaleAdjust;
+    var depth = (bb.maximum.z - bb.minimum.z) * scaleAdjust;
     console.log(thisMesh.name + " " + width + " " + depth + " " + height);
     console.log(bb.centerWorld, bb.directions);
 
@@ -102,7 +125,7 @@ var addCollider = function (scene, thisMesh, visible = false) {
     box.physicsImpostor = new PhysicsImpostor(
       box,
       PhysicsImpostor.BoxImpostor,
-      { mass: 0, restitution: 0 },
+      { mass: 0, restitution: 0, friction: friction },
       scene
     );
     console.log("Making bb of " + thisMesh.name);
@@ -131,7 +154,6 @@ var stopLap = function(gui) {
 };
 
 var addTriggers = function(gui, scene, vehicleName, powerup, app) {
-  console.log(vehicle.name + "Body");
   var stopSignTrigger = scene.getMeshByName("Trigger_StopSign");
   stopSignTrigger.actionManager = new ActionManager(scene);
   stopSignTrigger.visibility = 0.1;
@@ -139,7 +161,11 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName]),
+        parameter: scene.getMeshByName(
+          { Car: "MTBody", Train: "TrainBody", Omni: "Omni", Tank: "TankBody" }[
+            vehicleName
+          ]
+        ),
       },
       () => {
         console.log("RedLightArea");
@@ -154,7 +180,11 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName])
+        parameter: scene.getMeshByName(
+          { Car: "MTBody", Train: "TrainBody", Omni: "Omni", Tank: "TankBody" }[
+            vehicleName
+          ]
+        ),
       },
       () => {
         fourWheelDrivePassed = true;
@@ -172,7 +202,11 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName])
+        parameter: scene.getMeshByName(
+          { Car: "MTBody", Train: "TrainBody", Omni: "Omni", Tank: "TankBody" }[
+            vehicleName
+          ]
+        ),
       },
       () => {
         startLap(gui);
@@ -189,7 +223,11 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName])
+        parameter: scene.getMeshByName(
+          { Car: "MTBody", Train: "TrainBody", Omni: "Omni", Tank: "TankBody" }[
+            vehicleName
+          ]
+        ),
       },
       () => {
         if (fourWheelDrivePassed) {
@@ -201,13 +239,16 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
   );
 };
 
-var createScene = async function (engine, canvas) {
+var createScene = async function(engine, canvas) {
   //Creating scene, camera and lighting
   var scene = new Scene(engine);
-  //scene.debugLayer.show();
+  scene.debugLayer.show();
 
   scene.enablePhysics(new BABYLON.Vector3(0, -15.8, 0));
+
+  // Don't delete this log - it'll kill it
   console.log(scene.clearColor);
+
   // var camera = new BABYLON.ArcRotateCamera(
   //   "Camera",
   //   Math.PI / 5,
@@ -224,14 +265,34 @@ var createScene = async function (engine, canvas) {
   await SceneLoader.ImportMeshAsync("", "/assets/", "MT.glb", scene);
   await SceneLoader.ImportMeshAsync("", "/assets/", "Omni.glb", scene);
   await SceneLoader.ImportMeshAsync("", "/assets/", "Train.glb", scene);
-  await SceneLoader.ImportMeshAsync("", "/assets/", "Tank.glb", scene);
-  //importing track
+  await SceneLoader.ImportMeshAsync("", "/assets/", "Tank.glb", scene).then(
+    (result) => {
+      console.log(result);
+      var primitives = [];
+      result.meshes.forEach((mesh) => {
+        if (mesh.name.startsWith("TankBody_primitive")) {
+          console.log(mesh.name);
+          primitives.push(mesh);
+        }
+      });
 
-  // var track = scene.getMeshByName("Track");
-  // track.position = new BABYLON.Vector3(-125, -480, -760);
+      var mesh = BABYLON.Mesh.MergeMeshes(
+        primitives,
+        true,
+        true,
+        undefined,
+        true,
+        true
+      );
+      console.log("TankBod:");
+      mesh.name = "TankBody";
+      mesh.id = "TankBody";
+
+      console.log(scene.getMeshByID("TankBody"));
+    }
+  );
 
   //Creating the ground and enabling physics
-
   var mat = new BABYLON.StandardMaterial("green", scene);
   mat.diffuseColor = new BABYLON.Color3.Green();
   scene.enablePhysics(new BABYLON.Vector3(10, -9.8, 0));
@@ -243,28 +304,10 @@ var createScene = async function (engine, canvas) {
       console.log(scene.getTransformNodeByName("MainTrack").parent);
       var rootNode = scene.getTransformNodeByName("MainTrack").parent;
 
-      var sphere = MeshBuilder.CreateSphere(
-        "sphere",
-        { diameter: 10, segments: 32 },
-        scene
-      );
-      sphere.PhysicsImpostor = new PhysicsImpostor(
-        sphere,
-        PhysicsImpostor.SphereImpostor,
-        { mass: 1, restitution: 0.1 },
-        scene
-      );
-      sphere.position.y += 150;
-      console.log(sphere.position);
-
       var impulseDirection = new Vector3(1, 1, 0);
       var impulseMagnitude = 5;
       var contactLocalRefPoint = Vector3.Zero();
 
-      sphere.PhysicsImpostor.applyImpulse(
-        impulseDirection.scale(impulseMagnitude),
-        sphere.getAbsolutePosition().add(contactLocalRefPoint)
-      );
       for (var mesh in result.meshes) {
         var thisMesh = result.meshes[mesh];
         console.log("Mesh " + thisMesh.name);
@@ -284,13 +327,16 @@ var createScene = async function (engine, canvas) {
         if (thisMesh.name.startsWith("MapCollide")) {
           console.log("Collider: " + thisMesh.name);
           var friction = 100;
+          // For whatever reason the initial load is of the original scale
+          // The track has been scaled to 2.5 size to suit the vehicles
+          var scale = 2.5;
           if (thisMesh.name.includes("Ground")) {
             friction = 100;
           }
           if (thisMesh.name.includes("Visible")) {
-            addCollider(scene, thisMesh, true, friction);
+            addCollider(scene, thisMesh, true, friction, scale);
           } else {
-            addCollider(scene, thisMesh, false, friction);
+            addCollider(scene, thisMesh, false, friction, scale);
           }
         }
       }
@@ -339,12 +385,12 @@ export class BabylonApp {
     scenePromise.then((returnedScene) => {
       scene = returnedScene;
       this.scene = returnedScene;
-      vehicles = {
-        MT: new Vehicles.MT(scene, 230, 20, engineName, v),
-        Train: new Vehicles.Train(scene, 260, 20, engineName, v),
-        Tank: new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v),
-        Omni: new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v)
-      };
+      // vehicles = {
+      //   MT: new Vehicles.MT(scene, 230, 20, engineName, v),
+      //   Train: new Vehicles.Train(scene, 260, 20, engineName, v),
+      //   Tank: new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v),
+      //   Omni: new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v),
+      // };
       // sendScoreToServer("Athena", 55, "Car", "Emergency Siren", "Nuclear Fusion")
       // sendScoreToServer("Bella", 999, "Spaceship", "Portal", "Jet")
       // sendScoreToServer("Cara", 34, "Tank", "Speed Boost", "Petrol")
@@ -361,9 +407,8 @@ export class BabylonApp {
       console.log(vehicleName);
       engine.runRenderLoop(() => {
         scene.render();
-        if(vehicle != undefined)
-          vehicle.userInput(keysPressed);
-          this.gui.updateHud();
+        if (vehicle != undefined) vehicle.userInput(keysPressed);
+        this.gui.updateHud();
         //TODO check if the vehicle has passed the start/finish line
         //TODO check if the vehicle has ran a red light
       });
@@ -407,7 +452,7 @@ export class BabylonApp {
       vehicle.userInput(keysPressed);
     });
 
-    window.addEventListener("resize", function () {
+    window.addEventListener("resize", function() {
       engine.resize();
     });
   }
@@ -469,7 +514,7 @@ export class BabylonApp {
       frameRate,
       Animation.ANIMATIONTYPE_FLOAT
     );
-    thisAnim.onAnimationLoop = function () {
+    thisAnim.onAnimationLoop = function() {
       console.error("HEYO");
     };
     const keyFrames = [];
@@ -514,7 +559,7 @@ export class BabylonApp {
       Animation.ANIMATIONTYPE_FLOAT,
       Animation.ANIMATIONLOOPMODE_CYCLE
     );
-    thisAnim.onAnimationLoop = function () {
+    thisAnim.onAnimationLoop = function() {
       console.error("HEYO");
     };
     const keyFrames = [];
@@ -700,6 +745,7 @@ export class BabylonApp {
     // Set the default position
     if (!roadblockSet) {
       roadblockBottom = roadblock.position.y;
+      roadblockTop = roadblockBottom + roadblockOffset;
       roadblockSet = true;
     }
 
@@ -711,7 +757,7 @@ export class BabylonApp {
         roadblockTop
       ),
     ]).then((vals) => {
-      addCollider(scene, roadblock, true);
+      addCollider(scene, roadblock, true, 1);
     });
   }
 
@@ -730,6 +776,7 @@ export class BabylonApp {
     // Set the default position
     if (!roadblockSet) {
       roadblockBottom = roadblock.position.y;
+      roadblockTop = roadblockBottom + roadblockOffset;
       roadblockSet = true;
     }
 
@@ -743,7 +790,8 @@ export class BabylonApp {
 }
 
 var roadblockBottom = 0;
-var roadblockTop = 5;
+var roadblockOffset = 13;
+var roadblockTop = -25;
 var roadblockSet = false;
 
 export default {
