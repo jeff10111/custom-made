@@ -44,6 +44,7 @@
         <button v-on:click="click('engine', 'Nuclear Fusion')" id="Nuclear Fusion">Nuclear Fusion</button>
         <p class="searchHead">Name</p>
         <div v-on:click="text()" contenteditable="true" id="nameInput">Enter name here...</div>
+        <button v-on:click="enterName()" id="name">Enter</button>
       </div>
     </div>
   </div>
@@ -100,17 +101,24 @@ export default {
         console.log("Text clicked");
         document.getElementById("nameInput").textContent = "";
         this.getReq["name"] = "";
+        this.getRequest(this.update, this.repeat);
+      },
+      enterName: function(){
+        let n = (x) => x == "Enter name here..." ? "" : x;
+        this.getReq["name"] = n(document.getElementById("nameInput").textContent);
+        this.getRequest(this.update, this.repeat);
       }
     };
   },
   mounted() {
     this.getRequest(this.update, this.repeat);
     document.getElementById('nameInput').addEventListener('keydown', (evt) => {
+      console.log(evt.key);
       if (evt.key === "Enter") {
         evt.preventDefault();
-        this.getReq["name"] = document.getElementById("nameInput").textContent;
-        this.getRequest(this.update, this.repeat);
-      }
+        this.enterName();
+      }         
+
 });
   },
 };

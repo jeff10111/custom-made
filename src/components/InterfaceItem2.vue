@@ -20,11 +20,21 @@ export default {
     }
   },
   data() {return {selected: false}},
+  mounted(){
+    if(["Steam", "Train", "4 Wheel Drive"].find(x => x == this.partName))
+      this.selected = !this.selected;
+  }
 }
 </script>
 
 <style scoped>
 button{height: 5em; width: 100%;}
 .selectedDiv{border-style: dotted;}
-.btn-dark{color:blueviolet;}
+.btn-dark{color:blueviolet;outline:none}
+.btn-dark:focus{
+  color:blueviolet;
+  outline:none;
+  border:none;
+}
+
 </style>

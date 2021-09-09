@@ -1,7 +1,6 @@
 let vehicle;
 let vehicles = {};
 let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
-let offroadSection = { min: [0, 0], max: [1, 1] };
 let powerUpHasBeenActivated = false;
 let userHasRunRedLight = false;
 let startTime;
@@ -131,15 +130,15 @@ var stopLap = function(gui) {
 };
 
 var addTriggers = function(gui, scene, vehicleName, powerup, app) {
-  console.log(vehicle.name + "Body");
-  var stopSignTrigger = scene.getMeshByName("Trigger_StopSign");
+  var stopSignTrigger = scene.getMeshByName("Trigger_StopSign"); 
+  var vehicleMesh = {"Car":"MTBody", "Train":"TrainBody", "Spaceship":"Omni", "Tank":"TankBody"}[vehicleName];
   stopSignTrigger.actionManager = new ActionManager(scene);
   stopSignTrigger.visibility = 0.1;
   stopSignTrigger.actionManager.registerAction(
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName]),
+        parameter: scene.getMeshByName(vehicleMesh),
       },
       () => {
         console.log("RedLightArea");
@@ -154,7 +153,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName])
+        parameter: scene.getMeshByName(vehicleMesh)
       },
       () => {
         fourWheelDrivePassed = true;
@@ -172,7 +171,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName])
+        parameter: scene.getMeshByName(vehicleMesh)
       },
       () => {
         startLap(gui);
@@ -189,7 +188,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName({"Car":"MTBody", "Train":"TrainBody", "Omni":"Omni", "Tank":"TankBody"}[vehicleName])
+        parameter: scene.getMeshByName(vehicleMesh)
       },
       () => {
         if (fourWheelDrivePassed) {
@@ -355,6 +354,7 @@ export class BabylonApp {
       // sendScoreToServer("Hadria", 66, "Tank", "Portal", "Nuclear Fusion")
       // sendScoreToServer("Nelia", 32, "Spaceship", "Portal", "Nuclear Fusion")
       // sendScoreToServer("Octavia", 19, "Train", "4 Wheel Drive","Nuclear Fusion")
+
       this.gui = new Hud(scene);
       switchVehicle(vehicleName);
       addTriggers(this.gui, scene, vehicleName, this.powerUp, this);

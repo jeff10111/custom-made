@@ -1,6 +1,9 @@
 // app.js
 //Connecting to database
+const fs = require('fs');
 const sqlite3 = require('sqlite3');
+const http = require('http');
+//Opening DB and creating database object
 let db = new sqlite3.Database("custom-made-db", sqlite3.OPEN_READWRITE, (err) => {
   if (err) {
     return console.error(err.message)
@@ -15,10 +18,11 @@ var validEngines = {"Steam":0, "Petrol":1, "Jet":2, "Nuclear Fusion":3};
 var selectAllString = "";
 var selectWhereStrings = {};
 //Creating server
-const http = require('http');
 const server = http.createServer();
 //ctrl-c
 const { exit } = require('process');
+//Array to store bad words in
+var badWords = [];
 
 //Server request response api
 server.on('request', (request, response) => {
@@ -32,7 +36,6 @@ server.on('request', (request, response) => {
 
   //Used for leaderboard requesting scores
   if (request.method == "GET") {
-    console.log("\nGet request received");
     var string = request.url.slice(1,request.url.length);
     if(string.length == 0)
     {
@@ -52,34 +55,27 @@ server.on('request', (request, response) => {
         console.error(e);
         return;
       }
-      console.log("JSON object from url: ");
-      console.log(string);
+
       //Generating key for cache:
       var key = (string["name"] || "X").toString() + (string["body"] || "X").toString() + (string["engine"] || "X").toString() + (string["powerup"] || "X").toString();
-      console.log("Key is: " + key);
       //The keys are empty
       if(key == "XXXX")
       {
-        console.log("Writing selectAllString");
         response.write(selectAllString);
       }
       //response is already cached
       else if(selectWhereStrings[key] != undefined){
-        console.log("Writing cached selectWhereResult")
         response.write(selectWhereStrings[key])
       //Response has not been cached
       } else {
-        console.log("Writing re since not cached");
         response.write("Re");
         selectWhere(string, key);
       }
     }
-    console.log(string);
     response.end();
   }
   //Used for sending new scores
   else if (request.method == "POST") {
-    console.log("Post request received");
       var badPost = false;
       var vehicle = [];
 
@@ -89,8 +85,8 @@ server.on('request', (request, response) => {
       try {
         vehicle = JSON.parse(Buffer.concat(vehicle).toString());
         vehicle.name.replace(/[^0-9a-zA-Z]/g, '').slice(0,20);
-        //todo make sure name is submitted, make sure score is submitted as number, convert body/engine/powerup to ints
-        if (!('body' in vehicle && 'powerup' in vehicle && 'engine' in vehicle && 'name' in vehicle && 'score' in vehicle && Object.keys(vehicle) == 5)) {
+
+        if (!('body' in vehicle && 'powerup' in vehicle && 'engine' in vehicle && 'name' in vehicle && 'score' in vehicle && Object.keys(vehicle).length == 5)) {
           throw 'Invalid KEYS: ' + Object.keys(vehicle);
         }
         if (validBodies[vehicle.body] == undefined) {
@@ -105,7 +101,7 @@ server.on('request', (request, response) => {
         if (isNaN(parseInt(vehicle.score))) {
           throw 'Invalid SCORE: ' + vehicle.score;
         }
-        if (vehicle.name.length < 1 || !wordFilter(vehicle.name)) {
+        if (vehicle.name.length < 1 || badWords.some((x) => vehicle.name.toLowerCase().includes(x))) {
           throw "Invalid NAME: " + vehicle.name;
         }
       } catch (e) {
@@ -113,6 +109,7 @@ server.on('request', (request, response) => {
         console.error(e);
       }
       if (!badPost) {
+        console.log("Inserting user: " + vehicle.name);
         dbInsert(
           parseInt(vehicle.score),
           vehicle.name,
@@ -207,18 +204,18 @@ function selectWhere(values, key) {//Expects words as values, not numbers which 
   });
 }
 
-function wordFilter(name){
-  var wordList = ["fuck","cunt"];
-  wordList.forEach(x => {
-    if(x.includes(name.toLowerCase()))
-      return false;
-  });
-  return true;
-}
+//Load bad words list. Words are from:
+// https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words
+fs.readFile('bannedWords.txt', 'utf8', function (err,data) {
+  if (err) {
+    return console.log(err);
+  }
+  badWords = data.split('\n').map(x => x.slice(0,x.length-1));
+});
 
 // Start the server on port 3000
 server.listen(3000, '127.0.0.1');
 console.log('Node server running on port 3000');
+//Push initial result into cache
 selectAll();
-//TODO
-//Import a bad word list for checking usernames
+

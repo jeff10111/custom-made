@@ -381,7 +381,8 @@ export class Train {
         this.attr = {
             speed: 30, torque: 10 * engine(engineName),
             wheelDiam: 5.5, wheelHeight: 1, wheelRestitution: 0.05,
-            bodyMass: 30, wheelFriction: 100, sbActivationTime: 0, wheelMass: 1
+            bodyMass: 30, wheelFriction: 100, sbActivationTime: 0, wheelMass: 1,
+            offroad: false,
         };
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox(null, { width: 25, depth: 15, height: 6 }, scene),
@@ -703,7 +704,8 @@ export class MT {
         this.attr = {
             speed: 30, torque: 10 * engine(engineName),
             wheelDiam: 5.5, wheelHeight: 1.5, wheelRestitution: 0.01,
-            bodyMass: 10, wheelFriction: 80, sbActivationTime: 0
+            bodyMass: 10, wheelFriction: 80, sbActivationTime: 0,
+            offroad: false
         };
 
         this.meshes = {

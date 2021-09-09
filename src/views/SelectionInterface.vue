@@ -45,8 +45,7 @@
       <img src="../assets/Tank.png" id="TankImage" width="200" hidden/>
       <img src="../assets/Spaceship.png" id="SpaceshipImage" width="200" hidden/>
       <img src="../assets/Train.png" id="TrainImage" width="200"/>
-      <br>
-      <router-link :to="'/simulation?body=' + userSelection.body + '&powerup=' + userSelection.powerup + '&engine=' + userSelection.engine">
+      <router-link tag="button" id="startSimulation" :to="'/simulation?body=' + userSelection.body + '&powerup=' + userSelection.powerup + '&engine=' + userSelection.engine">
       Start Simulation</router-link>
     </div>
 
@@ -72,7 +71,7 @@ export default {
     bodies: ['Train','Car','Tank','Spaceship'],
     engines: ['Steam', 'Petrol', 'Jet', 'Nuclear Fusion'],
     powerups: ['4 Wheel Drive', 'Emergency Siren','Portal','Speed Boost'],
-    userSelection: {body:"Train",engine:"Steam",powerup:"Portal"}//
+    userSelection: {body:"Train",engine:"Steam",powerup:"4 Wheel Drive"}//
     };
   },
   methods: {
@@ -105,10 +104,14 @@ export default {
 </script>
 
 
-<style>
+<style scoped>
 @import '~@/components/bootstrap.css';
 .col-sm {margin-bottom: 10px; padding:0em} 
 h1{margin-bottom: 10px;}
-button{width:100%;}
-p{display: inline;color:blueviolet};
+p{color:blueviolet; display: inline}
+#startSimulation{
+  display:inline;
+  width: 200px;
+  height: 200px;
+}
 </style>
