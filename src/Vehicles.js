@@ -394,8 +394,6 @@ export class Train {
             wheelR1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
             wheelR2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
             wheelR3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            arm: BABYLON.MeshBuilder.CreateBox(null, { width: 14.5, depth: 1, height: 1 }, scene),
-            arm2: BABYLON.MeshBuilder.CreateBox(null, { width: 14.5, depth: 1, height: 1 }, scene),
         };
         this.motors = [];
         //Offset
@@ -406,63 +404,10 @@ export class Train {
         this.attachBodyParts();
         //Wheel positioning and physics
         this.attachWheels();
-        //attach the arm connecting wheels on each side
-        //this.attachArms();
         //Make all physics meshes invisible
         if (!visible)
             Object.entries(this.meshes).map((x) => x[1].isVisible = false);
 
-    }
-
-    attachArms() {
-        //Creating the arm and adding the MOD child mesh
-        let arm = this.meshes.arm;
-        var mesh = this.scene.getMeshByName("RightBar");
-        this.parentMeshToBar(mesh, arm, 0.75, -7, -28.5);
-        this.positionBar(this.meshes.wheelL1, arm, 5.2, 1.2, 0);
-        arm.physicsImpostor = new BABYLON.PhysicsImpostor(arm, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 1 }, this.scene);
-        this.attachBar(this.meshes.wheelL1, arm, -5.2, 1);
-        this.attachBar(this.meshes.wheelL2, arm, 1.3, 1);
-        this.attachBar(this.meshes.wheelL3, arm, 7.8, 1);
-
-        arm = this.meshes.arm2;
-        mesh = this.scene.getMeshByName("LeftBar");
-        this.parentMeshToBar(mesh, arm, 0.75, -7, -10.4);
-        this.positionBar(this.meshes.wheelR1, arm, 5.2, -1.2, 0);
-        arm.physicsImpostor = new BABYLON.PhysicsImpostor(arm, BABYLON.PhysicsImpostor.BoxImpostor, { mass: 1 }, this.scene);
-        this.attachBar(this.meshes.wheelR1, arm, -5.2, -1);
-        this.attachBar(this.meshes.wheelR2, arm, 1.3, -1);
-        this.attachBar(this.meshes.wheelR3, arm, 7.8, -1);
-    }
-
-    parentMeshToBar(mesh, bar, x, y, z) {
-        bar.addChild(mesh);
-        mesh.setParent(bar);
-        mesh.position.x = x;
-        mesh.position.y = y;
-        mesh.position.z = z;
-    }
-
-    positionBar(wheel, bar, x, y, z) {
-        bar.parent = wheel;
-        bar.position.x = x;
-        bar.position.y = y;
-        bar.position.z = z;
-        bar.setParent(null);
-        bar.rotate(BABYLON.Axis.X, (Math.PI / 2) * 3, BABYLON.Space.LOCAL);
-    }
-
-    attachBar(wheel, bar, pob, otherSide) {
-        var distanceFromCenter = -1.2;
-        var projection = -1.2 * otherSide;
-        var positionOnBar = pob + distanceFromCenter;
-        var newJoint = new BABYLON.MotorEnabledJoint(BABYLON.PhysicsJoint.HingeJoint, {
-            mainPivot: new BABYLON.Vector3(distanceFromCenter, 0, 0),
-            connectedPivot: new BABYLON.Vector3(positionOnBar, 0, projection),
-            mainAxis: new BABYLON.Vector3(0, 1, 0),
-            connectedAxis: new BABYLON.Vector3(0, 0, 1),
-        });
-        wheel.physicsImpostor.addJoint(bar.physicsImpostor, newJoint);
     }
 
     attachBodyParts() {
@@ -480,7 +425,6 @@ export class Train {
         //Adding physics imposter to body mesh (the parent of the mod mesh)
         this.meshes.body.physicsImpostor =
             new BABYLON.PhysicsImpostor(body, BABYLON.PhysicsImpostor.BoxImpostor, { mass: this.attr.bodyMass, friction: 0 }, this.scene);
-
     }
 
     attachWheels() {
