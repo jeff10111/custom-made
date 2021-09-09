@@ -28,7 +28,7 @@ function sendScoreToServer(name, score, vehicle, powerup, engine) {
   const url = `http://localhost:3000/LOL`;
   var xhr = new XMLHttpRequest();
 
-  xhr.onreadystatechange = function () {
+  xhr.onreadystatechange = function() {
     if (this.readyState != 4) return;
 
     if (this.status == 200) {
@@ -73,24 +73,25 @@ function switchVehicle(vehicleName) {
   camera.attachControl(document.getElementById("gameCanvas"), true);
 }
 
-var addCollider = function (scene, thisMesh, visible = false) {
+var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
   try {
     thisMesh = scene.getMeshByName(thisMesh.name);
     thisMesh.scaling.x = Math.abs(thisMesh.scaling.x);
     thisMesh.scaling.y = Math.abs(thisMesh.scaling.y);
     thisMesh.scaling.z = Math.abs(thisMesh.scaling.z);
 
+    console.log(scaleFactor);
     var bb = thisMesh.getBoundingInfo().boundingBox;
     // Don't really know why I have to double the scale but it works
-    var width = (bb.maximum.x - bb.minimum.x) * 2;
-    var height = (bb.maximum.y - bb.minimum.y) * 2;
-    var depth = (bb.maximum.z - bb.minimum.z) * 2;
+    var width = (bb.maximum.x - bb.minimum.x) * scaleFactor;
+    var height = (bb.maximum.y - bb.minimum.y) * scaleFactor;
+    var depth = (bb.maximum.z - bb.minimum.z) * scaleFactor;
     console.log(thisMesh.name + " " + width + " " + depth + " " + height);
     console.log(bb.centerWorld, bb.directions);
 
     var box = MeshBuilder.CreateBox(
       thisMesh.name + "_bb",
-      { width: width, height: height, depth: depth },
+      { width: width, height: height, depth: depth, friction: friction },
       scene
     );
     if (!visible) {
@@ -130,15 +131,23 @@ var stopLap = function(gui) {
 };
 
 var addTriggers = function(gui, scene, vehicleName, powerup, app) {
-  var stopSignTrigger = scene.getMeshByName("Trigger_StopSign"); 
-  var vehicleMesh = {"Car":"MTBody", "Train":"TrainBody", "Spaceship":"Omni", "Tank":"TankBody"}[vehicleName];
+  var vehicleMesh = scene.getMeshByName(
+    { Car: "MTLeft", Train: "TL1", Spaceship: "Omni", Tank: "TankL1" }[
+      vehicleName
+    ]
+  );
+  if(vehicleMesh == undefined){
+    console.log("VEHICLE NAME: " + vehicleName);
+    return;
+  }
+  var stopSignTrigger = scene.getMeshByName("Trigger_StopSign");
   stopSignTrigger.actionManager = new ActionManager(scene);
   stopSignTrigger.visibility = 0.1;
   stopSignTrigger.actionManager.registerAction(
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName(vehicleMesh),
+        parameter: vehicleMesh,
       },
       () => {
         console.log("RedLightArea");
@@ -153,7 +162,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName(vehicleMesh)
+        parameter: vehicleMesh,
       },
       () => {
         fourWheelDrivePassed = true;
@@ -171,7 +180,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName(vehicleMesh)
+        parameter: vehicleMesh,
       },
       () => {
         startLap(gui);
@@ -188,7 +197,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     new ExecuteCodeAction(
       {
         trigger: ActionManager.OnIntersectionEnterTrigger,
-        parameter: scene.getMeshByName(vehicleMesh)
+        parameter: vehicleMesh,
       },
       () => {
         if (fourWheelDrivePassed) {
@@ -199,6 +208,11 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     )
   );
 };
+
+function scoreSubmission()
+{
+  //var input = BABYLON.GUI.input
+}
 
 var createScene = async function (engine, canvas) {
   //Creating scene, camera and lighting
@@ -283,13 +297,14 @@ var createScene = async function (engine, canvas) {
         if (thisMesh.name.startsWith("MapCollide")) {
           console.log("Collider: " + thisMesh.name);
           var friction = 100;
+          var scaleFactor = 2.5;
           if (thisMesh.name.includes("Ground")) {
             friction = 100;
           }
           if (thisMesh.name.includes("Visible")) {
-            addCollider(scene, thisMesh, true, friction);
+            addCollider(scene, thisMesh, true, friction, scaleFactor);
           } else {
-            addCollider(scene, thisMesh, false, friction);
+            addCollider(scene, thisMesh, false, friction, scaleFactor);
           }
         }
       }
@@ -331,7 +346,7 @@ export class BabylonApp {
     this.engineType = engineName;
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
-    var v = false; //visibility
+    var v = false; // Vehicle physics boxes visibility
     // initialize babylon scene and engine
     var engine = new Engine(canvas, true);
     var scenePromise = createScene(engine, canvas);
@@ -358,7 +373,6 @@ export class BabylonApp {
       this.gui = new Hud(scene);
       switchVehicle(vehicleName);
       addTriggers(this.gui, scene, vehicleName, this.powerUp, this);
-      console.log(vehicleName);
       engine.runRenderLoop(() => {
         scene.render();
         if(vehicle != undefined)
@@ -407,7 +421,7 @@ export class BabylonApp {
       vehicle.userInput(keysPressed);
     });
 
-    window.addEventListener("resize", function () {
+    window.addEventListener("resize", function() {
       engine.resize();
     });
   }
@@ -469,7 +483,7 @@ export class BabylonApp {
       frameRate,
       Animation.ANIMATIONTYPE_FLOAT
     );
-    thisAnim.onAnimationLoop = function () {
+    thisAnim.onAnimationLoop = function() {
       console.error("HEYO");
     };
     const keyFrames = [];
@@ -514,7 +528,7 @@ export class BabylonApp {
       Animation.ANIMATIONTYPE_FLOAT,
       Animation.ANIMATIONLOOPMODE_CYCLE
     );
-    thisAnim.onAnimationLoop = function () {
+    thisAnim.onAnimationLoop = function() {
       console.error("HEYO");
     };
     const keyFrames = [];
@@ -700,6 +714,7 @@ export class BabylonApp {
     // Set the default position
     if (!roadblockSet) {
       roadblockBottom = roadblock.position.y;
+      roadblockTop = roadblockBottom + roadblockOffset;
       roadblockSet = true;
     }
 
@@ -711,7 +726,7 @@ export class BabylonApp {
         roadblockTop
       ),
     ]).then((vals) => {
-      addCollider(scene, roadblock, true);
+      addCollider(scene, roadblock, true, 100, 1);
     });
   }
 
@@ -730,6 +745,7 @@ export class BabylonApp {
     // Set the default position
     if (!roadblockSet) {
       roadblockBottom = roadblock.position.y;
+      roadblockTop = roadblockBottom + roadblockOffset;
       roadblockSet = true;
     }
 
@@ -742,8 +758,9 @@ export class BabylonApp {
   }
 }
 
+var roadblockOffset = 13;
 var roadblockBottom = 0;
-var roadblockTop = 5;
+var roadblockTop = 0;
 var roadblockSet = false;
 
 export default {
