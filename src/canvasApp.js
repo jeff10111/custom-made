@@ -137,7 +137,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     ]
   );
   if(vehicleMesh == undefined){
-    console.log("VEHICLE NAME: " + vehicleName);
+    console.log("VEHICLE MESH NOT DEFINED: " + vehicleName);
     return;
   }
   var stopSignTrigger = scene.getMeshByName("Trigger_StopSign");
@@ -169,6 +169,9 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         if (powerup != "Portal") {
           app.raiseBlock("RoadBlock2");
         }
+        if (powerup != "4 Wheel Drive"){
+          vehicle.offRoad = true;
+        }
       }
     )
   );
@@ -185,6 +188,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
       () => {
         startLap(gui);
         fourWheelDrivePassed = false;
+        vehicle.offRoad = false;
         app.raiseBlock("RoadBlock1");
       }
     )
@@ -204,6 +208,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
           stopLap(gui);
           app.lowerBlocks();
         }
+        vehicle.offRoad = false;
       }
     )
   );
@@ -238,12 +243,6 @@ var createScene = async function (engine, canvas) {
   await SceneLoader.ImportMeshAsync("", "/assets/", "Omni.glb", scene);
   await SceneLoader.ImportMeshAsync("", "/assets/", "Train.glb", scene);
   await SceneLoader.ImportMeshAsync("", "/assets/", "Tank.glb", scene);
-  //importing track
-
-  // var track = scene.getMeshByName("Track");
-  // track.position = new BABYLON.Vector3(-125, -480, -760);
-
-  //Creating the ground and enabling physics
 
   var mat = new BABYLON.StandardMaterial("green", scene);
   mat.diffuseColor = new BABYLON.Color3.Green();
@@ -342,8 +341,9 @@ var createScene = async function (engine, canvas) {
 
 export class BabylonApp {
   constructor(vehicleName, engineName, powerupName) {
-    this.powerUp = powerupName;
+    this.powerupName = powerupName;
     this.engineType = engineName;
+    this.vehicleName = vehicleName;
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
     var v = false; // Vehicle physics boxes visibility
@@ -354,8 +354,8 @@ export class BabylonApp {
       scene = returnedScene;
       this.scene = returnedScene;
       vehicles = {
-        MT: new Vehicles.MT(scene, 230, 20, engineName, v),
-        Train: new Vehicles.Train(scene, 260, 20, engineName, v),
+        MT: new Vehicles.MT(scene, 230, 20, engineName, powerupName, v),
+        Train: new Vehicles.Train(scene, 260, 20, engineName, powerupName, v),
         Tank: new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v),
         Omni: new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v)
       };
@@ -372,14 +372,12 @@ export class BabylonApp {
 
       this.gui = new Hud(scene);
       switchVehicle(vehicleName);
-      addTriggers(this.gui, scene, vehicleName, this.powerUp, this);
+      addTriggers(this.gui, scene, vehicleName, this.powerupName, this);
       engine.runRenderLoop(() => {
         scene.render();
         if(vehicle != undefined)
           vehicle.userInput(keysPressed);
           this.gui.updateHud();
-        //TODO check if the vehicle has passed the start/finish line
-        //TODO check if the vehicle has ran a red light
       });
     });
     window.addEventListener("keydown", (ev) => {
@@ -430,7 +428,7 @@ export class BabylonApp {
       return;
     }
     powerUpHasBeenActivated = true;
-    switch (this.powerUp) {
+    switch (this.powerupName) {
       case "Speed Boost":
         //increases vehicle speed for a time duration
         vehicle.attr.sbActivationTime = new Date().getTime();
@@ -448,6 +446,7 @@ export class BabylonApp {
       case "Portal":
         //this changes the track rather than the vehicle
         console.log("Portal boost activated");
+        this.lowerBlocks();
         break;
     }
   }
@@ -608,7 +607,7 @@ export class BabylonApp {
     var powerup;
     var powerupAngle;
 
-    switch (this.powerUp) {
+    switch (this.powerupName) {
       case "Speed Boost":
         powerup = scene.getMeshByName("Powerup_SpeedBoost1");
         powerupAngle = 350;
@@ -755,6 +754,15 @@ export class BabylonApp {
       roadblock.position.y,
       roadblockBottom
     );
+  }
+  submitScore(){
+    console.log(bestLap);
+    sendScoreToServer("name", this.score, this.vehicleName, this.powerupName, this.engineType);
+    this.scene.getPhysicsEngine().setTimeStep(1/30);
+  }
+
+  calculateScore() {
+    (bestLap == undefined) ? 0 : 50000 - (bestLap*111);
   }
 }
 

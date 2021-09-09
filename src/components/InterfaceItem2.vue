@@ -28,13 +28,15 @@ export default {
 </script>
 
 <style scoped>
-button{height: 5em; width: 100%;}
-.selectedDiv{border-style: dotted;}
+button{height: 5em; width: 95%;}
 .btn-dark{color:blueviolet;outline:none}
 .btn-dark:focus{
   color:blueviolet;
   outline:none;
   border:none;
+}
+button:active{
+  color:rosybrown;
 }
 
 </style>

@@ -12,6 +12,7 @@
       <button type="button" @click="raiseBlocks" id="av" class="simButton">Raise Blocks!</button>
       <button type="button" @click="lowerBlocks">Lower Blocks!</button>
       <button type="button" @click="powerUp">Activate Powerup!!</button>
+      <button type="button" @click="submitScore">Submit Score</button>
     </div>
     <div>
     <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
@@ -44,6 +45,10 @@ export default {
     lowerBlocks() {
       this.Application.lowerBlocks();
     },
+    submitScore() {
+      console.log("SIMULATION SUBMIT SCORE");
+      this.Application.submitScore();
+    }
   },
   data() {
     return { userSelection: { body: "", engine: "", powerup: "" }, mode: 0 };

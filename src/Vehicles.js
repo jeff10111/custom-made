@@ -377,13 +377,13 @@ export class Tank {
 }
 
 export class Train {
-    constructor(scene, x, z, engineName, visible) {
+    constructor(scene, x, z, engineName, powerupName, visible) {
         this.scene = scene;
         this.attr = {
             speed: 30, torque: 10 * engine(engineName),
             wheelDiam: 5.5, wheelHeight: 1, wheelRestitution: 0.05,
             bodyMass: 30, wheelFriction: 100, sbActivationTime: 0, wheelMass: 1,
-            offroad: false,
+            offroad: false, powerupName: powerupName,
         };
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox(null, { width: 25, depth: 15, height: 6 }, scene),
@@ -504,6 +504,7 @@ export class Train {
         var multi =
         ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
         if (this.attr.offroad && this.attr.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
+            console.log("Driving offroad");
             switch (Math.floor(Math.random() * 8))
             {
                 case 0:
@@ -644,13 +645,13 @@ export class Train {
 }
 
 export class MT {
-    constructor(scene, x, z, engineName, visible) {
+    constructor(scene, x, z, engineName, powerupName, visible) {
         this.scene = scene;
         this.attr = {
             speed: 30, torque: 10 * engine(engineName),
             wheelDiam: 5.5, wheelHeight: 1.5, wheelRestitution: 0.01,
             bodyMass: 10, wheelFriction: 80, sbActivationTime: 0,
-            offroad: false
+            offroad: false, powerupName: powerupName,
         };
 
         this.meshes = {

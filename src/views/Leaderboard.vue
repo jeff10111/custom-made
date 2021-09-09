@@ -26,25 +26,33 @@
         </table>
       </div>
       <div class="col-2" id="options">
-        <h5>Search Options</h5>
-        <p class="searchHead">Body</p>
-        <button v-on:click="click('body', 'Train')" id="Train">Train</button>
-        <button v-on:click="click('body', 'Car')" id="Car">Car</button>
-        <button v-on:click="click('body', 'Tank')" id="Tank">Tank</button>
-        <button v-on:click="click('body', 'Spaceship')" id="Spaceship">Space Ship</button>
+        <div class="row">
+          <h5>Search Options</h5>
+          <p class="searchHead">Body</p>
+          <button v-on:click="click('body', 'Train')" id="Train">Train</button>
+          <button v-on:click="click('body', 'Car')" id="Car">Car</button>
+          <button v-on:click="click('body', 'Tank')" id="Tank">Tank</button>
+          <button v-on:click="click('body', 'Spaceship')" id="Spaceship">Space Ship</button> 
+        </div>
+        <div class="row">
         <p class="searchHead">Powerup</p>
         <button v-on:click="click('powerup', '4 Wheel Drive')" id="4 Wheel Drive">4 Wheel Drive</button>
         <button v-on:click="click('powerup', 'Emergency Siren')" id="Emergency Siren">Emergency Siren</button>
         <button v-on:click="click('powerup', 'Portal')" id="Portal">Portal</button>
-        <button v-on:click="click('powerup', 'Speed Boost')" id="Speed Boost">Speed Boost</button>
+        <button v-on:click="click('powerup', 'Speed Boost')" id="Speed Boost">Speed Boost</button>          
+        </div>
+        <div class="row">
         <p class="searchHead">Engine</p>
         <button v-on:click="click('engine', 'Steam')" id="Steam">Steam</button>
         <button v-on:click="click('engine', 'Petrol')" id="Petrol">Petrol</button>
         <button v-on:click="click('engine', 'Jet')" id="Jet">Jet</button>
-        <button v-on:click="click('engine', 'Nuclear Fusion')" id="Nuclear Fusion">Nuclear Fusion</button>
-        <p class="searchHead">Name</p>
-        <div v-on:click="text()" contenteditable="true" id="nameInput">Enter name here...</div>
-        <button v-on:click="enterName()" id="name">Enter</button>
+        <button v-on:click="click('engine', 'Nuclear Fusion')" id="Nuclear Fusion">Nuclear Fusion</button>          
+        </div>
+        <div class="row">
+          <p class="searchHead">Name</p>
+          <div v-on:click="text()" contenteditable="true" id="nameInput">Enter name here...</div>
+          <button v-on:click="enterName()" id="name">Enter</button>          
+        </div>
       </div>
     </div>
   </div>
@@ -134,6 +142,7 @@ export default {
 
 .searchHead{
   color:white;
+  margin: 0em;
 }
 
 #nameInput{
@@ -146,6 +155,8 @@ export default {
 
 #options {
   background-color: blueviolet;
+  padding: 1em;
+  border: 1px solid white;
 }
 
 #leaderTable td,
@@ -177,4 +188,9 @@ export default {
   background-color: blueviolet;
   color: white;
 }
+
+#name{
+  margin:0.2em 0em 0em 0em;
+}
+
 </style>
