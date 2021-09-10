@@ -6,7 +6,7 @@ let userHasRunRedLight = false;
 let startTime;
 let endTime;
 let fourWheelDrivePassed;
-let bestLap;
+let bestLap = 0;
 let laps = [];
 
 var scene;
@@ -56,8 +56,6 @@ function switchVehicle(vehicleName) {
       break;
     case "Tank":
       vehicle = vehicles.Tank;
-      console.log("Set vehicle to tank");
-      console.log(vehicle.attr);
       break;
   }
 
@@ -80,14 +78,13 @@ var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
     thisMesh.scaling.y = Math.abs(thisMesh.scaling.y);
     thisMesh.scaling.z = Math.abs(thisMesh.scaling.z);
 
-    console.log(scaleFactor);
     var bb = thisMesh.getBoundingInfo().boundingBox;
     // Don't really know why I have to double the scale but it works
     var width = (bb.maximum.x - bb.minimum.x) * scaleFactor;
     var height = (bb.maximum.y - bb.minimum.y) * scaleFactor;
     var depth = (bb.maximum.z - bb.minimum.z) * scaleFactor;
-    console.log(thisMesh.name + " " + width + " " + depth + " " + height);
-    console.log(bb.centerWorld, bb.directions);
+    // console.log(thisMesh.name + " " + width + " " + depth + " " + height);
+    // console.log(bb.centerWorld, bb.directions);
 
     var box = MeshBuilder.CreateBox(
       thisMesh.name + "_bb",
@@ -105,7 +102,7 @@ var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
       { mass: 0, restitution: 0 },
       scene
     );
-    console.log("Making bb of " + thisMesh.name);
+    //console.log("Making bb of " + thisMesh.name);
 
     // box.showBoundingBox = true;
     box.position = bb.centerWorld;
@@ -170,7 +167,8 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
           app.raiseBlock("RoadBlock2");
         }
         if (powerup != "4 Wheel Drive"){
-          vehicle.offRoad = true;
+          console.log("setting vehicle offroad");
+          vehicle.attr.offRoad = true;
         }
       }
     )
@@ -188,7 +186,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
       () => {
         startLap(gui);
         fourWheelDrivePassed = false;
-        vehicle.offRoad = false;
+        vehicle.attr.offRoad = false;
         app.raiseBlock("RoadBlock1");
       }
     )
@@ -207,8 +205,10 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         if (fourWheelDrivePassed) {
           stopLap(gui);
           app.lowerBlocks();
+          if(bestLap)
+            document.getElementById("myModal").style.display = "block";
         }
-        vehicle.offRoad = false;
+        vehicle.attr.offRoad = false;
       }
     )
   );
@@ -225,7 +225,6 @@ var createScene = async function (engine, canvas) {
   //scene.debugLayer.show();
 
   scene.enablePhysics(new BABYLON.Vector3(0, -15.8, 0));
-  console.log(scene.clearColor);
   // var camera = new BABYLON.ArcRotateCamera(
   //   "Camera",
   //   Math.PI / 5,
@@ -250,9 +249,7 @@ var createScene = async function (engine, canvas) {
 
   await SceneLoader.ImportMeshAsync("", "/assets/", "track.glb").then(
     (result) => {
-      console.log(result);
 
-      console.log(scene.getTransformNodeByName("MainTrack").parent);
       var rootNode = scene.getTransformNodeByName("MainTrack").parent;
 
       var sphere = MeshBuilder.CreateSphere(
@@ -267,7 +264,6 @@ var createScene = async function (engine, canvas) {
         scene
       );
       sphere.position.y += 150;
-      console.log(sphere.position);
 
       var impulseDirection = new Vector3(1, 1, 0);
       var impulseMagnitude = 5;
@@ -279,12 +275,10 @@ var createScene = async function (engine, canvas) {
       );
       for (var mesh in result.meshes) {
         var thisMesh = result.meshes[mesh];
-        console.log("Mesh " + thisMesh.name);
         if (
           thisMesh.name.startsWith("Dorna_") &&
           !thisMesh.name.includes("primitive")
         ) {
-          console.log("Dorna part: " + thisMesh.name);
           const rot = thisMesh.rotationQuaternion.toEulerAngles();
           // Quaternions must be reset on imported models otherwise they will not be able to be rotated
           thisMesh.rotationQuaternion = null;
@@ -294,7 +288,6 @@ var createScene = async function (engine, canvas) {
         }
 
         if (thisMesh.name.startsWith("MapCollide")) {
-          console.log("Collider: " + thisMesh.name);
           var friction = 100;
           var scaleFactor = 2.5;
           if (thisMesh.name.includes("Ground")) {
@@ -317,12 +310,6 @@ var createScene = async function (engine, canvas) {
       ];
       for (var bone in boneList) {
         var sceneBone = scene.getTransformNodeByName(boneList[bone]);
-        console.log(
-          sceneBone.name,
-          sceneBone.rotation.x,
-          sceneBone.rotation.y,
-          sceneBone.rotation.z
-        );
         sceneBone.rotation = new Vector3(0, 0, 0);
       }
 
@@ -551,38 +538,36 @@ export class BabylonApp {
     return thisAnim;
   }
   spinArm() {
-    console.log(vehicle.meshes.body.position);
+    //console.log(vehicle.meshes.body.position);
     var test = Math.floor(Math.random() * 10 - 5);
     if (test == 0) {
       test = 1;
     }
-    console.log("Shoulder spin amt: " + test);
+    //console.log("Shoulder spin amt: " + test);
 
     this.rotateTo("ShoulderBone", "rotation.z", Math.PI / test);
     test = Math.floor(Math.random() * 20 - 10);
     if (test == 0) {
       test = 1;
     }
-    console.log("Forearm spin amt: " + test);
+    //console.log("Forearm spin amt: " + test);
     this.rotateTo("ForearmBone", "rotation.x", Math.PI / test);
     test = Math.floor(Math.random() * 20 - 10);
     if (test == 0) {
       test = 1;
     }
-    console.log("Upperarm spin amt: " + test);
+    //console.log("Upperarm spin amt: " + test);
     this.rotateTo("UpperarmBone", "rotation.x", Math.PI / test);
     test = Math.floor(Math.random() * 20 - 10);
     if (test == 0) {
       test = 1;
     }
-    console.log("Hand spin amt: " + test);
+    //console.log("Hand spin amt: " + test);
     this.rotateTo("HandBone", "rotation.x", Math.PI / test);
   }
   async buildVehicle() {
     var engine;
     var engineAngle;
-
-    console.log(this.engineType);
 
     switch (this.engineType) {
       case "Nuclear Fusion":
@@ -628,7 +613,6 @@ export class BabylonApp {
         powerupAngle = 350;
         break;
     }
-    console.log(engine.name, engineAngle, powerup, powerupAngle);
 
     // this.neutralPose() or something like that for the reset
     this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
@@ -669,19 +653,15 @@ export class BabylonApp {
     await this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
   }
   async playCSV() {
-    console.log("Yo");
     var csv = readCsv("Tank_Assembly_J");
     var lastrow = csv[0];
-    console.log(lastrow);
     var x = 0;
     for (var row of csv) {
       // var row = csv[250]
       if (JSON.stringify(lastrow) !== JSON.stringify(row)) {
         x += 1;
-        console.log(x);
         if (x % 10 == 0) {
           x = 0;
-          console.log(row);
           lastrow = row;
 
           this.rotateToDegrees("ShoulderBone", "rotation.z", parseInt(row[0]));
@@ -692,8 +672,6 @@ export class BabylonApp {
             "rotation.x",
             parseInt(row[3])
           );
-          console.log("Hey");
-          console.log("Yo");
         }
       }
     }
@@ -755,14 +733,15 @@ export class BabylonApp {
       roadblockBottom
     );
   }
-  submitScore(){
-    console.log(bestLap);
-    sendScoreToServer("name", this.score, this.vehicleName, this.powerupName, this.engineType);
-    this.scene.getPhysicsEngine().setTimeStep(1/30);
+
+  submitScore(name){
+    if(bestLap == 0)
+      return;
+    sendScoreToServer(name || "unknown", this.calculateScore(), this.vehicleName, this.powerupName, this.engineType);
   }
 
   calculateScore() {
-    (bestLap == undefined) ? 0 : 50000 - (bestLap*111);
+    return (bestLap == undefined || bestLap == 0) ? 0 : 50000 - (bestLap*111);
   }
 }
 

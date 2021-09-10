@@ -28,7 +28,7 @@ export class Omni {
         this.attr = {
             speed: 20, torque: 200 * engine(engineName),
             wheelDiam: 2.5, wheelHeight: 1, wheelRestitution: 1,
-            bodyMass: 10, wheelFriction: 50, sbActivationTime: 0, powerupName: powerupName, offroad: false
+            bodyMass: 10, wheelFriction: 50, sbActivationTime: 0, powerupName: powerupName, offRoad: false
         };
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: 23, height: 10 }, scene),
@@ -58,7 +58,7 @@ export class Omni {
         var impulseVector = new BABYLON.Vector3(0, 0, 0);
         // var multi =
         // ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
-        if (this.attr.offroad && this.attr.powerupName != "4 Wheel Drive" && Math.floor(Math.random() * 10) == 9) {
+        if (this.attr.offRoad && this.attr.powerupName != "4 Wheel Drive" && Math.floor(Math.random() * 10) == 9) {
             var x = Math.random() * 2 - 1 > 0 ? Math.random()*-1 : Math.random();
             var y = Math.random() * 2 - 1 > 0 ? Math.random()*-1 : Math.random();
             var z = Math.random() * 2 - 1 > 0 ? Math.random()*-1 : Math.random();
@@ -105,7 +105,7 @@ export class Tank {
         this.attr = {
             speed: 50, torque: 50 * engine(engineName),
             wheelDiam: 2.5, wheelHeight: 1, wheelRestitution: 0.05,
-            bodyMass: 20, wheelFriction: 100, sbActivationTime: 0, powerupName: powerupName, offroad: false
+            bodyMass: 20, wheelFriction: 100, sbActivationTime: 0, powerupName: powerupName, offRoad: false
         };
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox(null, { width: 22, depth: 20, height: 6 }, scene),
@@ -231,7 +231,10 @@ export class Tank {
     userInput(keys) {
         var multi =
         ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
-        if (this.attr.offroad && this.attr.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
+        if(this.attr.offRoad)
+            console.log("we are offRoad");
+        if (this.attr.offRoad && this.attr.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
+            console.log("Driving offRoad");
             switch (Math.floor(Math.random() * 8))
             {
                 case 0:
@@ -383,7 +386,7 @@ export class Train {
             speed: 30, torque: 10 * engine(engineName),
             wheelDiam: 5.5, wheelHeight: 1, wheelRestitution: 0.05,
             bodyMass: 30, wheelFriction: 100, sbActivationTime: 0, wheelMass: 1,
-            offroad: false, powerupName: powerupName,
+            offRoad: false, powerupName: powerupName,
         };
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox(null, { width: 25, depth: 15, height: 6 }, scene),
@@ -503,8 +506,8 @@ export class Train {
     userInput(keys) {
         var multi =
         ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
-        if (this.attr.offroad && this.attr.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
-            console.log("Driving offroad");
+        if (this.attr.offRoad && this.attr.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
+            console.log("Driving offRoad");
             switch (Math.floor(Math.random() * 8))
             {
                 case 0:
@@ -651,7 +654,7 @@ export class MT {
             speed: 30, torque: 10 * engine(engineName),
             wheelDiam: 5.5, wheelHeight: 1.5, wheelRestitution: 0.01,
             bodyMass: 10, wheelFriction: 80, sbActivationTime: 0,
-            offroad: false, powerupName: powerupName,
+            offRoad: false, powerupName: powerupName,
         };
 
         this.meshes = {
@@ -737,7 +740,7 @@ export class MT {
     userInput(keys) {
         var multi =
         ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
-        if (this.attr.offroad && this.attr.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
+        if (this.attr.offRoad && this.attr.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
             switch (Math.floor(Math.random() * 8))
             {
                 case 0:

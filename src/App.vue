@@ -1,9 +1,8 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link> |
-      <router-link to="/selection">Selection Interface</router-link> |
+      <router-link to="/about">Home</router-link> |
+      <router-link to="/selection">Play</router-link> |
       <router-link to="/leaderboard">Leader Board</router-link>
     </div>
     <router-view/>
@@ -35,5 +34,9 @@ html {
 
 #nav a.router-link-exact-active {
   color: #42b983;
+}
+
+#nav router-link:hover{
+  color:red;
 }
 </style>
