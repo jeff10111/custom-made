@@ -224,7 +224,7 @@ var createScene = async function (engine, canvas) {
   var scene = new Scene(engine);
   //scene.debugLayer.show();
 
-  scene.enablePhysics(new BABYLON.Vector3(0, -15.8, 0));
+  scene.enablePhysics(new BABYLON.Vector3(0, -50.8, 0));
   // var camera = new BABYLON.ArcRotateCamera(
   //   "Camera",
   //   Math.PI / 5,
@@ -357,6 +357,7 @@ export class BabylonApp {
       // sendScoreToServer("Nelia", 32, "Spaceship", "Portal", "Nuclear Fusion")
       // sendScoreToServer("Octavia", 19, "Train", "4 Wheel Drive","Nuclear Fusion")
 
+      //scene.getPhysicsEngine().setGravity(-9.8);
       this.gui = new Hud(scene);
       switchVehicle(vehicleName);
       addTriggers(this.gui, scene, vehicleName, this.powerupName, this);
@@ -433,7 +434,6 @@ export class BabylonApp {
       case "Portal":
         //this changes the track rather than the vehicle
         console.log("Portal boost activated");
-        this.lowerBlocks();
         break;
     }
   }

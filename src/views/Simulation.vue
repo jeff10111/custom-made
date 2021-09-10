@@ -28,7 +28,8 @@
           </div>
       <div class="row">
           <div @click="clear()" contenteditable="true" id="nameInput">Enter name here...</div>
-          <button @click="pushName()" id="name">Enter</button>     
+          <button @click="pushName()" id="name">Enter</button>
+          <button @click="cancel()" id="cancel">Cancel</button>     
       </div>     
       </div>
     </div>
@@ -73,6 +74,9 @@ export default {
     scoreSubmission() {
       document.getElementById("myModal").style.display = "block";
       document.getElementById("nameInput").textContent = "Enter name here...";
+    },
+    cancel(){
+      document.getElementById("myModal").style.display = "none";
     }
   },
   data() {
@@ -139,5 +143,9 @@ export default {
   margin: 0em, 3em, 0em, 3em;
   height: 3em;
   color: black;
+}
+
+#cancel{
+  display:inline;
 }
 </style>

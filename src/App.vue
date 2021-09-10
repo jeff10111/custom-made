@@ -35,8 +35,4 @@ html {
 #nav a.router-link-exact-active {
   color: #42b983;
 }
-
-#nav router-link:hover{
-  color:red;
-}
 </style>
