@@ -209,6 +209,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
             document.getElementById("myModal").style.display = "block";
         }
         vehicle.attr.offRoad = false;
+        fourWheelDrivePassed = false;
       }
     )
   );
