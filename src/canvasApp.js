@@ -1,5 +1,5 @@
 let vehicle;
-let vehicles = {};
+let vehicles = function(MT, Tank, Train, Omni){this.MT = MT; this.Tank = Tank, this.Train = Train, this.Omni = Omni};
 let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
 let powerUpHasBeenActivated = false;
 let userHasRunRedLight = false;
@@ -340,12 +340,12 @@ export class BabylonApp {
     scenePromise.then((returnedScene) => {
       scene = returnedScene;
       this.scene = returnedScene;
-      vehicles = {
-        MT: new Vehicles.MT(scene, 230, 20, engineName, powerupName, v),
-        Train: new Vehicles.Train(scene, 260, 20, engineName, powerupName, v),
-        Tank: new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v),
-        Omni: new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v)
-      };
+      vehicles = new vehicles(
+      new Vehicles.MT(scene, 230, 20, engineName, powerupName, v),
+      new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v),
+      new Vehicles.Train(scene, 260, 20, engineName, powerupName, v),
+      new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v)); 
+
       // sendScoreToServer("Athena", 55, "Car", "Emergency Siren", "Nuclear Fusion")
       // sendScoreToServer("Bella", 999, "Spaceship", "Portal", "Jet")
       // sendScoreToServer("Cara", 34, "Tank", "Speed Boost", "Petrol")
@@ -360,6 +360,7 @@ export class BabylonApp {
       //scene.getPhysicsEngine().setGravity(-9.8);
       this.gui = new Hud(scene);
       switchVehicle(vehicleName);
+      vehicle.startPhysics();
       addTriggers(this.gui, scene, vehicleName, this.powerupName, this);
       engine.runRenderLoop(() => {
         scene.render();
@@ -734,10 +735,28 @@ export class BabylonApp {
     );
   }
 
+  something()
+  {
+    console.log("test");
+    for(var key in vehicles){
+      if(vehicles[key] != vehicle && vehicles[key].physicsEnabled)
+      {
+        vehicles[key].disablePhysics();
+      } else if (vehicles[key] != vehicle && !vehicles[key].physicsEnabled)
+      {
+        vehicles[key].startPhysics();
+      }
+    }
+    // vehicles.MT.startPhysics();
+    // vehicles.Omni.startPhysics();
+    // vehicles.Tank.startPhysics();
+    // vehicles.Train.startPhysics();
+  }
+
   submitScore(name){
     if(bestLap == 0)
       return;
-    sendScoreToServer(name || "unknown", this.calculateScore(), this.vehicleName, this.powerupName, this.engineType);
+      sendScoreToServer(name || "unknown", this.calculateScore(), this.vehicleName, this.powerupName, this.engineType);
   }
 
   calculateScore() {

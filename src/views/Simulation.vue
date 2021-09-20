@@ -13,6 +13,7 @@
       <button type="button" @click="lowerBlocks">Lower Blocks!</button>
       <button type="button" @click="powerUp">Activate Powerup!!</button>
       <button type="button" @click="scoreSubmission">Open Score Submission</button>
+      <button type="button" @click="anything">anythingForTesting</button>
     </div>
     <div>
     <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
@@ -77,6 +78,9 @@ export default {
     },
     cancel(){
       document.getElementById("myModal").style.display = "none";
+    },
+    anything(){
+      this.Application.something();
     }
   },
   data() {

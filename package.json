@@ -51,7 +51,7 @@
     "not dead"
   ],
   "description": "## Project setup ``` npm install ```",
-  "main": "babel.config.js",
+  "main": "main.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jeff10111/custom-made.git"
