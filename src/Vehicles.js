@@ -111,6 +111,22 @@ let move = function(coordinates, rotation){
     this.meshes.body.rotationQuaternion = rotation;
 }
 
+let wheelPositioning = function(body, wheel, x, y, z) {
+    wheel.parent = body;
+    wheel.position.y = y;
+    wheel.position.z = z;//width
+    wheel.position.x = x;
+}
+
+let wheelMeshParent = function(mesh, parentMesh, x, y, z) {
+    parentMesh.setParent(null);
+    mesh.parent = parentMesh;
+    mesh.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
+    mesh.position.y = y;//width
+    mesh.position.z = z;// y negative is up
+    mesh.position.x = x;//forward/backward
+}
+
 let test = function(){
     this.i += 1;
     (this.physicsEnabled) ? this.disablePhysics() : this.startPhysics(); 
@@ -242,7 +258,8 @@ export class Tank {
         this.disablePhysics = disablePhysics;
         this.test = test;
         this.move = move;
-
+        this.wheelPositioning = wheelPositioning;
+        this.wheelMeshParent = wheelMeshParent;
 
         this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
         //Body positioning
@@ -334,21 +351,6 @@ export class Tank {
         this.wheelPositioning(body, R4, 5.5, wheelHeight, -wheelWidth);
     }
 
-    wheelPositioning(body, wheel, x, y, z) {
-        wheel.parent = body;
-        wheel.position.y = y;
-        wheel.position.z = z;//width
-        wheel.position.x = x;
-    }
-
-    wheelMeshParent(mesh, parentMesh, x, y, z) {
-        parentMesh.setParent(null);
-        mesh.parent = parentMesh;
-        mesh.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
-        mesh.position.y = y;//width
-        mesh.position.z = z;// y negative is up
-        mesh.position.x = x;//forward/backward
-    }
     wheelJoint(body, wheel, x, y, z) {
         var newJoint = new BABYLON.MotorEnabledJoint(BABYLON.PhysicsJoint.HingeJoint, {
             mainPivot: new BABYLON.Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
@@ -450,7 +452,7 @@ export class Train {
         this.scene = scene;
         this.prototype = new Prototype(30,10,5.5,1,0.05,100,30,1,powerupName,engineName);
         this.meshes = {
-            body: BABYLON.MeshBuilder.CreateBox(null, { width: 25, depth: 15, height: 6 }, scene),
+            body: BABYLON.MeshBuilder.CreateBox("ABCDE", { width: 25, depth: 15, height: 6 }, scene),
             wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheelL2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheelL3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
@@ -465,6 +467,8 @@ export class Train {
         this.disablePhysics = disablePhysics;
         this.test = test;
         this.move = move;
+        this.wheelPositioning = wheelPositioning;
+        this.wheelMeshParent = wheelMeshParent;
         //Offset
         this.meshes.body.position.x = x;
         this.meshes.body.position.z = z;
@@ -545,21 +549,6 @@ export class Train {
         this.wheelPositioning(body, R1, -6, wheelHeight, -wheelWidth);
         this.wheelPositioning(body, R2, 0.5, wheelHeight, -wheelWidth);
         this.wheelPositioning(body, R3, 7, wheelHeight, -wheelWidth);
-    }
-
-    wheelPositioning(body, wheel, x, y, z) {
-        wheel.parent = body;
-        wheel.position.y = y;
-        wheel.position.z = z;//width
-        wheel.position.x = x;
-    }
-
-    wheelMeshParent(mesh, parentMesh, x, y, z) {
-        mesh.parent = parentMesh;
-        mesh.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
-        mesh.position.y = y;//width
-        mesh.position.z = z;// y negative is up
-        mesh.position.x = x;//forward/backward
     }
 
     wheelJoint(body, wheel, x, y, z) {
@@ -670,6 +659,8 @@ export class MT {
         this.disablePhysics = disablePhysics;
         this.test = test;
         this.move = move;
+        this.wheelPositioning = wheelPositioning;
+        this.wheelMeshParent = wheelMeshParent;
         //Offset
         this.meshes.body.position.x = 445//x;
         this.meshes.body.position.z = 50//z;
@@ -719,21 +710,6 @@ export class MT {
         this.wheelMeshParent(this.scene.getMeshByName("MTRight"), this.meshes.wheel2, 3.5, 22.7, -9.5);
         this.wheelPositioning(this.meshes.body, this.meshes.wheel1, -6.5, -2.5, 10);
         this.wheelPositioning(this.meshes.body, this.meshes.wheel2, -6.5, -2.5, -10);
-    }
-
-    wheelPositioning(body, wheel, x, y, z) {
-        wheel.parent = body;
-        wheel.position.y = y;
-        wheel.position.z = z;//width
-        wheel.position.x = x;
-    }
-
-    wheelMeshParent(mesh, parentMesh, x, y, z) {
-        mesh.parent = parentMesh;
-        mesh.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
-        mesh.position.y = y;//width
-        mesh.position.z = z;// y negative is up
-        mesh.position.x = x;//forward/backward
     }
 
     wheelJoint(body, wheel, x, y, z) {

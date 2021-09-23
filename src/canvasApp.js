@@ -208,7 +208,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
           if(bestLap)
             document.getElementById("myModal").style.display = "block";
         }
-        vehicle.attr.offRoad = false;
+        vehicle.prototype.offRoad = false;
       }
     )
   );
