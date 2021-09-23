@@ -333,7 +333,7 @@ export class BabylonApp {
     this.vehicleName = vehicleName;
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
-    var v = false; // Vehicle physics boxes visibility
+    var v = true; // Vehicle physics boxes visibility
     // initialize babylon scene and engine
     var engine = new Engine(canvas, true);
     var scenePromise = createScene(engine, canvas);
@@ -360,11 +360,11 @@ export class BabylonApp {
       //scene.getPhysicsEngine().setGravity(-9.8);
       this.gui = new Hud(scene);
       switchVehicle(vehicleName);
-      vehicle.startPhysics();
       addTriggers(this.gui, scene, vehicleName, this.powerupName, this);
+      vehicle.startPhysics();
       engine.runRenderLoop(() => {
         scene.render();
-        if(vehicle != undefined)
+        if(vehicle != undefined && vehicle.physicsEnabled)
           vehicle.userInput(keysPressed);
           this.gui.updateHud();
       });
@@ -405,7 +405,7 @@ export class BabylonApp {
       } else if (ev.key == "ArrowLeft" || ev.key == "a") {
         keysPressed["a"] = 0;
       }
-      vehicle.userInput(keysPressed);
+      console.log("key pressed");
     });
 
     window.addEventListener("resize", function() {
@@ -747,10 +747,8 @@ export class BabylonApp {
         vehicles[key].startPhysics();
       }
     }
-    // vehicles.MT.startPhysics();
-    // vehicles.Omni.startPhysics();
-    // vehicles.Tank.startPhysics();
-    // vehicles.Train.startPhysics();
+    vehicle.move(new Vector3(-508,0,84), new Quaternion(0,0.7,0,0.7));
+    vehicle.test();
   }
 
   submitScore(name){
