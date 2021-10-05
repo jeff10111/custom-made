@@ -735,7 +735,6 @@ export class BabylonApp {
     //vehicle.move(new Vector3(180,0,72), new Quaternion(0,0.7,0,0.7), false);
     //vehicle.meshes.body.translate(new Vector3(0,1,0),50);
 
-    vehicle.disablePhysics();
     // var myAnimation = new BABYLON.Animation("myAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
     //                                                                 BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE); 
     // var myAnimation2 = new BABYLON.Animation("myAnimation", "rotationQuaternion", 30, BABYLON.Animation.ANIMATIONTYPE_QUATERNION,

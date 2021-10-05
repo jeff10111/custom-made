@@ -18,24 +18,24 @@
     <div>
     <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
     </div>
+    
     <!-- The Modal -->
     <div id="myModal" class="modal">
-
     <!-- Modal content -->
     <div class="modal-content">
       <div class="container">
         <div class="row">
           <h4 id="heading">Submit Score</h4>
-          </div>
-      <div class="row">
+        </div>
+        <div class="row">
           <div @click="clear()" contenteditable="true" id="nameInput">Enter name here...</div>
           <button @click="pushName()" id="name">Enter</button>
           <button @click="cancel()" id="cancel">Cancel</button>     
-      </div>     
+        </div>     
       </div>
     </div>
+    </div>
 
-  </div>
   </div>
 </template>
 

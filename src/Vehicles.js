@@ -1,6 +1,5 @@
 import * as BABYLON from 'babylonjs';
 import {Vector3} from "@babylonjs/core";
-import { forEach, keys } from 'core-js/core/array';
 //import { FollowCamera } from 'babylonjs/Cameras/followCamera';
 let sbDuration = 30000;//30 second power up duration
 let sbMultiplier = 1.3;
