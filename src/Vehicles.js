@@ -1,5 +1,6 @@
 import * as BABYLON from 'babylonjs';
 import {Vector3} from "@babylonjs/core";
+import { forEach, keys } from 'core-js/core/array';
 //import { FollowCamera } from 'babylonjs/Cameras/followCamera';
 let sbDuration = 30000;//30 second power up duration
 let sbMultiplier = 1.3;
@@ -22,17 +23,16 @@ function engine(e) {
 
 let userInput = function(keys)
 {
-
-if(!this.physicsEnabled){
-    return; 
-}
-    
-var multi =
-((new Date().getTime() - this.prototype.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
-if(this.prototype.offRoad)
-    console.log("we are offRoad");
-if (this.prototype.offRoad && this.prototype.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
-    console.log("Driving offRoad");
+    if(!this.physicsEnabled){
+        return; 
+    }
+ 
+    var multi =
+    ((new Date().getTime() - this.prototype.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+    if(this.prototype.offRoad)
+        console.log("we are offRoad");
+    if (this.prototype.offRoad && this.prototype.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
+        console.log("Driving offRoad");
     switch (Math.floor(Math.random() * 8))
     {
         case 0:
@@ -61,35 +61,35 @@ if (this.prototype.offRoad && this.prototype.powerupName != "4 Wheel Drive" && M
             break;
     }
     return;
-}
-else if (keys["w"]) {
-    if(keys["a"])
-    {
-        this.forwardsLeft(multi);
-    } else if (keys["d"])
-    {
-        this.forwardsRight(multi);
-    } else {
+    }
+    else if (keys["w"]) {
+        if(keys["a"])
+        {
+            this.forwardsLeft(multi);
+        } else if (keys["d"])
+        {
+            this.forwardsRight(multi);
+        } else {
         this.forwards(multi);
+        }
     }
-}
-else if (keys["s"]) {
-    if(keys["a"])
-    {
-        this.backwardsLeft(multi);
-    } else if (keys["d"])
-    {
-        this.backwardsRight(multi);
+    else if (keys["s"]) {
+        if(keys["a"])
+        {
+            this.backwardsLeft(multi);
+        } else if (keys["d"])
+        {
+            this.backwardsRight(multi);
+        } else {
+            this.backwards(multi);
+        }
+    } else if (keys["d"]) {
+        this.right(multi);
+    } else if (keys["a"]) {
+        this.left(multi);
     } else {
-        this.backwards(multi);
+        this.releaseDrive();
     }
-} else if (keys["d"]) {
-    this.right(multi);
-} else if (keys["a"]) {
-    this.left(multi);
-} else {
-    this.releaseDrive();
-}
 }
 
 let disablePhysics = function(){
@@ -105,10 +105,27 @@ let disablePhysics = function(){
     this.motors = [];       
 }
 
-let move = function(coordinates, rotation){
+let move = function(coordinates, rotation, reenablePhysics){
     this.physicsEnabled && this.disablePhysics();
     this.meshes.body.position = coordinates;
     this.meshes.body.rotationQuaternion = rotation;
+    reenablePhysics && this.startPhysics();
+}
+
+let animate = function(quaternions,vector3s, steps)
+{
+    var v3 = new BABYLON.Animation("v3", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE); 
+    var q = new BABYLON.Animation("q", "rotationQuaternion", 30, BABYLON.Animation.ANIMATIONTYPE_QUATERNION,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);  
+    let keyFramesV = [];
+    let keyFramesQ = [];
+    steps.forEach((x,i) =>{
+        keyFramesV.push({value:vector3s[i],frame:x});
+        keyFramesQ.push({value:quaternions[i],frame:x});
+    })
+    this.meshes.body.animations.push(v3);
+    this.meshes.body.animations.push(q);
 }
 
 let wheelPositioning = function(body, wheel, x, y, z) {
@@ -157,6 +174,7 @@ export class Omni {
         }
         this.physicsEnabled = false;
         this.move = move;
+        this.test = test;
 
         this.meshes.body.position.x = x;
         this.meshes.body.position.z = z;
@@ -179,6 +197,7 @@ export class Omni {
         if(!this.physicsEnabled)
         return;
         this.meshes.body.physicsImpostor.dispose();
+        this.meshes.body.physicsImpostor = null;
         this.physicsEnabled = false;
     }
 
@@ -482,6 +501,7 @@ export class Train {
         if (!visible)
             Object.entries(this.meshes).map((x) => x[1].isVisible = false);
         this.i = 0;
+        this.time = new Date().getTime();
     }
 
     startPhysics(){
@@ -708,8 +728,8 @@ export class MT {
         this.meshes.wheel2.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
         this.wheelMeshParent(this.scene.getMeshByName("MTLeft"), this.meshes.wheel1, 3.5, 3, -9.5);
         this.wheelMeshParent(this.scene.getMeshByName("MTRight"), this.meshes.wheel2, 3.5, 22.7, -9.5);
-        this.wheelPositioning(this.meshes.body, this.meshes.wheel1, -6.5, -2.5, 10);
-        this.wheelPositioning(this.meshes.body, this.meshes.wheel2, -6.5, -2.5, -10);
+        this.wheelPositioning(this.meshes.body, this.meshes.wheel1, -6.5, -1.5, 10);
+        this.wheelPositioning(this.meshes.body, this.meshes.wheel2, -6.5, -1.5, -10);
     }
 
     wheelJoint(body, wheel, x, y, z) {

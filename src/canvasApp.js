@@ -8,6 +8,8 @@ let endTime;
 let fourWheelDrivePassed;
 let bestLap = 0;
 let laps = [];
+let sendLapToServer = true;
+let timeStart;
 
 var scene;
 const frameRate = 1000;
@@ -17,31 +19,13 @@ import "@babylonjs/inspector";
 import * as BABYLON from "babylonjs";
 import { PhysicsImpostor } from "@babylonjs/core/Physics";
 import * as Vehicles from "./Vehicles.js";
+import * as HTTP from "./clientHttpRequests";
 import { SceneLoader, Engine, Scene, ActionManager, ExecuteCodeAction } from "@babylonjs/core";
 import { Animation, Vector3, Quaternion, MeshBuilder } from "@babylonjs/core";
 import { Hud } from "./gui";
 import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/";
 import { readCsv } from "@/utils/csvHelper.js";
 window.CANNON = require("cannon");
-
-function sendScoreToServer(name, score, vehicle, powerup, engine) {
-  const url = `http://localhost:3000/LOL`;
-  var xhr = new XMLHttpRequest();
-
-  xhr.onreadystatechange = function() {
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      console.log(this.responseText);
-    }
-  };
-
-  xhr.open("POST", url, true);
-  xhr.setRequestHeader('Content-Type', 'text/plain');
-  xhr.send(JSON.stringify({
-    name: name, score: score, body: vehicle, powerup: powerup, engine: engine,
-  }));
-}
 
 function switchVehicle(vehicleName) {
   switch (vehicleName) {
@@ -114,6 +98,7 @@ var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
 
 var startLap = function(gui) {
   gui.startTimer();
+  HTTP.startRecording(vehicle);
 };
 
 var stopLap = function(gui) {
@@ -122,7 +107,7 @@ var stopLap = function(gui) {
     bestLap = gui.time;
   }
   laps.push([gui.time, vehicle]);
-
+  HTTP.stopRecording();
   console.log(bestLap);
   console.log(laps);
 };
@@ -168,7 +153,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         }
         if (powerup != "4 Wheel Drive"){
           console.log("setting vehicle offroad");
-          vehicle.attr.offRoad = true;
+          vehicle.prototype.offRoad = true;
         }
       }
     )
@@ -186,7 +171,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
       () => {
         startLap(gui);
         fourWheelDrivePassed = false;
-        vehicle.attr.offRoad = false;
+        vehicle.prototype.offRoad = false;
         app.raiseBlock("RoadBlock1");
       }
     )
@@ -420,7 +405,7 @@ export class BabylonApp {
     switch (this.powerupName) {
       case "Speed Boost":
         //increases vehicle speed for a time duration
-        vehicle.attr.sbActivationTime = new Date().getTime();
+        vehicle.prototype.sbActivationTime = new Date().getTime();
         console.log("Speed boost activated");
         break;
       case "4 Wheel Drive":
@@ -747,14 +732,32 @@ export class BabylonApp {
         vehicles[key].startPhysics();
       }
     }
-    vehicle.move(new Vector3(-508,0,84), new Quaternion(0,0.7,0,0.7));
-    vehicle.test();
+    //vehicle.move(new Vector3(180,0,72), new Quaternion(0,0.7,0,0.7), false);
+    //vehicle.meshes.body.translate(new Vector3(0,1,0),50);
+
+    vehicle.disablePhysics();
+    // var myAnimation = new BABYLON.Animation("myAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+    //                                                                 BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE); 
+    // var myAnimation2 = new BABYLON.Animation("myAnimation", "rotationQuaternion", 30, BABYLON.Animation.ANIMATIONTYPE_QUATERNION,
+    // BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE); 
+    // let y = vehicle.meshes.body.position.y;
+    // let x = vehicle.meshes.body.position.x;
+    // let z = vehicle.meshes.body.position.z;
+    // const keyFrames = [{frame:0,value:new Vector3(x,y,z)}, {frame:1000,value:new Vector3(x,y+500,z)}, {frame:2000,value:new Vector3(x,y,z)}];
+    // const keyFrames2 = [{frame:0,value:new Quaternion(0,-.7,0,-.7)}, {frame:1000,value:new Quaternion(0,0,0,1)}, {frame:2000,value:new Quaternion(0,-.7,0,-.7)}];
+    // myAnimation.setKeys(keyFrames);
+    // myAnimation2.setKeys(keyFrames2);
+    // vehicle.meshes.body.animations.push(myAnimation);
+    // vehicle.meshes.body.animations.push(myAnimation2);
+    // scene.beginAnimation(vehicle.meshes.body,0,2000,true);
+
+    //vehicle.test();
   }
 
   submitScore(name){
     if(bestLap == 0)
       return;
-      sendScoreToServer(name || "unknown", this.calculateScore(), this.vehicleName, this.powerupName, this.engineType);
+      HTTP.sendScoreToServer(name || "unknown", this.calculateScore(), this.vehicleName, this.powerupName, this.engineType);
   }
 
   calculateScore() {
