@@ -1,11 +1,12 @@
 import * as BABYLON from 'babylonjs';
 import {Vector3} from "@babylonjs/core";
+import { _ } from 'core-js';
 //import { FollowCamera } from 'babylonjs/Cameras/followCamera';
 let sbDuration = 30000;//30 second power up duration
 let sbMultiplier = 1.3;
 //once the track is implemented we will know what this is
 
-function engine(e) {
+export function engine(e) {
     switch (e) {
         case "Steam":
             return 0.5;
@@ -149,9 +150,10 @@ let test = function(){
     console.log(this.meshes.body.position);
 }
 
-let Prototype = function(speed, torque, wheelDiam, wheelHeight, wheelRestitution, wheelFriction, bodyMass, wheelMass, powerupName, engineName){
+let Prototype = function(speed, torque, wheelDiam, wheelHeight, wheelRestitution, wheelFriction, bodyMass, wheelMass, powerupName, engineName, x, z, rotation){
     this.speed = speed;
     this.torque = torque * engine(engineName);
+    this.originalTorque = torque;
     this.wheelDiam = wheelDiam;
     this.wheelHeight = wheelHeight;
     this.wheelRestitution = wheelRestitution;
@@ -161,26 +163,36 @@ let Prototype = function(speed, torque, wheelDiam, wheelHeight, wheelRestitution
     this.powerupName = powerupName;
     this.offRoad = false;
     this.sbActivationTime = 0;
+    this.originalVector3 = new Vector3(x,-25,z);
+    this.originalQuaternion = rotation;
     Object.preventExtensions(this);
 }
 
+let resetPosition = function(){
+    this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
+}
+
 export class Omni {
-    constructor(scene, x, z, engineName, powerupName, visible) {
+    constructor(scene, x, z, engineName, powerupName, visible, rotation) {
         this.scene = scene;
-        this.prototype = new Prototype(20, 200, 2.5, 1, 1, 50, 10, 1, powerupName, engineName);
+        this.prototype = new Prototype(20, 200, 2.5, 1, 1, 50, 10, 1, powerupName, engineName, x, z, rotation);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: 23, height: 10 }, scene),
         }
+        this.camera = new BABYLON.ArcRotateCamera(
+            "Camera",
+            Math.PI / 5,
+            Math.PI / 3,
+            250,
+            this.meshes.body,
+            scene
+          );
         this.physicsEnabled = false;
         this.move = move;
         this.test = test;
-
-        this.meshes.body.position.x = x;
-        this.meshes.body.position.z = z;
-        this.meshes.body.position.y = -24;
-        this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
+        this.resetPosition = resetPosition;
         this.attachBodyParts();
-
+        this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
         if (!visible)
             Object.entries(this.meshes).map((x) => x[1].isVisible = false);
     }
@@ -251,9 +263,9 @@ export class Omni {
 }
 
 export class Tank {
-    constructor(scene, x, z, engineName, powerupName, visible) {
+    constructor(scene, x, z, engineName, powerupName, visible, rotation) {
         this.scene = scene;
-        this.prototype = new Prototype(50, 50, 2.5, 1, 0.05, 100, 20, 1, powerupName, engineName);
+        this.prototype = new Prototype(50, 50, 2.5, 1, 0.05, 100, 20, 1, powerupName, engineName, x, z, rotation);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox(null, { width: 22, depth: 20, height: 6 }, scene),
             wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
@@ -265,25 +277,30 @@ export class Tank {
             wheelR3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheelR4: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
         };
+        this.camera = new BABYLON.ArcRotateCamera(
+            "Camera",
+            Math.PI / 5,
+            Math.PI / 3,
+            250,
+            this.meshes.body,
+            scene
+          );
         this.wheels = Object.keys(this.meshes).filter(x => x != "body");
         this.motors = [];
         this.physicsEnabled = false;
-        //Offset
-        this.meshes.body.position.x = x;
-        this.meshes.body.position.z = z;
-        this.meshes.body.position.y = -25;
         this.userInput = userInput;
         this.disablePhysics = disablePhysics;
         this.test = test;
         this.move = move;
+        this.resetPosition = resetPosition;
         this.wheelPositioning = wheelPositioning;
         this.wheelMeshParent = wheelMeshParent;
 
-        this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
         //Body positioning
         this.attachBodyParts();
         //Wheel positioning
         this.attachWheels();
+        this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
 
         //Make all physics meshes invisible
         if (!visible)
@@ -466,9 +483,9 @@ export class Tank {
 }
 
 export class Train {
-    constructor(scene, x, z, engineName, powerupName, visible) {
+    constructor(scene, x, z, engineName, powerupName, visible, rotation) {
         this.scene = scene;
-        this.prototype = new Prototype(30,10,5.5,1,0.05,100,30,1,powerupName,engineName);
+        this.prototype = new Prototype(30,10,5.5,1,0.05,100,30,1,powerupName,engineName, x, z, rotation);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox("ABCDE", { width: 25, depth: 15, height: 6 }, scene),
             wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
@@ -478,6 +495,14 @@ export class Train {
             wheelR2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheelR3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
         };
+        this.camera = new BABYLON.ArcRotateCamera(
+            "Camera",
+            Math.PI / 5,
+            Math.PI / 3,
+            250,
+            this.meshes.body,
+            scene
+          );
         this.wheels = Object.keys(this.meshes).filter(x => x != "body");
         this.motors = [];
         this.physicsEnabled = false;
@@ -485,22 +510,18 @@ export class Train {
         this.disablePhysics = disablePhysics;
         this.test = test;
         this.move = move;
+        this.resetPosition = resetPosition;
         this.wheelPositioning = wheelPositioning;
         this.wheelMeshParent = wheelMeshParent;
-        //Offset
-        this.meshes.body.position.x = x;
-        this.meshes.body.position.z = z;
-        this.meshes.body.position.y = -25;
-        this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
         //Body positioning
         this.attachBodyParts();
         //Wheel positioning
         this.attachWheels();
+        this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
         //Make all physics meshes invisible
         if (!visible)
             Object.entries(this.meshes).map((x) => x[1].isVisible = false);
-        this.i = 0;
-        this.time = new Date().getTime();
+
     }
 
     startPhysics(){
@@ -663,14 +684,22 @@ export class Train {
 }
 
 export class MT {
-    constructor(scene, x, z, engineName, powerupName, visible) {
+    constructor(scene, x, z, engineName, powerupName, visible, rotation) {
         this.scene = scene;
-        this.prototype = new Prototype(30, 10, 5.5, 1.5, 0.01, 80, 10, 1, powerupName, engineName);
+        this.prototype = new Prototype(30, 10, 5.5, 1.5, 0.01, 80, 10, 1, powerupName, engineName, x, z, rotation);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox(null, { width: 24, depth: 20, height: 6 }, scene),
             wheel1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheel2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
         };
+        this.camera = new BABYLON.ArcRotateCamera(
+            "Camera",
+            Math.PI / 5,
+            Math.PI / 3,
+            250,
+            this.meshes.body,
+            scene
+          );
         this.wheels = Object.keys(this.meshes).filter(x => x != "body");
         this.motors = [];
         this.physicsEnabled = false;
@@ -678,19 +707,14 @@ export class MT {
         this.disablePhysics = disablePhysics;
         this.test = test;
         this.move = move;
+        this.resetPosition = resetPosition;
         this.wheelPositioning = wheelPositioning;
         this.wheelMeshParent = wheelMeshParent;
-        //Offset
-        this.meshes.body.position.x = 445//x;
-        this.meshes.body.position.z = 50//z;
-        this.meshes.body.position.y = -25;
-        //this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
-        this.i = 0;
-
         //Body part
         this.attachBodyParts();
         //Wheel part
         this.attachWheels();
+        this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
 
         //make babylon meshes invisible
         if (!visible)

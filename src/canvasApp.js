@@ -27,7 +27,7 @@ import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/";
 import { readCsv } from "@/utils/csvHelper.js";
 window.CANNON = require("cannon");
 
-function switchVehicle(vehicleName) {
+function switchVehicle(vehicleName, scene) {
   switch (vehicleName) {
     case "Car":
       vehicle = vehicles.MT;
@@ -42,17 +42,8 @@ function switchVehicle(vehicleName) {
       vehicle = vehicles.Tank;
       break;
   }
-
-  var camera = new BABYLON.ArcRotateCamera(
-    "Camera",
-    Math.PI / 5,
-    Math.PI / 3,
-    250,
-    vehicle.meshes.body,
-    scene
-  );
-  camera.useFramingBehavior = true;
-  camera.attachControl(document.getElementById("gameCanvas"), true);
+  scene.activeCamera = vehicle.camera;
+  vehicle.camera.attachControl(document.getElementById("gameCanvas"), true);
 }
 
 var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
@@ -98,7 +89,6 @@ var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
 
 var startLap = function(gui) {
   gui.startTimer();
-  HTTP.startRecording(vehicle);
 };
 
 var stopLap = function(gui) {
@@ -199,27 +189,11 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
   );
 };
 
-function scoreSubmission()
-{
-  //var input = BABYLON.GUI.input
-}
-
 var createScene = async function (engine, canvas) {
   //Creating scene, camera and lighting
   var scene = new Scene(engine);
-  //scene.debugLayer.show();
 
   scene.enablePhysics(new BABYLON.Vector3(0, -50.8, 0));
-  // var camera = new BABYLON.ArcRotateCamera(
-  //   "Camera",
-  //   Math.PI / 5,
-  //   Math.PI / 3,
-  //   250,
-  //   BABYLON.Vector3.Zero(),
-  //   scene
-  // );
-  // camera.useFramingBehavior = true;
-  // camera.attachControl(canvas, true);
   new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
 
   //Importing assets
@@ -326,10 +300,10 @@ export class BabylonApp {
       scene = returnedScene;
       this.scene = returnedScene;
       vehicles = new vehicles(
-      new Vehicles.MT(scene, 230, 20, engineName, powerupName, v),
-      new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v),
-      new Vehicles.Train(scene, 260, 20, engineName, powerupName, v),
-      new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v)); 
+      new Vehicles.MT(scene, 230, 20, engineName, powerupName, v, new Quaternion(0,0,0,-1)),
+      new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7)),
+      new Vehicles.Train(scene, 260, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7)),
+      new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7))); 
 
       // sendScoreToServer("Athena", 55, "Car", "Emergency Siren", "Nuclear Fusion")
       // sendScoreToServer("Bella", 999, "Spaceship", "Portal", "Jet")
@@ -344,7 +318,7 @@ export class BabylonApp {
 
       //scene.getPhysicsEngine().setGravity(-9.8);
       this.gui = new Hud(scene);
-      switchVehicle(vehicleName);
+      switchVehicle(vehicleName, this.scene);
       addTriggers(this.gui, scene, vehicleName, this.powerupName, this);
       vehicle.startPhysics();
       engine.runRenderLoop(() => {
@@ -723,34 +697,30 @@ export class BabylonApp {
   something()
   {
     console.log("test");
-    for(var key in vehicles){
-      if(vehicles[key] != vehicle && vehicles[key].physicsEnabled)
-      {
-        vehicles[key].disablePhysics();
-      } else if (vehicles[key] != vehicle && !vehicles[key].physicsEnabled)
-      {
-        vehicles[key].startPhysics();
-      }
-    }
-    //vehicle.move(new Vector3(180,0,72), new Quaternion(0,0.7,0,0.7), false);
-    //vehicle.meshes.body.translate(new Vector3(0,1,0),50);
+    // for(var key in vehicles){
+    //   if(vehicles[key] != vehicle && vehicles[key].physicsEnabled)
+    //   {
+    //     vehicles[key].disablePhysics();
+    //   } else if (vehicles[key] != vehicle && !vehicles[key].physicsEnabled)
+    //   {
+    //     vehicles[key].startPhysics();
+    //   }
+    // }
+    vehicle.meshes.body.rotationQuaternion =  new Quaternion(0,0.7,0,0.7);
+  }
 
-    // var myAnimation = new BABYLON.Animation("myAnimation", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-    //                                                                 BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE); 
-    // var myAnimation2 = new BABYLON.Animation("myAnimation", "rotationQuaternion", 30, BABYLON.Animation.ANIMATIONTYPE_QUATERNION,
-    // BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE); 
-    // let y = vehicle.meshes.body.position.y;
-    // let x = vehicle.meshes.body.position.x;
-    // let z = vehicle.meshes.body.position.z;
-    // const keyFrames = [{frame:0,value:new Vector3(x,y,z)}, {frame:1000,value:new Vector3(x,y+500,z)}, {frame:2000,value:new Vector3(x,y,z)}];
-    // const keyFrames2 = [{frame:0,value:new Quaternion(0,-.7,0,-.7)}, {frame:1000,value:new Quaternion(0,0,0,1)}, {frame:2000,value:new Quaternion(0,-.7,0,-.7)}];
-    // myAnimation.setKeys(keyFrames);
-    // myAnimation2.setKeys(keyFrames2);
-    // vehicle.meshes.body.animations.push(myAnimation);
-    // vehicle.meshes.body.animations.push(myAnimation2);
-    // scene.beginAnimation(vehicle.meshes.body,0,2000,true);
-
-    //vehicle.test();
+  restartSimulation(body,powerup, engine){
+    //Tasks: 
+    //1. move all vehicles back to starting positions
+    Object.keys(vehicles).map(x => vehicles[x].resetPosition());
+    //2. Switch vehicle
+    switchVehicle(body, this.scene);
+    //3. Switch powerup and engines 
+    vehicle.prototype.torque = Vehicles.engine(engine) * vehicle.prototype.originalTorque;
+    vehicle.prototype.powerupName = powerup;
+    //Start physics
+    console.log(`Restarting with ${body},${powerup},${engine}`)
+    vehicle.startPhysics();
   }
 
   submitScore(name){
