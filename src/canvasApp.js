@@ -179,9 +179,8 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
       () => {
         if (fourWheelDrivePassed) {
           stopLap(gui);
+          document.getElementById("bestScore").innerText = `Current Best Score: ${app.calculateScore(bestLap)}`;
           app.lowerBlocks();
-          if(bestLap)
-            document.getElementById("myModal").style.display = "block";
         }
         vehicle.prototype.offRoad = false;
       }
@@ -292,7 +291,7 @@ export class BabylonApp {
     this.vehicleName = vehicleName;
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
-    var v = true; // Vehicle physics boxes visibility
+    var v = false; // Vehicle physics boxes visibility
     // initialize babylon scene and engine
     var engine = new Engine(canvas, true);
     var scenePromise = createScene(engine, canvas);
@@ -300,7 +299,7 @@ export class BabylonApp {
       scene = returnedScene;
       this.scene = returnedScene;
       vehicles = new vehicles(
-      new Vehicles.MT(scene, 230, 20, engineName, powerupName, v, new Quaternion(0,0,0,-1)),
+      new Vehicles.MT(scene, 230, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7)),
       new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7)),
       new Vehicles.Train(scene, 260, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7)),
       new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7))); 
@@ -697,30 +696,36 @@ export class BabylonApp {
   something()
   {
     console.log("test");
-    // for(var key in vehicles){
-    //   if(vehicles[key] != vehicle && vehicles[key].physicsEnabled)
-    //   {
-    //     vehicles[key].disablePhysics();
-    //   } else if (vehicles[key] != vehicle && !vehicles[key].physicsEnabled)
-    //   {
-    //     vehicles[key].startPhysics();
-    //   }
-    // }
-    vehicle.meshes.body.rotationQuaternion =  new Quaternion(0,0.7,0,0.7);
+    for(var key in vehicles){
+      //  if(vehicles[key] != vehicle && vehicles[key].physicsEnabled)
+      //  {
+      //    vehicles[key].disablePhysics();
+      //  } else if (vehicles[key] != vehicle && !vehicles[key].physicsEnabled)
+      //  {
+      //    vehicles[key].startPhysics();
+      //  }
+      console.log(vehicles[key].meshes.body.rotationQuaternion);
+   }
+    document.getElementById("bestScore").innerText = "ASDASD";
+    //vehicle.move(vehicle.meshes.body.position, new Quaternion(0,0.7,0,0.7), true);
   }
 
   restartSimulation(body,powerup, engine){
     //Tasks: 
-    //1. move all vehicles back to starting positions
+    //move all vehicles back to starting positions
     Object.keys(vehicles).map(x => vehicles[x].resetPosition());
-    //2. Switch vehicle
+    //Switch vehicle
     switchVehicle(body, this.scene);
-    //3. Switch powerup and engines 
+    //Switch powerup and engines 
     vehicle.prototype.torque = Vehicles.engine(engine) * vehicle.prototype.originalTorque;
     vehicle.prototype.powerupName = powerup;
     //Start physics
-    console.log(`Restarting with ${body},${powerup},${engine}`)
     vehicle.startPhysics();
+    //Stop timer and reset score
+    bestLap = 0;
+    stopLap(this.gui);
+    document.getElementById("bestScore").innerText = `Current Best Score: 0`
+    //TODO reset triggers
   }
 
   submitScore(name){

@@ -6,14 +6,15 @@
       {{ this.userSelection.powerup }} powerup
     </div>
     <div class="btn-group" role="group">
-      <button type="button" @click="spinArm">Spin!</button>
-      <button type="button" @click="buildVehicle">Build Selected Vehicle!</button>
-      <button type="button" @click="playCSV">Play CSV!</button>
-      <button type="button" @click="raiseBlocks" id="av" class="simButton">Raise Blocks!</button>
-      <button type="button" @click="lowerBlocks">Lower Blocks!</button>
-      <button type="button" @click="powerUp">Activate Powerup!!</button>
-      <button type="button" @click="scoreSubmission">Open Score Submission</button>
+      <button type="button" @click="spinArm" hidden>Spin!</button>
+      <button type="button" @click="buildVehicle" hidden>Build Selected Vehicle!</button>
+      <button type="button" @click="playCSV" hidden>Play CSV!</button>
+      <button type="button" @click="raiseBlocks" id="av" class="simButton" hidden>Raise Blocks!</button>
+      <button type="button" @click="lowerBlocks" hidden>Lower Blocks!</button>
+      <button type="button" @click="powerUp" hidden>Activate Powerup!!</button>
+      <button type="button" @click="scoreSubmission">Submit Best Score</button>
       <button type="button" @click="anything">anythingForTesting</button>
+      <button type="button" @click="openVehicleSelection">Change Vehicle</button><div id="bestScore">Current Best Score: 0</div>
     </div>
     <div>
     <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
@@ -24,14 +25,20 @@
     <!-- Modal content -->
     <div class="modal-content">
       <div class="container">
-        <div class="row">
+        <div class="row justify-content-center">
           <h4 id="heading">Submit Score</h4>
         </div>
-        <div class="row">
-          <div @click="clear()" contenteditable="true" id="nameInput">Enter name here...</div>
-          <button @click="pushName()" id="name">Enter</button>
-          <button @click="cancel()" id="cancel">Cancel</button>     
+        <div class="row justify-content-center">
+          <div class="col-8">
+            <div @click="clear()" contenteditable="true" id="nameInput">Enter name here...</div>  
+          </div>
         </div>     
+        <div class="row justify-content-center">
+          <div class="col-8">
+          <button @click="pushName()" id="name">Enter</button>
+          <button @click="cancel()" id="cancel">Cancel</button>   
+          </div>
+        </div>
       </div>
     </div>
     </div>
@@ -138,8 +145,7 @@ export default {
       document.getElementById("myModal").style.display = "none";
     },
     anything(){
-      //this.Application.something();
-      this.openVehicleSelection();
+      this.Application.something();
     },
     openVehicleSelection(){
       document.getElementById("vehicleSelection").style.display = "block";
@@ -185,13 +191,14 @@ export default {
     this.userSelection["body"] = this.$route.query.body;
     this.userSelection["engine"] = this.$route.query.engine;
     this.userSelection["powerup"] = this.$route.query.powerup;
-    this.Application = new CanvasApp.BabylonApp(
-      this.userSelection["body"],
-      this.userSelection["engine"],
-      this.userSelection["powerup"]
-    );
+      if(!this.Application)
+        this.Application = new CanvasApp.BabylonApp(
+        this.userSelection["body"],
+        this.userSelection["engine"],
+        this.userSelection["powerup"]
+        );
     [this.userSelection.body, this.userSelection.engine, this.userSelection.powerup].map(x => this.sendText(x));
-  },
+  }, 
 };
 </script>
 <style>
@@ -210,11 +217,12 @@ export default {
 }
 
 .modal-content {
-  background-color: #fefefe;
+  background-color: #000000;
+  color: white;
   margin: 15% auto; /* 15% from the top and centered */
   padding: 20px;
   border: 1px solid #888;
-  width: 80%; /* Could be more or less, depending on screen size */
+  width: 20%; /* Could be more or less, depending on screen size */
 }
 
 .modal-select-content {
@@ -242,7 +250,8 @@ export default {
 #nameInput {
   margin: 0em, 3em, 0em, 3em;
   height: 3em;
-  color: black;
+  color: rgb(0, 0, 0);
+  background-color: white;
   border-style: solid;
   border-color: black;
 }
@@ -250,7 +259,7 @@ export default {
 #heading {
   margin: 0em, 3em, 0em, 3em;
   height: 3em;
-  color: black;
+  color: rgb(168, 168, 168);
 }
 
 #cancel{
@@ -327,5 +336,10 @@ img{
 .row.description{
   border-color: white;
   border-width: 1em;
+}
+
+#bestScore{
+  display:table-cell;
+  vertical-align: bottom;
 }
 </style>
