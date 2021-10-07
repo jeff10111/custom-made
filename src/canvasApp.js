@@ -1,5 +1,5 @@
 let vehicle;
-let vehicles = {};
+let vehicles = function(MT, Tank, Train, Omni){this.MT = MT; this.Tank = Tank, this.Train = Train, this.Omni = Omni};
 let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
 let powerUpHasBeenActivated = false;
 let userHasRunRedLight = false;
@@ -8,6 +8,8 @@ let endTime;
 let fourWheelDrivePassed;
 let bestLap = 0;
 let laps = [];
+let sendLapToServer = true;
+let timeStart;
 
 var scene;
 const frameRate = 1000;
@@ -17,6 +19,7 @@ import "@babylonjs/inspector";
 import * as BABYLON from "babylonjs";
 import { PhysicsImpostor } from "@babylonjs/core/Physics";
 import * as Vehicles from "./Vehicles.js";
+import * as HTTP from "./clientHttpRequests";
 import { SceneLoader, Engine, Scene, ActionManager, ExecuteCodeAction } from "@babylonjs/core";
 import { Animation, Vector3, Quaternion, MeshBuilder } from "@babylonjs/core";
 import { Hud } from "./gui";
@@ -24,26 +27,7 @@ import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/";
 import { readCsv } from "@/utils/csvHelper.js";
 window.CANNON = require("cannon");
 
-function sendScoreToServer(name, score, vehicle, powerup, engine) {
-  const url = `http://localhost:3000/LOL`;
-  var xhr = new XMLHttpRequest();
-
-  xhr.onreadystatechange = function() {
-    if (this.readyState != 4) return;
-
-    if (this.status == 200) {
-      console.log(this.responseText);
-    }
-  };
-
-  xhr.open("POST", url, true);
-  xhr.setRequestHeader('Content-Type', 'text/plain');
-  xhr.send(JSON.stringify({
-    name: name, score: score, body: vehicle, powerup: powerup, engine: engine,
-  }));
-}
-
-function switchVehicle(vehicleName) {
+function switchVehicle(vehicleName, scene) {
   switch (vehicleName) {
     case "Car":
       vehicle = vehicles.MT;
@@ -58,17 +42,8 @@ function switchVehicle(vehicleName) {
       vehicle = vehicles.Tank;
       break;
   }
-
-  var camera = new BABYLON.ArcRotateCamera(
-    "Camera",
-    Math.PI / 5,
-    Math.PI / 3,
-    250,
-    vehicle.meshes.body,
-    scene
-  );
-  camera.useFramingBehavior = true;
-  camera.attachControl(document.getElementById("gameCanvas"), true);
+  scene.activeCamera = vehicle.camera;
+  vehicle.camera.attachControl(document.getElementById("gameCanvas"), true);
 }
 
 var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
@@ -122,7 +97,7 @@ var stopLap = function(gui) {
     bestLap = gui.time;
   }
   laps.push([gui.time, vehicle]);
-
+  HTTP.stopRecording();
   console.log(bestLap);
   console.log(laps);
 };
@@ -168,7 +143,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         }
         if (powerup != "4 Wheel Drive"){
           console.log("setting vehicle offroad");
-          vehicle.attr.offRoad = true;
+          vehicle.prototype.offRoad = true;
         }
       }
     )
@@ -186,7 +161,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
       () => {
         startLap(gui);
         fourWheelDrivePassed = false;
-        vehicle.attr.offRoad = false;
+        vehicle.prototype.offRoad = false;
         app.raiseBlock("RoadBlock1");
       }
     )
@@ -210,32 +185,17 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         }
         vehicle.attr.offRoad = false;
         fourWheelDrivePassed = false;
+        vehicle.prototype.offRoad = false;
       }
     )
   );
 };
 
-function scoreSubmission()
-{
-  //var input = BABYLON.GUI.input
-}
-
 var createScene = async function (engine, canvas) {
   //Creating scene, camera and lighting
   var scene = new Scene(engine);
-  //scene.debugLayer.show();
 
-  scene.enablePhysics(new BABYLON.Vector3(0, -15.8, 0));
-  // var camera = new BABYLON.ArcRotateCamera(
-  //   "Camera",
-  //   Math.PI / 5,
-  //   Math.PI / 3,
-  //   250,
-  //   BABYLON.Vector3.Zero(),
-  //   scene
-  // );
-  // camera.useFramingBehavior = true;
-  // camera.attachControl(canvas, true);
+  scene.enablePhysics(new BABYLON.Vector3(0, -50.8, 0));
   new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, 1, 0), scene);
 
   //Importing assets
@@ -334,19 +294,19 @@ export class BabylonApp {
     this.vehicleName = vehicleName;
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
-    var v = false; // Vehicle physics boxes visibility
+    var v = true; // Vehicle physics boxes visibility
     // initialize babylon scene and engine
     var engine = new Engine(canvas, true);
     var scenePromise = createScene(engine, canvas);
     scenePromise.then((returnedScene) => {
       scene = returnedScene;
       this.scene = returnedScene;
-      vehicles = {
-        MT: new Vehicles.MT(scene, 230, 20, engineName, powerupName, v),
-        Train: new Vehicles.Train(scene, 260, 20, engineName, powerupName, v),
-        Tank: new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v),
-        Omni: new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v)
-      };
+      vehicles = new vehicles(
+      new Vehicles.MT(scene, 230, 20, engineName, powerupName, v, new Quaternion(0,0,0,-1)),
+      new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7)),
+      new Vehicles.Train(scene, 260, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7)),
+      new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7))); 
+
       // sendScoreToServer("Athena", 55, "Car", "Emergency Siren", "Nuclear Fusion")
       // sendScoreToServer("Bella", 999, "Spaceship", "Portal", "Jet")
       // sendScoreToServer("Cara", 34, "Tank", "Speed Boost", "Petrol")
@@ -358,12 +318,14 @@ export class BabylonApp {
       // sendScoreToServer("Nelia", 32, "Spaceship", "Portal", "Nuclear Fusion")
       // sendScoreToServer("Octavia", 19, "Train", "4 Wheel Drive","Nuclear Fusion")
 
+      //scene.getPhysicsEngine().setGravity(-9.8);
       this.gui = new Hud(scene);
-      switchVehicle(vehicleName);
+      switchVehicle(vehicleName, this.scene);
       addTriggers(this.gui, scene, vehicleName, this.powerupName, this);
+      vehicle.startPhysics();
       engine.runRenderLoop(() => {
         scene.render();
-        if(vehicle != undefined)
+        if(vehicle != undefined && vehicle.physicsEnabled)
           vehicle.userInput(keysPressed);
           this.gui.updateHud();
       });
@@ -404,7 +366,7 @@ export class BabylonApp {
       } else if (ev.key == "ArrowLeft" || ev.key == "a") {
         keysPressed["a"] = 0;
       }
-      vehicle.userInput(keysPressed);
+      console.log("key pressed");
     });
 
     window.addEventListener("resize", function() {
@@ -419,7 +381,7 @@ export class BabylonApp {
     switch (this.powerupName) {
       case "Speed Boost":
         //increases vehicle speed for a time duration
-        vehicle.attr.sbActivationTime = new Date().getTime();
+        vehicle.prototype.sbActivationTime = new Date().getTime();
         console.log("Speed boost activated");
         break;
       case "4 Wheel Drive":
@@ -434,7 +396,6 @@ export class BabylonApp {
       case "Portal":
         //this changes the track rather than the vehicle
         console.log("Portal boost activated");
-        this.lowerBlocks();
         break;
     }
   }
@@ -735,10 +696,39 @@ export class BabylonApp {
     );
   }
 
+  something()
+  {
+    console.log("test");
+    // for(var key in vehicles){
+    //   if(vehicles[key] != vehicle && vehicles[key].physicsEnabled)
+    //   {
+    //     vehicles[key].disablePhysics();
+    //   } else if (vehicles[key] != vehicle && !vehicles[key].physicsEnabled)
+    //   {
+    //     vehicles[key].startPhysics();
+    //   }
+    // }
+    vehicle.meshes.body.rotationQuaternion =  new Quaternion(0,0.7,0,0.7);
+  }
+
+  restartSimulation(body,powerup, engine){
+    //Tasks: 
+    //1. move all vehicles back to starting positions
+    Object.keys(vehicles).map(x => vehicles[x].resetPosition());
+    //2. Switch vehicle
+    switchVehicle(body, this.scene);
+    //3. Switch powerup and engines 
+    vehicle.prototype.torque = Vehicles.engine(engine) * vehicle.prototype.originalTorque;
+    vehicle.prototype.powerupName = powerup;
+    //Start physics
+    console.log(`Restarting with ${body},${powerup},${engine}`)
+    vehicle.startPhysics();
+  }
+
   submitScore(name){
     if(bestLap == 0)
       return;
-    sendScoreToServer(name || "unknown", this.calculateScore(), this.vehicleName, this.powerupName, this.engineType);
+      HTTP.sendScoreToServer(name || "unknown", this.calculateScore(), this.vehicleName, this.powerupName, this.engineType);
   }
 
   calculateScore() {

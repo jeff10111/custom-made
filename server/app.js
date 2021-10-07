@@ -76,6 +76,16 @@ server.on('request', (request, response) => {
   }
   //Used for sending new scores
   else if (request.method == "POST") {
+    if(request.url == "score"){
+      var a = [];
+      request.on('data', (chunk) => {
+        a.push(chunk);
+      }).on('end', () => {
+        console.log(a);
+      });
+      return;
+    }
+    
       var badPost = false;
       var vehicle = [];
 
