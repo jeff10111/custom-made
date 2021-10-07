@@ -1,12 +1,12 @@
 import * as BABYLON from 'babylonjs';
+import {Vector3} from "@babylonjs/core";
+import { _ } from 'core-js';
 //import { FollowCamera } from 'babylonjs/Cameras/followCamera';
 let sbDuration = 30000;//30 second power up duration
 let sbMultiplier = 1.3;
 //once the track is implemented we will know what this is
 
-
-
-function engine(e) {
+export function engine(e) {
     switch (e) {
         case "Steam":
             return 0.5;
@@ -21,44 +21,210 @@ function engine(e) {
     }
 }
 
+let userInput = function(keys)
+{
+    if(!this.physicsEnabled){
+        return; 
+    }
+ 
+    var multi =
+    ((new Date().getTime() - this.prototype.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+    if(this.prototype.offRoad)
+        console.log("we are offRoad");
+    if (this.prototype.offRoad && this.prototype.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
+        console.log("Driving offRoad");
+    switch (Math.floor(Math.random() * 8))
+    {
+        case 0:
+            this.forwards(multi);
+            break;
+        case 1:
+            this.backwards(multi);
+            break;
+        case 2:
+            this.left(multi);
+            break;
+        case 3:
+            this.right(multi);
+            break;
+        case 4:
+            this.forwardsLeft(multi);
+            break;
+        case 5:
+            this.forwardsRight(multi);
+            break;
+        case 6:
+            this.backwardsLeft(multi);
+            break;
+        case 7:
+            this.backwardsRight(multi);
+            break;
+    }
+    return;
+    }
+    else if (keys["w"]) {
+        if(keys["a"])
+        {
+            this.forwardsLeft(multi);
+        } else if (keys["d"])
+        {
+            this.forwardsRight(multi);
+        } else {
+        this.forwards(multi);
+        }
+    }
+    else if (keys["s"]) {
+        if(keys["a"])
+        {
+            this.backwardsLeft(multi);
+        } else if (keys["d"])
+        {
+            this.backwardsRight(multi);
+        } else {
+            this.backwards(multi);
+        }
+    } else if (keys["d"]) {
+        this.right(multi);
+    } else if (keys["a"]) {
+        this.left(multi);
+    } else {
+        this.releaseDrive();
+    }
+}
+
+let disablePhysics = function(){
+    if(!this.physicsEnabled)
+    return;
+    for(var key in this.meshes)
+    {
+        this.meshes[key].physicsImpostor.dispose();
+        this.meshes[key].physicsImpostor = null;
+    }
+    this.wheels.map(x => this.meshes[x].setParent(this.meshes.body));
+    this.physicsEnabled = false;
+    this.motors = [];       
+}
+
+let move = function(coordinates, rotation, reenablePhysics){
+    this.physicsEnabled && this.disablePhysics();
+    this.meshes.body.position = coordinates;
+    this.meshes.body.rotationQuaternion = rotation;
+    reenablePhysics && this.startPhysics();
+}
+
+let animate = function(quaternions,vector3s, steps)
+{
+    var v3 = new BABYLON.Animation("v3", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE); 
+    var q = new BABYLON.Animation("q", "rotationQuaternion", 30, BABYLON.Animation.ANIMATIONTYPE_QUATERNION,
+    BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);  
+    let keyFramesV = [];
+    let keyFramesQ = [];
+    steps.forEach((x,i) =>{
+        keyFramesV.push({value:vector3s[i],frame:x});
+        keyFramesQ.push({value:quaternions[i],frame:x});
+    })
+    this.meshes.body.animations.push(v3);
+    this.meshes.body.animations.push(q);
+}
+
+let wheelPositioning = function(body, wheel, x, y, z) {
+    wheel.parent = body;
+    wheel.position.y = y;
+    wheel.position.z = z;//width
+    wheel.position.x = x;
+}
+
+let wheelMeshParent = function(mesh, parentMesh, x, y, z) {
+    parentMesh.setParent(null);
+    mesh.parent = parentMesh;
+    mesh.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
+    mesh.position.y = y;//width
+    mesh.position.z = z;// y negative is up
+    mesh.position.x = x;//forward/backward
+}
+
+let test = function(){
+    this.i += 1;
+    (this.physicsEnabled) ? this.disablePhysics() : this.startPhysics(); 
+    console.log(this.meshes.body.position);
+}
+
+let Prototype = function(speed, torque, wheelDiam, wheelHeight, wheelRestitution, wheelFriction, bodyMass, wheelMass, powerupName, engineName, x, z, rotation){
+    this.speed = speed;
+    this.torque = torque * engine(engineName);
+    this.originalTorque = torque;
+    this.wheelDiam = wheelDiam;
+    this.wheelHeight = wheelHeight;
+    this.wheelRestitution = wheelRestitution;
+    this.wheelFriction = wheelFriction;
+    this.bodyMass = bodyMass; 
+    this.wheelMass = wheelMass;
+    this.powerupName = powerupName;
+    this.offRoad = false;
+    this.sbActivationTime = 0;
+    this.originalVector3 = new Vector3(x,-25,z);
+    this.originalQuaternion = rotation;
+    Object.preventExtensions(this);
+}
+
+let resetPosition = function(){
+    this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
+}
+
 export class Omni {
-    constructor(scene, x, z, engineName, powerupName, visible) {
-        console.log("From the omni constructor");
+    constructor(scene, x, z, engineName, powerupName, visible, rotation) {
         this.scene = scene;
-        this.attr = {
-            speed: 20, torque: 200 * engine(engineName),
-            wheelDiam: 2.5, wheelHeight: 1, wheelRestitution: 1,
-            bodyMass: 10, wheelFriction: 50, sbActivationTime: 0, powerupName: powerupName, offRoad: false
-        };
+        this.prototype = new Prototype(20, 200, 2.5, 1, 1, 50, 10, 1, powerupName, engineName, x, z, rotation);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: 23, height: 10 }, scene),
         }
-        this.meshes.body.position.x = x;
-        this.meshes.body.position.z = z;
-        this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
+        this.camera = new BABYLON.ArcRotateCamera(
+            "Camera",
+            Math.PI / 5,
+            Math.PI / 3,
+            250,
+            this.meshes.body,
+            scene
+          );
+        this.physicsEnabled = false;
+        this.move = move;
+        this.test = test;
+        this.resetPosition = resetPosition;
         this.attachBodyParts();
+        this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
         if (!visible)
             Object.entries(this.meshes).map((x) => x[1].isVisible = false);
     }
 
+    startPhysics(){
+        if(this.physicsEnabled)
+        return;
+        this.meshes.body.physicsImpostor = new BABYLON.PhysicsImpostor(this.meshes.body, BABYLON.PhysicsImpostor.CylinderImpostor, { mass: this.prototype.bodyMass, friction: 0.01, restitution: 0 }, this.scene);
+        this.physicsEnabled = true;
+    }
+
+    disablePhysics() {
+        if(!this.physicsEnabled)
+        return;
+        this.meshes.body.physicsImpostor.dispose();
+        this.meshes.body.physicsImpostor = null;
+        this.physicsEnabled = false;
+    }
+
     attachBodyParts() {
-        let body = this.meshes.body;
         var mesh = this.scene.getTransformNodeByName("Omni");
-        // console.log("OMNI: " + this.scene.getMeshByName("Omni"));
-        body.position.y = -15;
-        mesh.parent = body;
+        //this.meshes.body.position.y = -15;
+        mesh.parent = this.meshes.body;
         mesh.position.z = 0;
         mesh.position.y = -5;
-        // var triggerMesh = new BABYLON.MeshBuilder.CreateCylinder("OmniBody")
-        body.physicsImpostor = new BABYLON.PhysicsImpostor(body, BABYLON.PhysicsImpostor.CylinderImpostor, { mass: this.attr.bodyMass, friction: 0.01, restitution: 0 }, this.scene);
-        //new FollowCamera(name: string, position: Vector3, scene: Scene, lockedTarget?: Nullable<AbstractMesh>)
     }
 
     userInput(keys) {
         var impulseVector = new BABYLON.Vector3(0, 0, 0);
         // var multi =
-        // ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
-        if (this.attr.offRoad && this.attr.powerupName != "4 Wheel Drive" && Math.floor(Math.random() * 10) == 9) {
+        // ((new Date().getTime() - this.prototype.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+        if (this.prototype.offRoad && this.prototype.powerupName != "4 Wheel Drive" && Math.floor(Math.random() * 10) == 9) {
             var x = Math.random() * 2 - 1 > 0 ? Math.random()*-1 : Math.random();
             var y = Math.random() * 2 - 1 > 0 ? Math.random()*-1 : Math.random();
             var z = Math.random() * 2 - 1 > 0 ? Math.random()*-1 : Math.random();
@@ -92,57 +258,89 @@ export class Omni {
         } else if (keys['a']) {
             impulseVector = new BABYLON.Vector3(1, 0, 0);
         }
-        this.meshes.body.physicsImpostor.applyImpulse(impulseVector.scale(this.attr.bodyMass * sbMultiplier), this.meshes.body.getAbsolutePosition());
+        this.meshes.body.physicsImpostor.applyImpulse(impulseVector.scale(this.prototype.bodyMass * sbMultiplier), this.meshes.body.getAbsolutePosition());
     }
-
-
-
 }
 
 export class Tank {
-    constructor(scene, x, z, engineName, powerupName, visible) {
+    constructor(scene, x, z, engineName, powerupName, visible, rotation) {
         this.scene = scene;
-        this.attr = {
-            speed: 50, torque: 50 * engine(engineName),
-            wheelDiam: 2.5, wheelHeight: 1, wheelRestitution: 0.05,
-            bodyMass: 20, wheelFriction: 100, sbActivationTime: 0, powerupName: powerupName, offRoad: false
-        };
+        this.prototype = new Prototype(50, 50, 2.5, 1, 0.05, 100, 20, 1, powerupName, engineName, x, z, rotation);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox(null, { width: 22, depth: 20, height: 6 }, scene),
-            wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheelL2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheelL3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheelL4: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheelR1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheelR2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheelR3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheelR4: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
+            wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheelL2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheelL3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheelL4: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheelR1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheelR2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheelR3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheelR4: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
         };
+        this.camera = new BABYLON.ArcRotateCamera(
+            "Camera",
+            Math.PI / 5,
+            Math.PI / 3,
+            250,
+            this.meshes.body,
+            scene
+          );
+        this.wheels = Object.keys(this.meshes).filter(x => x != "body");
         this.motors = [];
-        //Offset
-        this.meshes.body.position.x = x;
-        this.meshes.body.position.z = z;
-        this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
-        //Body positioning and physics
+        this.physicsEnabled = false;
+        this.userInput = userInput;
+        this.disablePhysics = disablePhysics;
+        this.test = test;
+        this.move = move;
+        this.resetPosition = resetPosition;
+        this.wheelPositioning = wheelPositioning;
+        this.wheelMeshParent = wheelMeshParent;
+
+        //Body positioning
         this.attachBodyParts();
-        //Wheel positioning and physics
+        //Wheel positioning
         this.attachWheels();
+        this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
+
         //Make all physics meshes invisible
         if (!visible)
             Object.entries(this.meshes).map((x) => x[1].isVisible = false);
     }
+
+    startPhysics(){
+        if(this.physicsEnabled)
+            return;
+        this.wheels.forEach((x) => {
+            this.meshes[x].setParent(null);
+            this.meshes[x].physicsImpostor = 
+            new BABYLON.PhysicsImpostor(this.meshes[x], BABYLON.PhysicsImpostor.CylinderImpostor, { mass: this.prototype.wheelMass, friction: this.prototype.wheelFriction, restitution: this.prototype.wheelRestitution }, this.scene);
+        });
+        //Adding physics imposter to body mesh (the parent of the mod mesh)
+        this.meshes.body.physicsImpostor =
+        new BABYLON.PhysicsImpostor(this.meshes.body, BABYLON.PhysicsImpostor.BoxImpostor, { mass: this.prototype.bodyMass , restitution: 0, friction: 0}, this.scene);
+        //hinges part
+        let wheelWidth = 10.5;
+        let wheelHeight = -3;
+        this.wheelJoint(this.meshes.body, this.meshes.wheelL1, -5.3, wheelHeight, wheelWidth);
+        this.wheelJoint(this.meshes.body, this.meshes.wheelL2, -1.6, wheelHeight, wheelWidth);
+        this.wheelJoint(this.meshes.body, this.meshes.wheelL3, 2, wheelHeight, wheelWidth);
+        this.wheelJoint(this.meshes.body, this.meshes.wheelL4, 5.5, wheelHeight, wheelWidth);
+        this.wheelJoint(this.meshes.body, this.meshes.wheelR1, -5.3, wheelHeight, -wheelWidth);
+        this.wheelJoint(this.meshes.body, this.meshes.wheelR2, -1.6, wheelHeight, -wheelWidth);
+        this.wheelJoint(this.meshes.body, this.meshes.wheelR3, 2, wheelHeight, -wheelWidth);
+        this.wheelJoint(this.meshes.body, this.meshes.wheelR4, 5.5, wheelHeight, -wheelWidth);
+        this.physicsEnabled = true;
+    }
+
     attachBodyParts() {
         let body = this.meshes.body;
         var mesh = this.scene.getTransformNodeByName("TankBody");
-        body.position.y = -15;
         mesh.parent = body;
         //Positioning the MOD mesh relative to the babylon mesh
         mesh.position.y -= 4;
         mesh.position.z -= 23;
         mesh.position.x -= 2;
-        //Adding physics imposter to body mesh (the parent of the mod mesh)
-        this.meshes.body.physicsImpostor =
-            new BABYLON.PhysicsImpostor(body, BABYLON.PhysicsImpostor.BoxImpostor, { mass: this.attr.bodyMass , restitution: 0, friction: 0}, this.scene);
+
     }
     attachWheels() {
         let L1 = this.meshes.wheelL1;
@@ -186,38 +384,9 @@ export class Tank {
         this.wheelPositioning(body, R2, -1.6, wheelHeight, -wheelWidth);
         this.wheelPositioning(body, R3, 2, wheelHeight, -wheelWidth);
         this.wheelPositioning(body, R4, 5.5, wheelHeight, -wheelWidth);
-
-        //physics/hinge part
-        this.wheelJoint(body, L1, -5.3, wheelHeight, wheelWidth);
-        this.wheelJoint(body, L2, -1.6, wheelHeight, wheelWidth);
-        this.wheelJoint(body, L3, 2, wheelHeight, wheelWidth);
-        this.wheelJoint(body, L4, 5.5, wheelHeight, wheelWidth);
-        this.wheelJoint(body, R1, -5.3, wheelHeight, -wheelWidth);
-        this.wheelJoint(body, R2, -1.6, wheelHeight, -wheelWidth);
-        this.wheelJoint(body, R3, 2, wheelHeight, -wheelWidth);
-        this.wheelJoint(body, R4, 5.5, wheelHeight, -wheelWidth);
-
-
     }
 
-    wheelPositioning(body, wheel, x, y, z) {
-        wheel.parent = body;
-        wheel.position.y = y;
-        wheel.position.z = z;//width
-        wheel.position.x = x;
-    }
-
-    wheelMeshParent(mesh, parentMesh, x, y, z) {
-        parentMesh.setParent(null);
-        mesh.parent = parentMesh;
-        mesh.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
-        mesh.position.y = y;//width
-        mesh.position.z = z;// y negative is up
-        mesh.position.x = x;//forward/backward
-    }
     wheelJoint(body, wheel, x, y, z) {
-        wheel.setParent(null);
-        wheel.physicsImpostor = new BABYLON.PhysicsImpostor(wheel, BABYLON.PhysicsImpostor.CylinderImpostor, { mass: 1, friction: this.attr.wheelFriction, restitution: this.attr.wheelRestitution }, this.scene);
         var newJoint = new BABYLON.MotorEnabledJoint(BABYLON.PhysicsJoint.HingeJoint, {
             mainPivot: new BABYLON.Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
             connectedPivot: new BABYLON.Vector3(x, y, z), //(length,y,)
@@ -228,206 +397,162 @@ export class Tank {
         this.motors.push(newJoint);
     }
 
-    userInput(keys) {
-        var multi =
-        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
-        if(this.attr.offRoad)
-            console.log("we are offRoad");
-        if (this.attr.offRoad && this.attr.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
-            console.log("Driving offRoad");
-            switch (Math.floor(Math.random() * 8))
-            {
-                case 0:
-                    this.forwards(multi);
-                    break;
-                case 1:
-                    this.backwards(multi);
-                    break;
-                case 2:
-                    this.left(multi);
-                    break;
-                case 3:
-                    this.right(multi);
-                    break;
-                case 4:
-                    this.forwardsLeft(multi);
-                    break;
-                case 5:
-                    this.forwardsRight(multi);
-                    break;
-                case 6:
-                    this.backwardsLeft(multi);
-                    break;
-                case 7:
-                    this.backwardsRight(multi);
-                    break;
-            }
-            return;
-        }
-        else if (keys["w"]) {
-            if(keys["a"])
-            {
-                this.forwardsLeft(multi);
-            } else if (keys["d"])
-            {
-                this.forwardsRight(multi);
-            } else {
-                this.forwards(multi);
-            }
-        }
-        else if (keys["s"]) {
-            if(keys["a"])
-            {
-                this.backwardsLeft(multi);
-            } else if (keys["d"])
-            {
-                this.backwardsRight(multi);
-            } else {
-                this.backwards(multi);
-            }
-        } else if (keys["d"]) {
-            this.right(multi);
-        } else if (keys["a"]) {
-            this.left(multi);
-        } else {
-            this.releaseDrive();
-        }
-    }
-
     forwards(multi) {
-        this.motors.map((x) => x.setMotor(+this.attr.speed * multi, this.attr.torque * multi));
+        this.motors.map((x) => x.setMotor(+this.prototype.speed * multi, this.prototype.torque * multi));
     }
     backwards(multi) {
-        this.motors.map((x) => x.setMotor(-this.attr.speed * multi, this.attr.torque * multi));
+        this.motors.map((x) => x.setMotor(-this.prototype.speed * multi, this.prototype.torque * multi));
     }
     forwardsLeft(multi) {
         var torqueMultiForwards = 0.6;
         var torqueMultiBackwards = torqueMultiForwards/3;
-        this.motors[0].setMotor(this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[1].setMotor(this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[2].setMotor(this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[3].setMotor(this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[4].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[5].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[6].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[7].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
+        this.motors[0].setMotor(this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[1].setMotor(this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[2].setMotor(this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[3].setMotor(this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[4].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[5].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[6].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[7].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
     }
     backwardsLeft(multi) {
         var torqueMultiForwards = 0.6;
         var torqueMultiBackwards = torqueMultiForwards/3;
-        this.motors[0].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[1].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[2].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[3].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[4].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[5].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[6].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[7].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
+        this.motors[0].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[1].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[2].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[3].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[4].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[5].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[6].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[7].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
     }
     backwardsRight(multi) {
         var torqueMultiForwards = 0.6;
         var torqueMultiBackwards = torqueMultiForwards/3;
-        this.motors[4].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[5].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[6].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[7].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[0].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[1].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[2].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[3].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
+        this.motors[4].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[5].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[6].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[7].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[0].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[1].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[2].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[3].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
     }
     forwardsRight(multi) {
         var torqueMultiForwards = 0.6;
         var torqueMultiBackwards = torqueMultiForwards/3;
-        this.motors[0].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[1].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[2].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[3].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[4].setMotor(this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[5].setMotor(this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[6].setMotor(this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[7].setMotor(this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
+        this.motors[0].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[1].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[2].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[3].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[4].setMotor(this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[5].setMotor(this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[6].setMotor(this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[7].setMotor(this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
     }
     right(multi) {
         var torqueMulti = 0.1;
-        this.motors[0].setMotor(this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[1].setMotor(this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[2].setMotor(this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[3].setMotor(this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[4].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[5].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[6].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[7].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMulti);
+        this.motors[0].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[1].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[2].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[3].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[4].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[5].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[6].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[7].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMulti);
     }
     left(multi) {
         var torqueMulti = 0.1;
-        this.motors[0].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[1].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[2].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[3].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[4].setMotor(this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[5].setMotor(this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[6].setMotor(this.attr.speed * multi, this.attr.torque * torqueMulti);
-        this.motors[7].setMotor(this.attr.speed * multi, this.attr.torque * torqueMulti);
+        this.motors[0].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[1].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[2].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[3].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[4].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[5].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[6].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMulti);
+        this.motors[7].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMulti);
     }
     releaseDrive() {
-        this.motors.map(x => x.setMotor(0, this.attr.torque / 8));
+        this.motors.map(x => x.setMotor(0, this.prototype.torque / 8));
     }
     releaseSteering() {
-        this.motors.map(x => x.setMotor(0, this.attr.torque / 8));
+        this.motors.map(x => x.setMotor(0, this.prototype.torque / 8));
     }
 
 }
 
 export class Train {
-    constructor(scene, x, z, engineName, powerupName, visible) {
+    constructor(scene, x, z, engineName, powerupName, visible, rotation) {
         this.scene = scene;
-        this.attr = {
-            speed: 30, torque: 10 * engine(engineName),
-            wheelDiam: 5.5, wheelHeight: 1, wheelRestitution: 0.05,
-            bodyMass: 30, wheelFriction: 100, sbActivationTime: 0, wheelMass: 1,
-            offRoad: false, powerupName: powerupName,
-        };
+        this.prototype = new Prototype(30,10,5.5,1,0.05,100,30,1,powerupName,engineName, x, z, rotation);
         this.meshes = {
-            body: BABYLON.MeshBuilder.CreateBox(null, { width: 25, depth: 15, height: 6 }, scene),
-            front: BABYLON.MeshBuilder.CreateBox(null, { width: 8, depth: 15, height: 6 }, scene),
-            wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheelL2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheelL3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheelR1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheelR2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheelR3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
+            body: BABYLON.MeshBuilder.CreateBox("ABCDE", { width: 25, depth: 15, height: 6 }, scene),
+            wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheelL2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheelL3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheelR1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheelR2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheelR3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
         };
+        this.camera = new BABYLON.ArcRotateCamera(
+            "Camera",
+            Math.PI / 5,
+            Math.PI / 3,
+            250,
+            this.meshes.body,
+            scene
+          );
+        this.wheels = Object.keys(this.meshes).filter(x => x != "body");
         this.motors = [];
-        //Offset
-        this.meshes.body.position.x = x;
-        this.meshes.body.position.z = z;
-        this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
-        //Body positioning and physics
+        this.physicsEnabled = false;
+        this.userInput = userInput;
+        this.disablePhysics = disablePhysics;
+        this.test = test;
+        this.move = move;
+        this.resetPosition = resetPosition;
+        this.wheelPositioning = wheelPositioning;
+        this.wheelMeshParent = wheelMeshParent;
+        //Body positioning
         this.attachBodyParts();
-        //Wheel positioning and physics
+        //Wheel positioning
         this.attachWheels();
+        this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
         //Make all physics meshes invisible
         if (!visible)
             Object.entries(this.meshes).map((x) => x[1].isVisible = false);
 
     }
 
-    attachBodyParts() {
-        let body = this.meshes.body;
-        //pull body out of the ground
-        body.position.y = -15;
+    startPhysics(){
+        if(this.physicsEnabled)
+        return;
+        this.wheels.forEach((x) => {
+            this.meshes[x].setParent(null);
+            this.meshes[x].physicsImpostor = 
+        new BABYLON.PhysicsImpostor(this.meshes[x], BABYLON.PhysicsImpostor.CylinderImpostor, { mass: this.prototype.wheelMass, friction: this.prototype.wheelFriction, restitution: this.prototype.wheelRestitution }, this.scene);
+        });
+        this.meshes.body.physicsImpostor =
+        new BABYLON.PhysicsImpostor(this.meshes.body, BABYLON.PhysicsImpostor.BoxImpostor, { mass: this.prototype.bodyMass, friction: 0 }, this.scene);
+        let wheelWidth = 8.5;
+        let wheelHeight = -0.5;
+        this.wheelJoint(this.meshes.body, this.meshes.wheelL1, -6, wheelHeight, wheelWidth);
+        this.wheelJoint(this.meshes.body, this.meshes.wheelL2, 0.5, wheelHeight, wheelWidth);
+        this.wheelJoint(this.meshes.body, this.meshes.wheelL3, 7, wheelHeight, wheelWidth);
+        this.wheelJoint(this.meshes.body, this.meshes.wheelR1, -6, wheelHeight, -wheelWidth);
+        this.wheelJoint(this.meshes.body, this.meshes.wheelR2, 0.5, wheelHeight, -wheelWidth);
+        this.wheelJoint(this.meshes.body, this.meshes.wheelR3, 7, wheelHeight, -wheelWidth);
+        this.physicsEnabled = true;
+    }
 
+    attachBodyParts() {
         //Attaching mod mesh to babylon mesh
         var mesh = this.scene.getTransformNodeByName("TrainBody");
-        mesh.parent = body;
+        mesh.parent = this.meshes.body;
         //Positioning the MOD mesh relative to the babylon mesh
         mesh.position.y -= 8.2;
         mesh.position.z -= 19.5;
         mesh.position.x -= 5;
-        //Adding physics imposter to body mesh (the parent of the mod mesh)
-        this.meshes.body.physicsImpostor =
-            new BABYLON.PhysicsImpostor(body, BABYLON.PhysicsImpostor.BoxImpostor, { mass: this.attr.bodyMass, friction: 0 }, this.scene);
     }
 
     attachWheels() {
@@ -464,35 +589,10 @@ export class Train {
         this.wheelPositioning(body, R1, -6, wheelHeight, -wheelWidth);
         this.wheelPositioning(body, R2, 0.5, wheelHeight, -wheelWidth);
         this.wheelPositioning(body, R3, 7, wheelHeight, -wheelWidth);
-
-        //adding physics to wheel and attaching it to the body
-        this.wheelJoint(body, L1, -6, wheelHeight, wheelWidth);
-        this.wheelJoint(body, L2, 0.5, wheelHeight, wheelWidth);
-        this.wheelJoint(body, L3, 7, wheelHeight, wheelWidth);
-        this.wheelJoint(body, R1, -6, wheelHeight, -wheelWidth);
-        this.wheelJoint(body, R2, 0.5, wheelHeight, -wheelWidth);
-        this.wheelJoint(body, R3, 7, wheelHeight, -wheelWidth);
-
-    }
-
-    wheelPositioning(body, wheel, x, y, z) {
-        wheel.parent = body;
-        wheel.position.y = y;
-        wheel.position.z = z;//width
-        wheel.position.x = x;
-    }
-
-    wheelMeshParent(mesh, parentMesh, x, y, z) {
-        mesh.parent = parentMesh;
-        mesh.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
-        mesh.position.y = y;//width
-        mesh.position.z = z;// y negative is up
-        mesh.position.x = x;//forward/backward
     }
 
     wheelJoint(body, wheel, x, y, z) {
-        wheel.setParent(null);
-        wheel.physicsImpostor = new BABYLON.PhysicsImpostor(wheel, BABYLON.PhysicsImpostor.CylinderImpostor, { mass: this.attr.wheelMass, friction: this.attr.wheelFriction, restitution: this.attr.wheelRestitution }, this.scene);
+        //wheel.setParent(null);
         var newJoint = new BABYLON.MotorEnabledJoint(BABYLON.PhysicsJoint.HingeJoint, {
             mainPivot: new BABYLON.Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
             connectedPivot: new BABYLON.Vector3(x, y, z), //(length,y,)
@@ -503,230 +603,159 @@ export class Train {
         this.motors.push(newJoint);
     }
 
-    userInput(keys) {
-        var multi =
-        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
-        if (this.attr.offRoad && this.attr.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
-            console.log("Driving offRoad");
-            switch (Math.floor(Math.random() * 8))
-            {
-                case 0:
-                    this.forwards(multi);
-                    break;
-                case 1:
-                    this.backwards(multi);
-                    break;
-                case 2:
-                    this.left(multi);
-                    break;
-                case 3:
-                    this.right(multi);
-                    break;
-                case 4:
-                    this.forwardsLeft(multi);
-                    break;
-                case 5:
-                    this.forwardsRight(multi);
-                    break;
-                case 6:
-                    this.backwardsLeft(multi);
-                    break;
-                case 7:
-                    this.backwardsRight(multi);
-                    break;
-            }
-            return;
-        }
-        if (keys["w"]) {
-            if(keys["a"])
-            {
-                this.forwardsLeft(multi);
-            } else if (keys["d"])
-            {
-                this.forwardsRight(multi);
-            } else {
-                this.forwards(multi);
-            }
-        }
-        else if (keys["s"]) {
-            if(keys["a"])
-            {
-                this.backwardsLeft(multi);
-            } else if (keys["d"])
-            {
-                this.backwardsRight(multi);
-            } else {
-                this.backwards(multi);
-            }
-        } else if (keys["d"]) {
-            this.right(multi);
-        } else if (keys["a"]) {
-            this.left(multi);
-        } else {
-            this.releaseDrive();
-        }
-    }
-
     forwards(multi) {
-        this.motors.map((x) => x.setMotor(+this.attr.speed * multi, this.attr.torque * multi));
+        this.motors.map((x) => x.setMotor(+this.prototype.speed * multi, this.prototype.torque * multi));
     }
 
     forwardsLeft(multi){
         var torqueMultiForwards = 0.6;
         var torqueMultiBackwards = torqueMultiForwards;
-        this.motors[0].setMotor(this.attr.speed/4 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[1].setMotor(this.attr.speed/4 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[2].setMotor(this.attr.speed/4 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[3].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[4].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[5].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
+        this.motors[0].setMotor(this.prototype.speed/4 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[1].setMotor(this.prototype.speed/4 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[2].setMotor(this.prototype.speed/4 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[3].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[4].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[5].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
     }
 
     forwardsRight(multi){
         var torqueMultiForwards = 0.6;
         var torqueMultiBackwards = torqueMultiForwards;
-        this.motors[0].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[1].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[2].setMotor(this.attr.speed * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[3].setMotor(this.attr.speed/4 * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[4].setMotor(this.attr.speed/4 * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[5].setMotor(this.attr.speed/4 * multi, this.attr.torque * torqueMultiForwards * multi);
+        this.motors[0].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[1].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[2].setMotor(this.prototype.speed * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[3].setMotor(this.prototype.speed/4 * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[4].setMotor(this.prototype.speed/4 * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[5].setMotor(this.prototype.speed/4 * multi, this.prototype.torque * torqueMultiForwards * multi);
     }
 
     backwardsLeft(multi){
         var torqueMultiForwards = 0.6;
         var torqueMultiBackwards = torqueMultiForwards/3;
-        this.motors[0].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[1].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[2].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[3].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[4].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[5].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiForwards * multi);
+        this.motors[0].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[1].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[2].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[3].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[4].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[5].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiForwards * multi);
     }
 
     backwardsRight(multi){
         var torqueMultiForwards = 0.6;
         var torqueMultiBackwards = torqueMultiForwards/3;
-        this.motors[0].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[1].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[2].setMotor(-this.attr.speed * multi, this.attr.torque * torqueMultiBackwards * multi);
-        this.motors[3].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[4].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiForwards * multi);
-        this.motors[5].setMotor(-this.attr.speed/3 * multi, this.attr.torque * torqueMultiForwards * multi);
+        this.motors[0].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[1].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[2].setMotor(-this.prototype.speed * multi, this.prototype.torque * torqueMultiBackwards * multi);
+        this.motors[3].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[4].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiForwards * multi);
+        this.motors[5].setMotor(-this.prototype.speed/3 * multi, this.prototype.torque * torqueMultiForwards * multi);
     }
 
     backwards(multi) {
-        this.motors.map((x) => x.setMotor(-this.attr.speed * multi, this.attr.torque * multi));
+        this.motors.map((x) => x.setMotor(-this.prototype.speed * multi, this.prototype.torque * multi));
     }
 
     left(multi) {
-        this.motors[0].setMotor(-this.attr.speed * multi, this.attr.torque * multi);
-        this.motors[1].setMotor(-this.attr.speed * multi, this.attr.torque * multi);
-        this.motors[2].setMotor(-this.attr.speed * multi, this.attr.torque * multi);
-        this.motors[3].setMotor(this.attr.speed * multi, this.attr.torque * multi);
-        this.motors[4].setMotor(this.attr.speed * multi, this.attr.torque * multi);
-        this.motors[5].setMotor(this.attr.speed * multi, this.attr.torque * multi);
+        this.motors[0].setMotor(-this.prototype.speed * multi, this.prototype.torque * multi);
+        this.motors[1].setMotor(-this.prototype.speed * multi, this.prototype.torque * multi);
+        this.motors[2].setMotor(-this.prototype.speed * multi, this.prototype.torque * multi);
+        this.motors[3].setMotor(this.prototype.speed * multi, this.prototype.torque * multi);
+        this.motors[4].setMotor(this.prototype.speed * multi, this.prototype.torque * multi);
+        this.motors[5].setMotor(this.prototype.speed * multi, this.prototype.torque * multi);
     }
 
     right(multi) {
-        this.motors[0].setMotor(this.attr.speed * multi, this.attr.torque * multi);
-        this.motors[1].setMotor(this.attr.speed * multi, this.attr.torque * multi);
-        this.motors[2].setMotor(this.attr.speed * multi, this.attr.torque * multi);
-        this.motors[3].setMotor(-this.attr.speed * multi, this.attr.torque * multi);
-        this.motors[4].setMotor(-this.attr.speed * multi, this.attr.torque * multi);
-        this.motors[5].setMotor(-this.attr.speed * multi, this.attr.torque * multi);
+        this.motors[0].setMotor(this.prototype.speed * multi, this.prototype.torque * multi);
+        this.motors[1].setMotor(this.prototype.speed * multi, this.prototype.torque * multi);
+        this.motors[2].setMotor(this.prototype.speed * multi, this.prototype.torque * multi);
+        this.motors[3].setMotor(-this.prototype.speed * multi, this.prototype.torque * multi);
+        this.motors[4].setMotor(-this.prototype.speed * multi, this.prototype.torque * multi);
+        this.motors[5].setMotor(-this.prototype.speed * multi, this.prototype.torque * multi);
     }
 
     releaseDrive() {
-        this.motors.map((x) => x.setMotor(0, this.attr.torque / 8));
+        this.motors.map((x) => x.setMotor(0, this.prototype.torque / 8));
     }
 
     releaseSteering() {
-        this.motors.map((x) => x.setMotor(0, this.attr.torque / 8));
+        this.motors.map((x) => x.setMotor(0, this.prototype.torque / 8));
     }
 
 }
 
 export class MT {
-    constructor(scene, x, z, engineName, powerupName, visible) {
+    constructor(scene, x, z, engineName, powerupName, visible, rotation) {
         this.scene = scene;
-        this.attr = {
-            speed: 30, torque: 10 * engine(engineName),
-            wheelDiam: 5.5, wheelHeight: 1.5, wheelRestitution: 0.01,
-            bodyMass: 10, wheelFriction: 80, sbActivationTime: 0,
-            offRoad: false, powerupName: powerupName,
-        };
-
+        this.prototype = new Prototype(30, 10, 5.5, 1.5, 0.01, 80, 10, 1, powerupName, engineName, x, z, rotation);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox(null, { width: 24, depth: 20, height: 6 }, scene),
-            front: BABYLON.MeshBuilder.CreateBox(null, { width: 8, depth: 20, height: 6 }, scene),
-            wheel1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            wheel2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.attr.wheelDiam, height: this.attr.wheelHeight }, scene),
-            b1: BABYLON.MeshBuilder.CreateBox(null, { size: 2, height: 2.4 }, scene),
-            b2: BABYLON.MeshBuilder.CreateBox(null, { size: 2, height: 2.4 }, scene),
+            wheel1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
+            wheel2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
         };
+        this.camera = new BABYLON.ArcRotateCamera(
+            "Camera",
+            Math.PI / 5,
+            Math.PI / 3,
+            250,
+            this.meshes.body,
+            scene
+          );
+        this.wheels = Object.keys(this.meshes).filter(x => x != "body");
         this.motors = [];
-        //Offset
-        this.meshes.body.position.x = x;
-        this.meshes.body.position.z = z;
-        //this.meshes.body.rotation = new BABYLON.Vector3(0,1.5,0);
-
+        this.physicsEnabled = false;
+        this.userInput = userInput;
+        this.disablePhysics = disablePhysics;
+        this.test = test;
+        this.move = move;
+        this.resetPosition = resetPosition;
+        this.wheelPositioning = wheelPositioning;
+        this.wheelMeshParent = wheelMeshParent;
         //Body part
         this.attachBodyParts();
         //Wheel part
         this.attachWheels();
+        this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
+
         //make babylon meshes invisible
         if (!visible)
             Object.entries(this.meshes).map((x) => x[1].isVisible = false);
     }
+
+    startPhysics() {
+        if(this.physicsEnabled)
+        return;
+        this.wheels.forEach((x) => {
+            this.meshes[x].setParent(null);
+            this.meshes[x].physicsImpostor = 
+        new BABYLON.PhysicsImpostor(this.meshes[x], BABYLON.PhysicsImpostor.CylinderImpostor, { mass: 1, friction: this.prototype.wheelFriction, restitution: this.prototype.wheelRestitution }, this.scene);
+        });
+        this.meshes.body.physicsImpostor =
+        new BABYLON.PhysicsImpostor(this.meshes.body, BABYLON.PhysicsImpostor.BoxImpostor, { mass: this.prototype.bodyMass, friction:0,  restitution: 0}, this.scene);
+        this.wheelJoint(this.meshes.body, this.meshes.wheel1, -6.5, -1.5, 10);
+        this.wheelJoint(this.meshes.body, this.meshes.wheel2, -6.5, -1.5, -10);
+        this.physicsEnabled = true;
+    }
+
     attachBodyParts() {
-        let body = this.meshes.body;
-        body.position.y = -15;
         //attaching MOD mesh to babylon mesh, creating a physics imposter for babylon mesh
         var mesh = this.scene.getTransformNodeByName("MTBody");
-        mesh.parent = body;
+        mesh.parent = this.meshes.body;
         //Positioning the MOD mesh relative to the babylon mesh
         mesh.position.y = -12;
         mesh.position.z = -13;
         mesh.position.x = -3;
-        //Adding physics imposter to babylon mesh (the parent of the mod mesh)
-        this.meshes.body.physicsImpostor =
-            new BABYLON.PhysicsImpostor(body, BABYLON.PhysicsImpostor.BoxImpostor, { mass: this.attr.bodyMass, friction:0,  restitution: 0}, this.scene);
-
     }
 
     attachWheels() {
-        let w1 = this.meshes.wheel1;
-        let w2 = this.meshes.wheel2;
-        let body = this.meshes.body;
-        w1.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
-        w2.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
-        this.wheelMeshParent(this.scene.getMeshByName("MTLeft"), w1, 3.5, 3, -9.5);
-        this.wheelMeshParent(this.scene.getMeshByName("MTRight"), w2, 3.5, 22.7, -9.5);
-        this.wheelPositioning(body, w1, -3.5, -2.5, 10);
-        this.wheelPositioning(body, w2, -3.5, -2.5, -10);
-        this.wheelJoint(body, w1, -6.5, -1.5, 10);
-        this.wheelJoint(body, w2, -6.5, -1.5, -10);
-    }
-
-    wheelPositioning(body, wheel, x, y, z) {
-        wheel.parent = body;
-        wheel.position.y = y;
-        wheel.position.z = z;//width
-        wheel.position.x = x;
-    }
-
-    wheelMeshParent(mesh, parentMesh, x, y, z) {
-        mesh.parent = parentMesh;
-        mesh.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
-        mesh.position.y = y;//width
-        mesh.position.z = z;// y negative is up
-        mesh.position.x = x;//forward/backward
+        this.meshes.wheel1.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
+        this.meshes.wheel2.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
+        this.wheelMeshParent(this.scene.getMeshByName("MTLeft"), this.meshes.wheel1, 3.5, 3, -9.5);
+        this.wheelMeshParent(this.scene.getMeshByName("MTRight"), this.meshes.wheel2, 3.5, 22.7, -9.5);
+        this.wheelPositioning(this.meshes.body, this.meshes.wheel1, -6.5, -1.5, 10);
+        this.wheelPositioning(this.meshes.body, this.meshes.wheel2, -6.5, -1.5, -10);
     }
 
     wheelJoint(body, wheel, x, y, z) {
-        wheel.setParent(null);
-        wheel.physicsImpostor = new BABYLON.PhysicsImpostor(wheel, BABYLON.PhysicsImpostor.CylinderImpostor, { mass: 1, friction: this.attr.wheelFriction, restitution: this.attr.wheelRestitution }, this.scene);
         var newJoint = new BABYLON.MotorEnabledJoint(BABYLON.PhysicsJoint.HingeJoint, {
             mainPivot: new BABYLON.Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
             connectedPivot: new BABYLON.Vector3(x, y, z), //(length,y,)
@@ -737,87 +766,24 @@ export class MT {
         this.motors.push(newJoint);
     }
 
-    userInput(keys) {
-        var multi =
-        ((new Date().getTime() - this.attr.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
-        if (this.attr.offRoad && this.attr.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
-            switch (Math.floor(Math.random() * 8))
-            {
-                case 0:
-                    this.forwards(multi);
-                    break;
-                case 1:
-                    this.backwards(multi);
-                    break;
-                case 2:
-                    this.left(multi);
-                    break;
-                case 3:
-                    this.right(multi);
-                    break;
-                case 4:
-                    this.forwardsLeft(multi);
-                    break;
-                case 5:
-                    this.forwardsRight(multi);
-                    break;
-                case 6:
-                    this.backwardsLeft(multi);
-                    break;
-                case 7:
-                    this.backwardsRight(multi);
-                    break;
-            }
-            return;
-        }
-        if (keys["w"]) {
-            if(keys["a"])
-            {
-                this.forwardsLeft(multi);
-            } else if (keys["d"])
-            {
-                this.forwardsRight(multi);
-            } else {
-                this.forwards(multi);
-            }
-        }
-        else if (keys["s"]) {
-            if(keys["a"])
-            {
-                this.backwardsLeft(multi);
-            } else if (keys["d"])
-            {
-                this.backwardsRight(multi);
-            } else {
-                this.backwards(multi);
-            }
-        } else if (keys["d"]) {
-            this.right(multi);
-        } else if (keys["a"]) {
-            this.left(multi);
-        } else {
-            this.releaseDrive();
-        }
-    }
-
     forwards(multi) {
 
-        this.motors.map((x) => x.setMotor(+this.attr.speed * multi, this.attr.torque * multi));
+        this.motors.map((x) => x.setMotor(+this.prototype.speed * multi, this.prototype.torque * multi));
     }
 
     forwardsLeft(multi)
     {
-        this.motors[0].setMotor(this.attr.speed * multi/4, this.attr.torque * multi * 0.8);
-        this.motors[1].setMotor(this.attr.speed * multi, this.attr.torque * multi);
+        this.motors[0].setMotor(this.prototype.speed * multi/4, this.prototype.torque * multi * 0.8);
+        this.motors[1].setMotor(this.prototype.speed * multi, this.prototype.torque * multi);
     }
     forwardsRight(multi)
     {
-        this.motors[0].setMotor(this.attr.speed * multi, this.attr.torque * multi * 0.8);
-        this.motors[1].setMotor(this.attr.speed * multi/4, this.attr.torque * multi * 0.8);
+        this.motors[0].setMotor(this.prototype.speed * multi, this.prototype.torque * multi * 0.8);
+        this.motors[1].setMotor(this.prototype.speed * multi/4, this.prototype.torque * multi * 0.8);
     }
 
     backwards(multi) {
-        this.motors.map((x) => x.setMotor(-this.attr.speed * multi, this.attr.torque * multi));
+        this.motors.map((x) => x.setMotor(-this.prototype.speed * multi, this.prototype.torque * multi));
     }
 
     backwardsLeft(multi){
@@ -830,19 +796,19 @@ export class MT {
     }
 
     right(multi) {
-        this.motors[0].setMotor(this.attr.speed/2 * multi, this.attr.torque * multi);
-        this.motors[1].setMotor(-this.attr.speed/2 * multi, this.attr.torque * multi);
+        this.motors[0].setMotor(this.prototype.speed/2 * multi, this.prototype.torque * multi);
+        this.motors[1].setMotor(-this.prototype.speed/2 * multi, this.prototype.torque * multi);
     }
     left(multi) {
-        this.motors[0].setMotor(-this.attr.speed/2 * multi, this.attr.torque * multi);
-        this.motors[1].setMotor(this.attr.speed/2 * multi, this.attr.torque * multi);
+        this.motors[0].setMotor(-this.prototype.speed/2 * multi, this.prototype.torque * multi);
+        this.motors[1].setMotor(this.prototype.speed/2 * multi, this.prototype.torque * multi);
     }
     releaseDrive() {
-        this.motors[0].setMotor(0, this.attr.torque / 3);
-        this.motors[1].setMotor(0, this.attr.torque / 3);
+        this.motors[0].setMotor(0, this.prototype.torque / 3);
+        this.motors[1].setMotor(0, this.prototype.torque / 3);
     }
     releaseSteering() {
-        this.motors[0].setMotor(0, this.attr.torque / 3);
-        this.motors[1].setMotor(0, this.attr.torque / 3);
+        this.motors[0].setMotor(0, this.prototype.torque / 3);
+        this.motors[1].setMotor(0, this.prototype.torque / 3);
     }
 }
