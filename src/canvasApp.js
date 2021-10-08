@@ -1,4 +1,5 @@
 let vehicle;
+let userSelection = { "body": "", "powerup":"", "engine":""}
 let vehicles = function(MT, Tank, Train, Omni){this.MT = MT; this.Tank = Tank, this.Train = Train, this.Omni = Omni};
 let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
 let powerUpHasBeenActivated = false;
@@ -526,11 +527,13 @@ export class BabylonApp {
   }
   async buildVehicle() {
     var dornaHand = scene.getTransformNodeByName("HandBone");
+
+    console.log(userSelection.body, userSelection.engine, userSelection.powerup);
     
     var engine;
     var engineAngle;
 
-    switch (this.engineType) {
+    switch (userSelection.engine) {
       case "Nuclear Fusion":
         engine = scene.getMeshByName("Engine_NuclearFusion1");
         engineAngle = 10;
@@ -553,7 +556,7 @@ export class BabylonApp {
     var powerup;
     var powerupAngle;
 
-    switch (this.powerupName) {
+    switch (userSelection.powerup) {
       case "Speed Boost":
         powerup = scene.getMeshByName("Powerup_SpeedBoost1");
         powerupAngle = 350;
@@ -566,9 +569,10 @@ export class BabylonApp {
         powerup = scene.getMeshByName("Powerup_4WheelDrive1");
         powerupAngle = 310;
         break;
-      // case "Portal":
-      //   powerup = scene.getMeshByName("Powerup_Portal1");
-      //   powerupAngle = 290;
+      case "Portal":
+        powerup = scene.getMeshByName("Powerup_Portal1");
+        powerupAngle = 290;
+        break;
       default:
         powerup = scene.getMeshByName("Powerup_SpeedBoost1");
         powerupAngle = 350;
@@ -578,7 +582,7 @@ export class BabylonApp {
     var vehicleChassis = vehicle.meshes.body;
     var shell;
     var shellAngle = 0;
-    switch (this.vehicleName) {
+    switch (userSelection.body) {
       case "Car":
         break;
       case "Train":
@@ -774,6 +778,9 @@ export class BabylonApp {
   }
 
   restartSimulation(body,powerup, engine){
+    userSelection.body = body || "Car";
+    userSelection.engine = engine || "Steam";
+    userSelection.powerup = powerup || "4 Wheel Drive";
     //move all vehicles back to starting positions
     Object.keys(vehicles).map(x => vehicles[x].resetPosition());
     //Switch vehicle
