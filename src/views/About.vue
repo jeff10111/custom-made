@@ -1,5 +1,5 @@
 <template>
-  <div class="about">
+  <div class="about" id="about">
     <h1 style="text-decoration:underline;">Custom Made Digital Twin</h1>
     <div class="container">
       <div class="column">

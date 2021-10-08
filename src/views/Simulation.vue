@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div id="simulation">
     <div>
       {{ this.userSelection.body }} with
       {{ this.userSelection.engine }} engine and
@@ -15,9 +15,19 @@
       <button type="button" @click="scoreSubmission">Submit Best Score</button>
       <button type="button" @click="anything">anythingForTesting</button>
       <button type="button" @click="openVehicleSelection">Change Vehicle</button><div id="bestScore">Current Best Score: 0</div>
+      <button type="button" @click="openLeaderboardModal">Open Leaderboard</button>
+
     </div>
     <div>
     <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
+    </div>
+
+    <!-- Leaderboard Modal -->
+    <div id="leaderboardModal" class="modal">
+      <div id="leaderboardModal-content">
+        <button type="button" @click="closeLeaderboard"> CLOSE </button>
+        <Leaderboard></Leaderboard>
+      </div>
     </div>
     
     <!-- The Modal -->
@@ -102,10 +112,11 @@
 <script>
 import * as CanvasApp from "../canvasApp.js";
 import InterfaceItem2 from '@/components/InterfaceItem2.vue'
+import Leaderboard from '@/components/Leaderboard.vue'
 export default {
   name: "Simulation",
   props: {},
-  components: {InterfaceItem2},
+  components: {InterfaceItem2, Leaderboard},
   methods: {
     restartSimulation() {
       this.Application.restartSimulation(this.userSelection.body, this.userSelection.powerup, this.userSelection.engine);
@@ -144,11 +155,17 @@ export default {
     cancel(){
       document.getElementById("myModal").style.display = "none";
     },
+    closeLeaderboard(){
+      document.getElementById("leaderboardModal").style.display = "none";
+    },
     anything(){
       this.Application.something();
     },
     openVehicleSelection(){
       document.getElementById("vehicleSelection").style.display = "block";
+    },
+    openLeaderboardModal(){
+      document.getElementById("leaderboardModal").style.display = "block";
     },
     sendText: function(text) 
     {
@@ -341,5 +358,13 @@ img{
 #bestScore{
   display:table-cell;
   vertical-align: bottom;
+}
+
+#leaderboardModal-content{
+  background-color: black;
+}
+
+#leaderboardModal{
+  margin-top: 50px;
 }
 </style>

@@ -286,8 +286,11 @@ var createScene = async function (engine, canvas) {
 
 export class BabylonApp {
   constructor(vehicleName, engineName, powerupName) {
-    this.powerupName = powerupName;
-    this.engineType = engineName;
+    vehicleName = vehicleName || "Car";
+    engineName = engineName || "Jet";
+    powerupName = powerupName || "4 Wheel Drive";
+    this.powerupName = powerupName || "4 Wheel Drive";
+    this.engineType = engineName || "Jet";
     this.vehicleName = vehicleName;
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
