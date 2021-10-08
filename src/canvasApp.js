@@ -182,6 +182,8 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
           document.getElementById("bestScore").innerText = `Current Best Score: ${app.calculateScore(bestLap)}`;
           app.lowerBlocks();
         }
+        vehicle.attr.offRoad = false;
+        fourWheelDrivePassed = false;
         vehicle.prototype.offRoad = false;
       }
     )
@@ -523,6 +525,8 @@ export class BabylonApp {
     this.rotateTo("HandBone", "rotation.x", Math.PI / test);
   }
   async buildVehicle() {
+    var dornaHand = scene.getTransformNodeByName("HandBone");
+    
     var engine;
     var engineAngle;
 
@@ -571,44 +575,105 @@ export class BabylonApp {
         break;
     }
 
-    // this.neutralPose() or something like that for the reset
-    this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
-    await this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
+    var vehicleChassis = vehicle.meshes.body;
+    var shell;
+    var shellAngle = 0;
+    switch (this.vehicleName) {
+      case "Car":
+        break;
+      case "Train":
+        break;
+      case "Spaceship":
+        break;
+      case "Tank":
+        shell = scene.getTransformNodeByName("TankTop.1");
+        shellAngle = 20;
+        break;
+    }
 
-    this.rotateToDegrees("ShoulderBone", "rotation.z", engineAngle);
-    this.rotateToDegrees("UpperarmBone", "rotation.x", 57);
-    this.rotateToDegrees("ForearmBone", "rotation.x", -65);
-    await this.rotateToDegrees("HandBone", "rotation.x", 8);
-    engine.setParent(scene.getTransformNodeByName("HandBone"));
+    // CHASSIS ASSEMBLY
+    await this.playRow([shellAngle,140,,], 1)
 
-    this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
-    await this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
+    await this.playRow([,0,-120,120])
+    shell.setParent(dornaHand);
 
-    this.rotateToDegrees("UpperarmBone", "rotation.x", 20.4);
-    this.rotateToDegrees("ForearmBone", "rotation.x", -75);
-    await this.rotateToDegrees("HandBone", "rotation.x", 47.5);
-    engine.setParent(null);
+    await this.playRow([shellAngle+180,140,,], 1)
 
-    this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
-    await this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
+    await this.playRow([,25,-106,81.5])
+    shell.setParent(vehicleChassis);
 
-    this.rotateToDegrees("ShoulderBone", "rotation.z", powerupAngle);
-    this.rotateToDegrees("UpperarmBone", "rotation.x", 57);
-    this.rotateToDegrees("ForearmBone", "rotation.x", -65);
-    await this.rotateToDegrees("HandBone", "rotation.x", 8);
-    powerup.setParent(scene.getTransformNodeByName("HandBone"));
+    await this.playRow([155,140,,], 1)
 
-    this.rotateToDegrees("ShoulderBone", "rotation.z", 165);
-    await this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
+    // ENGINE ASSEMBLY
 
-    this.rotateToDegrees("UpperarmBone", "rotation.x", 20.4);
-    this.rotateToDegrees("ForearmBone", "rotation.x", -75);
-    await this.rotateToDegrees("HandBone", "rotation.x", 47.5);
-    powerup.setParent(null);
+    await this.playRow([engineAngle, 57, -65, 8])
+    engine.setParent(dornaHand);
 
-    this.rotateToDegrees("ShoulderBone", "rotation.z", 155);
-    await this.rotateToDegrees("UpperarmBone", "rotation.x", 140);
+    await this.playRow([155, 140,,], 1)
+
+    // Model T await this.playRow([155, 20.4, -75, 47.5])
+    await this.playRow([192.5, 10, -115, 103.5])
+    engine.setParent(vehicleChassis);
+
+    await this.playRow([155,140,,], 1)
+
+    // POWERUP ASSEMBLY
+
+    await this.playRow([powerupAngle, 57, -65, 8])
+    powerup.setParent(dornaHand);
+
+    // Model T await this.playRow([165,140,,], 1), this.playRow([165,20.4,-75,47.5]
+    
+    await this.playRow([208,140,,], 1)
+    await this.playRow([208, 10, -115, 103.5])
+    powerup.setParent(vehicleChassis);
+
+    // RESET
+    await this.playRow([155,140,,], 1)
+
   }
+
+  // arrayOfPositions = [Shoulder.z, Upper.x, Fore.x, Hand.x]
+  async playRow(arrayOfPositions, awaitIndex = 3) {
+    var shoulder = parseInt(arrayOfPositions[0])
+    if (!isNaN(shoulder)) {
+      if (awaitIndex == 0) {
+        await this.rotateToDegrees("ShoulderBone", "rotation.z", shoulder);
+      } else {
+        this.rotateToDegrees("ShoulderBone", "rotation.z", shoulder);
+      }
+    }
+
+    var upper = parseInt(arrayOfPositions[1])
+    if (!isNaN(upper)) {
+      if (awaitIndex == 1) {
+        await this.rotateToDegrees("UpperarmBone", "rotation.x", upper);
+      } else {
+        this.rotateToDegrees("UpperarmBone", "rotation.x", upper);
+      }
+    }
+
+    var fore = parseInt(arrayOfPositions[2])
+    if (!isNaN(fore)) {
+      if (awaitIndex == 2) {
+        this.rotateToDegrees("ForearmBone", "rotation.x", fore);
+      } else {
+        this.rotateToDegrees("ForearmBone", "rotation.x", fore);
+      }
+    }
+    
+    var hand = parseInt(arrayOfPositions[3])
+    if (!isNaN(hand)) {
+      if (awaitIndex == 3) {
+        await this.rotateToDegrees("HandBone", "rotation.x", hand);
+      } else {
+        this.rotateToDegrees("HandBone", "rotation.x", hand);
+      }
+    }
+    console.log(shoulder,upper,fore,hand)
+
+  }
+
   async playCSV() {
     var csv = readCsv("Tank_Assembly_J");
     var lastrow = csv[0];
