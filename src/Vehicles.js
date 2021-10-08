@@ -1,10 +1,8 @@
 import * as BABYLON from 'babylonjs';
-import {Vector3} from "@babylonjs/core";
+import {Vector3, Quaternion} from "@babylonjs/core";
 import { _ } from 'core-js';
-//import { FollowCamera } from 'babylonjs/Cameras/followCamera';
 let sbDuration = 30000;//30 second power up duration
 let sbMultiplier = 1.3;
-//once the track is implemented we will know what this is
 
 export function engine(e) {
     switch (e) {
@@ -108,7 +106,11 @@ let disablePhysics = function(){
 let move = function(coordinates, rotation, reenablePhysics){
     this.physicsEnabled && this.disablePhysics();
     this.meshes.body.position = coordinates;
-    this.meshes.body.rotationQuaternion = rotation;
+    this.meshes.body.rotationQuaternion.x = rotation.x; 
+    this.meshes.body.rotationQuaternion.y = rotation.y; 
+    this.meshes.body.rotationQuaternion.z = rotation.z; 
+    this.meshes.body.rotationQuaternion.w = rotation.w; 
+    console.log(`Setting quaternion to: ${rotation}. Result is: ${this.meshes.body.rotationQuaternion}`)
     reenablePhysics && this.startPhysics();
 }
 
@@ -164,7 +166,7 @@ let Prototype = function(speed, torque, wheelDiam, wheelHeight, wheelRestitution
     this.offRoad = false;
     this.sbActivationTime = 0;
     this.originalVector3 = new Vector3(x,-25,z);
-    this.originalQuaternion = rotation;
+    this.originalQuaternion = {x:rotation.x, y:rotation.y, z:rotation.z, w:rotation.w};
     Object.preventExtensions(this);
 }
 
@@ -172,29 +174,66 @@ let resetPosition = function(){
     this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
 }
 
+let vehicleBuilder = function(visible, rotation, scene){
+    this.scene = scene;
+    this.camera = new BABYLON.ArcRotateCamera(
+        "Camera",
+        Math.PI / 5,
+        Math.PI / 3,
+        250,
+        this.meshes.body,
+        this.scene
+      );
+      this.motors = [];
+      this.physicsEnabled = false;
+      !this.userInput && (this.userInput = userInput);
+      this.disablePhysics = disablePhysics;
+      this.test = test;
+      this.move = move;
+      this.resetPosition = resetPosition;
+      this.wheelPositioning = wheelPositioning;
+      this.wheelMeshParent = wheelMeshParent;
+      this.wheels = Object.keys(this.meshes).filter(x => x != "body");
+      //Body part
+      this.attachBodyParts();
+      //Wheel part
+      this.attachWheels && this.attachWheels();
+      this.meshes.body.rotationQuaternion = rotation;
+      this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
+
+      //make babylon meshes invisible
+      if (!visible)
+          Object.entries(this.meshes).map((x) => x[1].isVisible = false);
+}
+
 export class Omni {
     constructor(scene, x, z, engineName, powerupName, visible, rotation) {
-        this.scene = scene;
+        // this.scene = scene;
         this.prototype = new Prototype(20, 200, 2.5, 1, 1, 50, 10, 1, powerupName, engineName, x, z, rotation);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: 23, height: 10 }, scene),
         }
-        this.camera = new BABYLON.ArcRotateCamera(
-            "Camera",
-            Math.PI / 5,
-            Math.PI / 3,
-            250,
-            this.meshes.body,
-            scene
-          );
-        this.physicsEnabled = false;
-        this.move = move;
-        this.test = test;
-        this.resetPosition = resetPosition;
-        this.attachBodyParts();
-        this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
-        if (!visible)
-            Object.entries(this.meshes).map((x) => x[1].isVisible = false);
+        // this.camera = new BABYLON.ArcRotateCamera(
+        //     "Camera",
+        //     Math.PI / 5,
+        //     Math.PI / 3,
+        //     250,
+        //     this.meshes.body,
+        //     scene
+        //   );
+        // this.physicsEnabled = false;
+        // this.move = move;
+        // this.test = test;
+        // this.resetPosition = resetPosition;
+        // this.attachBodyParts();
+        // this.meshes.body.rotationQuaternion = rotation;
+
+        // this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
+        // if (!visible)
+        //     Object.entries(this.meshes).map((x) => x[1].isVisible = false);
+
+        this.protoConst = vehicleBuilder;
+        this.protoConst(visible, rotation, scene);
     }
 
     startPhysics(){
@@ -264,7 +303,6 @@ export class Omni {
 
 export class Tank {
     constructor(scene, x, z, engineName, powerupName, visible, rotation) {
-        this.scene = scene;
         this.prototype = new Prototype(50, 50, 2.5, 1, 0.05, 100, 20, 1, powerupName, engineName, x, z, rotation);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox(null, { width: 22, depth: 20, height: 6 }, scene),
@@ -277,34 +315,8 @@ export class Tank {
             wheelR3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheelR4: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
         };
-        this.camera = new BABYLON.ArcRotateCamera(
-            "Camera",
-            Math.PI / 5,
-            Math.PI / 3,
-            250,
-            this.meshes.body,
-            scene
-          );
-        this.wheels = Object.keys(this.meshes).filter(x => x != "body");
-        this.motors = [];
-        this.physicsEnabled = false;
-        this.userInput = userInput;
-        this.disablePhysics = disablePhysics;
-        this.test = test;
-        this.move = move;
-        this.resetPosition = resetPosition;
-        this.wheelPositioning = wheelPositioning;
-        this.wheelMeshParent = wheelMeshParent;
-
-        //Body positioning
-        this.attachBodyParts();
-        //Wheel positioning
-        this.attachWheels();
-        this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
-
-        //Make all physics meshes invisible
-        if (!visible)
-            Object.entries(this.meshes).map((x) => x[1].isVisible = false);
+        this.protoConst = vehicleBuilder;
+        this.protoConst(visible, rotation, scene);
     }
 
     startPhysics(){
@@ -484,7 +496,6 @@ export class Tank {
 
 export class Train {
     constructor(scene, x, z, engineName, powerupName, visible, rotation) {
-        this.scene = scene;
         this.prototype = new Prototype(30,10,5.5,1,0.05,100,30,1,powerupName,engineName, x, z, rotation);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox("ABCDE", { width: 25, depth: 15, height: 6 }, scene),
@@ -495,33 +506,8 @@ export class Train {
             wheelR2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheelR3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
         };
-        this.camera = new BABYLON.ArcRotateCamera(
-            "Camera",
-            Math.PI / 5,
-            Math.PI / 3,
-            250,
-            this.meshes.body,
-            scene
-          );
-        this.wheels = Object.keys(this.meshes).filter(x => x != "body");
-        this.motors = [];
-        this.physicsEnabled = false;
-        this.userInput = userInput;
-        this.disablePhysics = disablePhysics;
-        this.test = test;
-        this.move = move;
-        this.resetPosition = resetPosition;
-        this.wheelPositioning = wheelPositioning;
-        this.wheelMeshParent = wheelMeshParent;
-        //Body positioning
-        this.attachBodyParts();
-        //Wheel positioning
-        this.attachWheels();
-        this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
-        //Make all physics meshes invisible
-        if (!visible)
-            Object.entries(this.meshes).map((x) => x[1].isVisible = false);
-
+        this.protoConst = vehicleBuilder;
+        this.protoConst(visible, rotation, scene);
     }
 
     startPhysics(){
@@ -685,40 +671,14 @@ export class Train {
 
 export class MT {
     constructor(scene, x, z, engineName, powerupName, visible, rotation) {
-        this.scene = scene;
         this.prototype = new Prototype(30, 10, 5.5, 1.5, 0.01, 80, 10, 1, powerupName, engineName, x, z, rotation);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox(null, { width: 24, depth: 20, height: 6 }, scene),
             wheel1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheel2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
         };
-        this.camera = new BABYLON.ArcRotateCamera(
-            "Camera",
-            Math.PI / 5,
-            Math.PI / 3,
-            250,
-            this.meshes.body,
-            scene
-          );
-        this.wheels = Object.keys(this.meshes).filter(x => x != "body");
-        this.motors = [];
-        this.physicsEnabled = false;
-        this.userInput = userInput;
-        this.disablePhysics = disablePhysics;
-        this.test = test;
-        this.move = move;
-        this.resetPosition = resetPosition;
-        this.wheelPositioning = wheelPositioning;
-        this.wheelMeshParent = wheelMeshParent;
-        //Body part
-        this.attachBodyParts();
-        //Wheel part
-        this.attachWheels();
-        this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
-
-        //make babylon meshes invisible
-        if (!visible)
-            Object.entries(this.meshes).map((x) => x[1].isVisible = false);
+        this.protoConst = vehicleBuilder;
+        this.protoConst(visible, rotation, scene);
     }
 
     startPhysics() {
