@@ -208,30 +208,10 @@ let vehicleBuilder = function(visible, rotation, scene){
 
 export class Omni {
     constructor(scene, x, z, engineName, powerupName, visible, rotation) {
-        // this.scene = scene;
         this.prototype = new Prototype(20, 200, 2.5, 1, 1, 50, 10, 1, powerupName, engineName, x, z, rotation);
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: 23, height: 10 }, scene),
         }
-        // this.camera = new BABYLON.ArcRotateCamera(
-        //     "Camera",
-        //     Math.PI / 5,
-        //     Math.PI / 3,
-        //     250,
-        //     this.meshes.body,
-        //     scene
-        //   );
-        // this.physicsEnabled = false;
-        // this.move = move;
-        // this.test = test;
-        // this.resetPosition = resetPosition;
-        // this.attachBodyParts();
-        // this.meshes.body.rotationQuaternion = rotation;
-
-        // this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
-        // if (!visible)
-        //     Object.entries(this.meshes).map((x) => x[1].isVisible = false);
-
         this.protoConst = vehicleBuilder;
         this.protoConst(visible, rotation, scene);
     }
