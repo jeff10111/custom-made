@@ -285,13 +285,10 @@ var createScene = async function (engine, canvas) {
 };
 
 export class BabylonApp {
-  constructor(vehicleName, engineName, powerupName) {
-    vehicleName = vehicleName || "Car";
-    engineName = engineName || "Jet";
-    powerupName = powerupName || "4 Wheel Drive";
-    this.powerupName = powerupName || "4 Wheel Drive";
-    this.engineType = engineName || "Jet";
-    this.vehicleName = vehicleName;
+  constructor() {
+    this.powerupName;
+    this.engineType;
+    this.vehicleName;
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
     var v = false; // Vehicle physics boxes visibility
@@ -302,10 +299,10 @@ export class BabylonApp {
       scene = returnedScene;
       this.scene = returnedScene;
       vehicles = new vehicles(
-      new Vehicles.MT(scene, 230, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7)),
-      new Vehicles.Tank(scene, 290, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7)),
-      new Vehicles.Train(scene, 260, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7)),
-      new Vehicles.Omni(scene, 320, 20, engineName, powerupName, v, new Quaternion(0,0.7,0,0.7))); 
+      new Vehicles.MT(scene, 230, 20, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7)),
+      new Vehicles.Tank(scene, 290, 20, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7)),
+      new Vehicles.Train(scene, 260, 20, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7)),
+      new Vehicles.Omni(scene, 320, 20, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7))); 
 
       // sendScoreToServer("Athena", 55, "Car", "Emergency Siren", "Nuclear Fusion")
       // sendScoreToServer("Bella", 999, "Spaceship", "Portal", "Jet")
@@ -318,11 +315,9 @@ export class BabylonApp {
       // sendScoreToServer("Nelia", 32, "Spaceship", "Portal", "Nuclear Fusion")
       // sendScoreToServer("Octavia", 19, "Train", "4 Wheel Drive","Nuclear Fusion")
 
-      //scene.getPhysicsEngine().setGravity(-9.8);
+      document.getElementById("vehicleSelection").style.display = "block";
       this.gui = new Hud(scene);
-      switchVehicle(vehicleName, this.scene);
-      addTriggers(this.gui, scene, vehicleName, this.powerupName, this);
-      vehicle.startPhysics();
+
       engine.runRenderLoop(() => {
         scene.render();
         if(vehicle != undefined && vehicle.physicsEnabled)
@@ -366,7 +361,7 @@ export class BabylonApp {
       } else if (ev.key == "ArrowLeft" || ev.key == "a") {
         keysPressed["a"] = 0;
       }
-      console.log("key pressed");
+      console.log("key pressed. Vehicle: " + vehicle);
     });
 
     window.addEventListener("resize", function() {
@@ -714,7 +709,6 @@ export class BabylonApp {
   }
 
   restartSimulation(body,powerup, engine){
-    //Tasks: 
     //move all vehicles back to starting positions
     Object.keys(vehicles).map(x => vehicles[x].resetPosition());
     //Switch vehicle
@@ -728,7 +722,8 @@ export class BabylonApp {
     bestLap = 0;
     stopLap(this.gui);
     document.getElementById("bestScore").innerText = `Current Best Score: 0`
-    //TODO reset triggers
+    //add triggers
+    addTriggers(this.gui, scene, body, this.powerupName, this)
   }
 
   submitScore(name){

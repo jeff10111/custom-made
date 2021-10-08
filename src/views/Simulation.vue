@@ -30,7 +30,7 @@
       </div>
     </div>
     
-    <!-- The Modal -->
+    <!-- The Modal for submitting score-->
     <div id="myModal" class="modal">
     <!-- Modal content -->
     <div class="modal-content">
@@ -56,53 +56,7 @@
     <!-- Vehicle Selection Interface Modal -->
     <div id="vehicleSelection" class="modal">
       <div class="container modal-select-content">
-        <div class="row">
-          <div class="col"><!-- selection rows-->
-            <h1> Choose your components </h1>
-            <div class="row selection">
-              <h4>Bodies</h4>
-              <InterfaceItem2 class="col-sm body" v-for="body in bodies" v-bind:key="body.id" :partName="body" v-on:send="sendText" ref="body"></InterfaceItem2>
-            </div>
-            <div class="row selection">
-              <h4>Engines</h4>
-              <InterfaceItem2 class="col-sm engine" v-for="engine in engines" v-bind:key="engine.id" :partName="engine" v-on:send="sendText" ref="engine"></InterfaceItem2>
-            </div>
-            <div class="row selection">
-              <h4>Power-ups</h4>
-              <InterfaceItem2 class="col-sm powerup" v-for="powerup in powerups" v-bind:key="powerup.id" :partName="powerup" v-on:send="sendText" ref="powerup"></InterfaceItem2>
-            </div>
-          </div>
-          <div class="col">
-            <h1> Vehicle Description </h1>
-            <div class="row" id="descText"><!-- description text -->
-              <div>
-        The <p>{{this.userSelection.body}}</p> represents the 
-        <p>{{this.userSelection.body == "Train" ? "first" : 
-        this.userSelection.body == "Car" ? "second": 
-        this.userSelection.body == "Tank" ? "third" : "fourth"}}</p> industrial revolution.
-
-        The <p>{{this.userSelection.engine}}</p> engine represents the 
-        <p>{{this.userSelection.engine == "Steam" ? "first" : 
-        this.userSelection.engine == "Petrol" ? "second": 
-        this.userSelection.engine == "Jet" ? "third" : "fourth"}}</p> industrial revolution. 
-
-        The <p>{{this.userSelection.powerup}}</p> power-up
-        {{this.userSelection.powerup == "4 Wheel Drive" ? "allows the vehicle to drive over the 4WD section of the track more easily." :
-        this.userSelection.powerup == "Emergency Siren" ? "allows the vehicle to pass through red lights without stopping" :
-        this.userSelection.powerup == "Portal" ? "allows the vehicle to drive through one of the walls":
-        this.userSelection.powerup == "Speed Boost" ? "gives the vehicle a temporary speed boost when activated by the player.": ""
-        }}
-              </div>
-            </div>
-            <div class="row"><!-- images -->
-                <img src="../assets/Car.png" id="CarImage" title="car" width="200" />
-                <img src="../assets/Tank.png" id="TankImage" title="tank" width="200" />
-                <img src="../assets/Spaceship.png" title="spaceship" id="SpaceshipImage" width="200" />
-                <img src="../assets/Train.png" title="train" id="TrainImage" width="100"/>
-                <button id="startSimulation" @click="restartSimulation">Start Simulation</button>
-            </div>
-          </div>
-        </div>
+        <SelectionInterface v-on:send="restartSimulation"></SelectionInterface>
       </div>
     </div>  
 
@@ -111,14 +65,18 @@
 
 <script>
 import * as CanvasApp from "../canvasApp.js";
-import InterfaceItem2 from '@/components/InterfaceItem2.vue'
 import Leaderboard from '@/components/Leaderboard.vue'
+import SelectionInterface from '@/components/SelectionInterface.vue'
+
 export default {
   name: "Simulation",
   props: {},
-  components: {InterfaceItem2, Leaderboard},
+  components: {SelectionInterface, Leaderboard},
   methods: {
-    restartSimulation() {
+    restartSimulation(body, engine, powerup) {
+      this.userSelection.body = body || "Car";
+      this.userSelection.engine = engine || "Steam";
+      this.userSelection.powerup = powerup || "4 Wheel Drive";
       this.Application.restartSimulation(this.userSelection.body, this.userSelection.powerup, this.userSelection.engine);
       document.getElementById("vehicleSelection").style.display = "none";
     },
@@ -205,9 +163,9 @@ export default {
     };
   },
   mounted() {
-    this.userSelection["body"] = this.$route.query.body;
-    this.userSelection["engine"] = this.$route.query.engine;
-    this.userSelection["powerup"] = this.$route.query.powerup;
+    this.userSelection["body"] = this.$route.query.body || "Car";
+    this.userSelection["engine"] = this.$route.query.engine || "Steam";
+    this.userSelection["powerup"] = this.$route.query.powerup || "4 Wheel Drive";
       if(!this.Application)
         this.Application = new CanvasApp.BabylonApp(
         this.userSelection["body"],

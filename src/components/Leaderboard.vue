@@ -8,7 +8,7 @@
           <th>Body</th>
           <th>Power-up</th>
           <th>Engine</th>
-          <tr v-for="object in this.scores" :key="object.name">
+          <tr v-for="object in this.scores" :key="object.name+1">
             <td>{{ object.name }}</td>
             <td>{{ object.score }}</td>
             <td>{{ ["Train", "Car", "Tank", "Spaceship"][object.body] }}</td>

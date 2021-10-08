@@ -50,8 +50,7 @@
                 <img src="../assets/Spaceship.png" id="SpaceshipImage" width="200" hidden/>
                 <img src="../assets/Train.png" id="TrainImage" width="200"/>
 
-          <router-link tag="button" id="startSimulation" :to="'/simulation?body=' + userSelection.body + '&powerup=' + userSelection.powerup + '&engine=' + userSelection.engine">
-                Start Simulation</router-link>
+          <button id="startSimulation" @click="sendRestart">Start Simulation</button>
         </div>
       </div>
     </div>
@@ -82,6 +81,9 @@ export default {
     };
   },
   methods: {
+            sendRestart(){
+              this.$emit('send',this.userSelection['body'], this.userSelection['engine'], this.userSelection['powerup']);
+            },
             sendText: function(text) {
               //this statement changes the image displayed
               //when a user select a different vehicle

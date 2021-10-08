@@ -11,11 +11,6 @@ const routes = [
     component: About
   },
   {
-    path: '/selection',
-    name: 'SelectionInterface',
-    component: () => import('../views/SelectionInterface.vue')
-  },
-  {
     path: '/simulation',
     name: 'Simulation',
     component: () => import('../views/Simulation.vue')
