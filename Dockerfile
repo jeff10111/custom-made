@@ -25,7 +25,7 @@ RUN npm ci
 # Copy local code to the container image.
 COPY . ./
 
-RUN npm run build
+RUN npm run serve
 
 # Run the web service on container startup.
 CMD [ "npm", "run", "start" ]
