@@ -124,7 +124,8 @@ export default {
       document.getElementById("leaderboardModal").style.display = "none";
     },
     anything(){
-      this.Application.something();
+      // this.Application.something();
+      this.buildVehicle();
     },
     openVehicleSelection(){
       document.getElementById("vehicleSelection").style.display = "block";
