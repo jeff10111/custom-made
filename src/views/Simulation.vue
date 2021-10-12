@@ -16,7 +16,6 @@
       <button type="button" @click="anything" hidden>anythingForTesting</button>
       <button type="button" @click="openVehicleSelection">Change Vehicle</button>
       <button type="button" @click="openLeaderboardModal">Open Leaderboard</button>
-      <button type="button" @click="openControlsModal">Open Controls</button>
       <div id="bestScore">Current Best Score: 0</div>
 
     </div>
