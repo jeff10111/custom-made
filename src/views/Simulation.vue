@@ -13,9 +13,11 @@
       <button type="button" @click="lowerBlocks" hidden>Lower Blocks!</button>
       <button type="button" @click="powerUp" hidden>Activate Powerup!!</button>
       <button type="button" @click="scoreSubmission">Submit Best Score</button>
-      <button type="button" @click="anything">anythingForTesting</button>
-      <button type="button" @click="openVehicleSelection">Change Vehicle</button><div id="bestScore">Current Best Score: 0</div>
+      <button type="button" @click="anything" hidden>anythingForTesting</button>
+      <button type="button" @click="openVehicleSelection">Change Vehicle</button>
       <button type="button" @click="openLeaderboardModal">Open Leaderboard</button>
+      <button type="button" @click="openControlsModal">Open Controls</button>
+      <div id="bestScore">Current Best Score: 0</div>
 
     </div>
     <div>
@@ -27,6 +29,11 @@
       <div id="leaderboardModal-content">
         <button type="button" @click="closeLeaderboard"> CLOSE </button>
         <Leaderboard></Leaderboard>
+      </div>
+    </div>
+
+    <div id="controlsModal" class="modal">
+      <div id="controlsModal-content">
       </div>
     </div>
     
@@ -167,11 +174,7 @@ export default {
     this.userSelection["engine"] = this.$route.query.engine || "Steam";
     this.userSelection["powerup"] = this.$route.query.powerup || "4 Wheel Drive";
       if(!this.Application)
-        this.Application = new CanvasApp.BabylonApp(
-        this.userSelection["body"],
-        this.userSelection["engine"],
-        this.userSelection["powerup"]
-        );
+        this.Application = new CanvasApp.BabylonApp();
     [this.userSelection.body, this.userSelection.engine, this.userSelection.powerup].map(x => this.sendText(x));
   }, 
 };

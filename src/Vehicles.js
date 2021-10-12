@@ -176,14 +176,10 @@ let resetPosition = function(){
 
 let vehicleBuilder = function(visible, rotation, scene){
     this.scene = scene;
-    this.camera = new BABYLON.ArcRotateCamera(
-        "Camera",
-        Math.PI / 5,
-        Math.PI / 3,
-        250,
-        this.meshes.body,
-        this.scene
-      );
+    this.camera = 
+    new BABYLON.ArcRotateCamera("Camera", Math.PI / 5, Math.PI / 3, 250, this.meshes.body, this.scene, true);
+      //new BABYLON.FollowCamera("FollowCamera", new Vector3(0,0,0),this.scene, this.meshes.body);
+      //new BABYLON.UniversalCamera();
       this.motors = [];
       this.physicsEnabled = false;
       !this.userInput && (this.userInput = userInput);

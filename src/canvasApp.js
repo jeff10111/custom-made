@@ -340,9 +340,7 @@ export class BabylonApp {
         keysPressed["d"] = 1;
       } else if (ev.key == "ArrowLeft" || ev.key == "a") {
         keysPressed["a"] = 1;
-      } else if (ev.key == "c") {
-        new BABYLON.FollowCamera();
-      }
+      } 
     });
 
     window.addEventListener("keyup", (ev) => {
