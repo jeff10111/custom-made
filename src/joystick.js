@@ -48,7 +48,7 @@ export class JoyStick{
         leftPuck.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
         leftPuck.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
         leftPuck.isVisible = true;
-        leftThumbContainer.alpha = 0.9;
+        leftThumbContainer.alpha = 0.4;
 
 
         leftThumbContainer.onPointerDownObservable.add(function() {
