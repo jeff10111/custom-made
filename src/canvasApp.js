@@ -51,17 +51,19 @@ function switchVehicle(vehicleName, scene) {
 var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
   try {
     thisMesh = scene.getMeshByName(thisMesh.name);
+    var meshRot = thisMesh.rotation
+
+    // meshRot = new BABYLON.Vector3(0,0,0)
     thisMesh.scaling.x = Math.abs(thisMesh.scaling.x);
     thisMesh.scaling.y = Math.abs(thisMesh.scaling.y);
     thisMesh.scaling.z = Math.abs(thisMesh.scaling.z);
 
     var bb = thisMesh.getBoundingInfo().boundingBox;
     // Don't really know why I have to double the scale but it works
-    var width = (bb.maximum.x - bb.minimum.x) * scaleFactor;
-    var height = (bb.maximum.y - bb.minimum.y) * scaleFactor;
-    var depth = (bb.maximum.z - bb.minimum.z) * scaleFactor;
-    // console.log(thisMesh.name + " " + width + " " + depth + " " + height);
-    // console.log(bb.centerWorld, bb.directions);
+    var width = (bb.maximum.x - bb.minimum.x) * 1;
+    var height = (bb.maximum.y - bb.minimum.y) * 1;
+    var depth = (bb.maximum.z - bb.minimum.z) * 1;
+    thisMesh.rotation = meshRot
 
     var box = MeshBuilder.CreateBox(
       thisMesh.name + "_bb",
@@ -73,6 +75,14 @@ var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
     }
     box.visibility = 0;
 
+    if (thisMesh.name.includes("_rot")) {
+      var numbers = parseFloat(thisMesh.name.slice(thisMesh.name.lastIndexOf("_rot") + 4))
+      console.log("Rot: " + numbers)
+      thisMesh.rotation.y = numbers * Math.PI / 180
+      box.rotation.y = (numbers * Math.PI / 180) * -1
+    }
+
+
     box.physicsImpostor = new PhysicsImpostor(
       box,
       PhysicsImpostor.BoxImpostor,
@@ -81,9 +91,10 @@ var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
     );
     //console.log("Making bb of " + thisMesh.name);
 
-    // box.showBoundingBox = true;
+
+    box.showBoundingBox = true;
     box.position = bb.centerWorld;
-    box.rotation = Vector3.TransformCoordinates(bb.centerWorld, bb.directions);
+
   } catch (e) {
     console.log(e);
   }
@@ -210,30 +221,6 @@ var createScene = async function (engine, canvas) {
 
   await SceneLoader.ImportMeshAsync("", "/assets/", "track.glb").then(
     (result) => {
-
-      var rootNode = scene.getTransformNodeByName("MainTrack").parent;
-
-      var sphere = MeshBuilder.CreateSphere(
-        "sphere",
-        { diameter: 10, segments: 32 },
-        scene
-      );
-      sphere.PhysicsImpostor = new PhysicsImpostor(
-        sphere,
-        PhysicsImpostor.SphereImpostor,
-        { mass: 1, restitution: 0.1 },
-        scene
-      );
-      sphere.position.y += 150;
-
-      var impulseDirection = new Vector3(1, 1, 0);
-      var impulseMagnitude = 5;
-      var contactLocalRefPoint = Vector3.Zero();
-
-      sphere.PhysicsImpostor.applyImpulse(
-        impulseDirection.scale(impulseMagnitude),
-        sphere.getAbsolutePosition().add(contactLocalRefPoint)
-      );
       for (var mesh in result.meshes) {
         var thisMesh = result.meshes[mesh];
         if (
@@ -527,7 +514,26 @@ export class BabylonApp {
     //console.log("Hand spin amt: " + test);
     this.rotateTo("HandBone", "rotation.x", Math.PI / test);
   }
+
+  attachTo(attachable, attachPoint, offsetx=0, offsety=0, offsetz=0) {
+    var currentParent = attachPoint.parent
+    attachPoint.setParent(null);
+    attachable.setParent(null);
+    var matrix = attachPoint.computeWorldMatrix(true);  // force calculation of world matrix
+    var local_pos = new BABYLON.Vector3(offsetx, offsety, offsetz); //top middle of box relative to box
+    var global_pos = BABYLON.Vector3.TransformCoordinates(local_pos, matrix); //calculate world position
+    attachable.position = global_pos; //position sphere relative to world
+    attachable.setParent(currentParent)
+    attachPoint.setParent(currentParent)
+  }
+
   async buildVehicle() {
+    var moveRot = vehicle.meshes.body.rotation
+    moveRot.y = this.rad(70)
+    
+    vehicle.move(new BABYLON.Vector3(418, -25, -1), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z),false)
+    // vehicle.meshes.body.rotation.y = 
+
     var dornaHand = scene.getTransformNodeByName("HandBone");
 
     console.log(userSelection.body, userSelection.engine, userSelection.powerup);
@@ -586,11 +592,8 @@ export class BabylonApp {
     var shellAngle = 0;
     switch (userSelection.body) {
       case "Car":
-        break;
       case "Train":
-        break;
       case "Spaceship":
-        break;
       case "Tank":
         shell = scene.getTransformNodeByName("TankTop.1");
         shellAngle = 20;
@@ -606,7 +609,10 @@ export class BabylonApp {
     await this.playRow([shellAngle+180,140,,], 1)
 
     await this.playRow([,25,-106,81.5])
-    shell.setParent(vehicleChassis);
+    
+    var topAttachpoint = scene.getMeshByName("Tank_TopAttach");
+    this.attachTo(shell, topAttachpoint, 0,0,0)
+    shell.rotation = new BABYLON.Vector3(0, this.rad(180), this.rad(180))
 
     await this.playRow([155,140,,], 1)
 
@@ -619,7 +625,12 @@ export class BabylonApp {
 
     // Model T await this.playRow([155, 20.4, -75, 47.5])
     await this.playRow([192.5, 10, -115, 103.5])
-    engine.setParent(vehicleChassis);
+    var engineAttach = scene.getMeshByName("Tank_EngineAttach");
+    this.attachTo(engine, engineAttach, 0,0.5,0)
+    engine.rotation = new BABYLON.Vector3(0, this.rad(90), this.rad(180))
+
+
+    
 
     await this.playRow([155,140,,], 1)
 
@@ -632,11 +643,19 @@ export class BabylonApp {
     
     await this.playRow([208,140,,], 1)
     await this.playRow([208, 10, -115, 103.5])
-    powerup.setParent(vehicleChassis);
+    var powerupAttach = scene.getMeshByName("Tank_PowerupAttach");
+    this.attachTo(powerup, powerupAttach, 0,0.5,0)
+    powerup.rotation = new BABYLON.Vector3(0, this.rad(90), this.rad(180))
 
     // RESET
     await this.playRow([155,140,,], 1)
 
+    vehicle.startPhysics()
+
+  }
+
+  rad(degrees) {
+    return degrees * Math.PI / 180
   }
 
   // arrayOfPositions = [Shoulder.z, Upper.x, Fore.x, Hand.x]
@@ -799,6 +818,7 @@ export class BabylonApp {
     //add triggers
     addTriggers(this.gui, scene, body, this.powerupName, this)
   }
+  
 
   submitScore(name){
     if(bestLap == 0)

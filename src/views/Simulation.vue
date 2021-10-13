@@ -7,7 +7,7 @@
     </div>
     <div class="btn-group" role="group">
       <button type="button" @click="spinArm" hidden>Spin!</button>
-      <button type="button" @click="buildVehicle" hidden>Build Selected Vehicle!</button>
+      <button type="button" @click="buildVehicle">Build Selected Vehicle!</button>
       <button type="button" @click="playCSV" hidden>Play CSV!</button>
       <button type="button" @click="raiseBlocks" id="av" class="simButton" hidden>Raise Blocks!</button>
       <button type="button" @click="lowerBlocks" hidden>Lower Blocks!</button>

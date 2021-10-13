@@ -329,6 +329,22 @@ export class Tank {
         mesh.position.z -= 23;
         mesh.position.x -= 2;
 
+        mesh = this.scene.getMeshByName("Tank_PowerupAttach");
+        mesh.parent = body;
+        mesh.position.y -= 4;
+        mesh.position.z -= 23;
+        mesh.position.x -= 2;
+        mesh = this.scene.getMeshByName("Tank_EngineAttach");
+        mesh.parent = body;
+                mesh.position.y -= 4;
+        mesh.position.z -= 23;
+        mesh.position.x -= 2;
+        mesh = this.scene.getMeshByName("Tank_TopAttach");
+        mesh.parent = body;
+        mesh.position.y -= 4;
+        mesh.position.z -= 23;
+        mesh.position.x -= 2;
+
     }
     attachWheels() {
         let L1 = this.meshes.wheelL1;
