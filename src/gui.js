@@ -16,9 +16,10 @@ import {
   Effect,
   SceneSerializer,
 } from "@babylonjs/core";
+import { JoyStick } from "./joystick"; 
 
 export class Hud {
-  constructor(scene) {
+  constructor(scene, keysPressed) {
     this._scene = scene;
 
     const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
@@ -50,6 +51,9 @@ export class Hud {
     clockTime.fontFamily = "Lucida Console";
     stackPanel.addControl(clockTime);
     this._clockTime = clockTime;
+
+    //start joystick
+    new JoyStick(playerUI, keysPressed);
   }
 
   updateHud() {

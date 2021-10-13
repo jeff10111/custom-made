@@ -1,7 +1,8 @@
 let vehicle;
 let userSelection = { "body": "", "powerup":"", "engine":""}
 let vehicles = function(MT, Tank, Train, Omni){this.MT = MT; this.Tank = Tank, this.Train = Train, this.Omni = Omni};
-let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
+//let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
+let keysPressed = function(){ this.w = 0, this.a = 0, this.s = 0, this.d = 0 };
 let powerUpHasBeenActivated = false;
 let userHasRunRedLight = false;
 let startTime;
@@ -183,7 +184,6 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
           document.getElementById("bestScore").innerText = `Current Best Score: ${app.calculateScore(bestLap)}`;
           app.lowerBlocks();
         }
-        vehicle.attr.offRoad = false;
         fourWheelDrivePassed = false;
         vehicle.prototype.offRoad = false;
       }
@@ -292,8 +292,12 @@ export class BabylonApp {
     this.powerupName;
     this.engineType;
     this.vehicleName;
+    this.keysPressed = new keysPressed();
+    //this.leftJoystick = new BABYLON.VirtualJoystick(true);
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
+    // this.leftJoystick.canvas = canvas;
+    // this.leftJoystick.containerSize = 5;
     var v = false; // Vehicle physics boxes visibility
     // initialize babylon scene and engine
     var engine = new Engine(canvas, true);
@@ -319,12 +323,12 @@ export class BabylonApp {
       // sendScoreToServer("Octavia", 19, "Train", "4 Wheel Drive","Nuclear Fusion")
 
       document.getElementById("vehicleSelection").style.display = "block";
-      this.gui = new Hud(scene);
+      this.gui = new Hud(scene, this.keysPressed);
 
       engine.runRenderLoop(() => {
         scene.render();
         if(vehicle != undefined && vehicle.physicsEnabled)
-          vehicle.userInput(keysPressed);
+          vehicle.userInput(this.keysPressed);
           this.gui.updateHud();
       });
     });
@@ -336,13 +340,13 @@ export class BabylonApp {
           scene.debugLayer.show();
         }
       } else if (ev.key == "ArrowUp" || ev.key == "w") {
-        keysPressed["w"] = 1;
+        this.keysPressed["w"] = 1;
       } else if (ev.key == "ArrowDown" || ev.key == "s") {
-        keysPressed["s"] = 1;
+        this.keysPressed["s"] = 1;
       } else if (ev.key == "ArrowRight" || ev.key == "d") {
-        keysPressed["d"] = 1;
+        this.keysPressed["d"] = 1;
       } else if (ev.key == "ArrowLeft" || ev.key == "a") {
-        keysPressed["a"] = 1;
+        this.keysPressed["a"] = 1;
       } 
     });
 
@@ -354,13 +358,13 @@ export class BabylonApp {
           scene.debugLayer.show();
         }
       } else if (ev.key == "ArrowUp" || ev.key == "w") {
-        keysPressed["w"] = 0;
+        this.keysPressed["w"] = 0;
       } else if (ev.key == "ArrowDown" || ev.key == "s") {
-        keysPressed["s"] = 0;
+        this.keysPressed["s"] = 0;
       } else if (ev.key == "ArrowRight" || ev.key == "d") {
-        keysPressed["d"] = 0;
+        this.keysPressed["d"] = 0;
       } else if (ev.key == "ArrowLeft" || ev.key == "a") {
-        keysPressed["a"] = 0;
+        this.keysPressed["a"] = 0;
       }
       console.log("key pressed. Vehicle: " + vehicle);
     });

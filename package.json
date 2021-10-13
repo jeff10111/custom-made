@@ -43,7 +43,7 @@
     },
     "rules": {
       "no-unused-vars": "off",
-	  "no-sparse-arrays": "off"
+      "no-sparse-arrays": "off"
     }
   },
   "browserslist": [
