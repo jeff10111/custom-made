@@ -48,7 +48,7 @@ function switchVehicle(vehicleName, scene) {
   vehicle.camera.attachControl(document.getElementById("gameCanvas"), true);
 }
 
-var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
+var addCollider = function(scene, thisMesh, visible, friction) {
   try {
     thisMesh = scene.getMeshByName(thisMesh.name);
     var meshRot = thisMesh.rotation
@@ -60,9 +60,9 @@ var addCollider = function(scene, thisMesh, visible, friction, scaleFactor) {
 
     var bb = thisMesh.getBoundingInfo().boundingBox;
     // Don't really know why I have to double the scale but it works
-    var width = (bb.maximum.x - bb.minimum.x) * 1;
-    var height = (bb.maximum.y - bb.minimum.y) * 1;
-    var depth = (bb.maximum.z - bb.minimum.z) * 1;
+    var width = (bb.maximum.x - bb.minimum.x);
+    var height = (bb.maximum.y - bb.minimum.y);
+    var depth = (bb.maximum.z - bb.minimum.z);
     thisMesh.rotation = meshRot
 
     var box = MeshBuilder.CreateBox(
@@ -237,14 +237,13 @@ var createScene = async function (engine, canvas) {
 
         if (thisMesh.name.startsWith("MapCollide")) {
           var friction = 100;
-          var scaleFactor = 2.5;
           if (thisMesh.name.includes("Ground")) {
             friction = 100;
           }
           if (thisMesh.name.includes("Visible")) {
-            addCollider(scene, thisMesh, true, friction, scaleFactor);
+            addCollider(scene, thisMesh, true, friction);
           } else {
-            addCollider(scene, thisMesh, false, friction, scaleFactor);
+            addCollider(scene, thisMesh, false, friction);
           }
         }
       }
@@ -750,7 +749,7 @@ export class BabylonApp {
         roadblockTop
       ),
     ]).then((vals) => {
-      addCollider(scene, roadblock, true, 100, 1);
+      addCollider(scene, roadblock, true, 100);
     });
   }
 
