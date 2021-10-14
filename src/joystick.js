@@ -17,16 +17,20 @@ let makeThumbArea = function(name, thickness, color, background, curves){
 export class JoyStick{
     constructor(adt, keysPressed)
     {
-        let xAddPos = 0;
-        let yAddPos = 0;
+        //Distance from bottom of canvas
         let sideJoystickOffset = 20;
         let bottomJoystickOffset = -20;
-        let center = {x:82.5 + sideJoystickOffset, y:518 + bottomJoystickOffset};
+        //Sizes
+        let puckSize = 60;
+        let innerContainerHeight = 80;
+        let outerContainerHeight = 200;
+        //Center point offset for user mouse/touch input calculations
+        let center = {x:outerContainerHeight/2, y:adt._canvas.height - outerContainerHeight/2};
 
-        this.x = 5;
-        let leftThumbContainer = makeThumbArea("leftThumb", 2, "blue", null);
-        leftThumbContainer.height = "200px";
-        leftThumbContainer.width = "200px";
+        //Outer container
+        let leftThumbContainer = makeThumbArea("leftThumb", 2, "red", null);
+        leftThumbContainer.height = `${outerContainerHeight}px`;
+        leftThumbContainer.width = `${outerContainerHeight}px`;
         leftThumbContainer.isPointerBlocker = true;
         leftThumbContainer.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
         leftThumbContainer.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
@@ -34,103 +38,101 @@ export class JoyStick{
         leftThumbContainer.left = sideJoystickOffset;
         leftThumbContainer.top = bottomJoystickOffset;
   
-        let leftInnerThumbContainer = makeThumbArea("leftInnterThumb", 4, "blue", null);
-        leftInnerThumbContainer.height = "80px";
-        leftInnerThumbContainer.width = "80px";
+        //Inner container
+        let leftInnerThumbContainer = makeThumbArea("leftInnterThumb", 4, "red", null);
+        leftInnerThumbContainer.height = `${innerContainerHeight}px`;
+        leftInnerThumbContainer.width = `${innerContainerHeight}px`;
         leftInnerThumbContainer.isPointerBlocker = true;
         leftInnerThumbContainer.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
         leftInnerThumbContainer.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
 
-        let leftPuck = makeThumbArea("leftPuck",0, "blue", "blue");
-        leftPuck.height = "60px";
-        leftPuck.width = "60px";
+        //Puck
+        let leftPuck = makeThumbArea("leftPuck",0, "white", "white");
+        leftPuck.height = `${puckSize}px`;
+        leftPuck.width = `${puckSize}px`;
         leftPuck.isPointerBlocker = true;
         leftPuck.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
         leftPuck.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
         leftPuck.isVisible = true;
-        leftThumbContainer.alpha = 0.4;
 
-
+        //THUMB DOWN
         leftThumbContainer.onPointerDownObservable.add(function() {
             leftPuck.isDown = true;
         });
 
+        //THUMB UP
         leftThumbContainer.onPointerUpObservable.add(function() {
             leftPuck.isDown = false;
+            //release all inputs
             keysPressed['a'] = keysPressed['w'] = keysPressed['s'] = keysPressed['d'] = 0;
+            //return puck to center
+            leftPuck.left = 0;
+            leftPuck.top = 0;
         });
 
+        //THUMB MOVED
         leftThumbContainer.onPointerMoveObservable.add(function(coordinates) {
-            if (!leftPuck.isDown) 
-                return;
-            
-            xAddPos = coordinates.x-(leftThumbContainer._currentMeasure.width*.5)-sideJoystickOffset;
-            yAddPos = adt._canvas.height - coordinates.y-(leftThumbContainer._currentMeasure.height*.5)+bottomJoystickOffset;
-            leftPuck.floatLeft = xAddPos;
-            leftPuck.floatTop = yAddPos*-1;
-            leftPuck.left = leftPuck.floatLeft;
-            leftPuck.top = leftPuck.floatTop;
-                
-            //up or down
-            if(coordinates.x - center.x > -42 && coordinates.x - center.x < 42)
-            {
-                keysPressed['a'] = 0; keysPressed['d'] = 0;
-                if(coordinates.y - center.y > 0)
-                {
-                    console.log("UP");
-                    keysPressed['s'] = 1;keysPressed['w'] = 0;
-                }
-                else 
-                {
-                    console.log("DOWN");
-                    keysPressed['s'] = 0;keysPressed['w'] = 1;
-                }
-            }
-            //left or right
-            else if(coordinates.y - center.y > -42 && coordinates.y - center.y < 42)
-            {
-                keysPressed['s'] = 0; keysPressed['w'] = 0;
-                if(coordinates.x - center.x > 0)
-                {
-                    console.log("right");
-                    (keysPressed['a'] = 0); (keysPressed['d'] = 1);
-                } else
-                {
-                    console.log("left");
-                    (keysPressed['a'] = 1); (keysPressed['d'] = 0);
-                }   
-            }
-            //left up, right up
-            else if(coordinates.y - center.y < 0)
-            {
-                keysPressed['s'] = 0; keysPressed['w'] = 1;
-                if(coordinates.x - center.x > 0)
-                {
-                    console.log("left up");
-                    keysPressed['d'] = 1; keysPressed['a'] = 0;
-                } else
-                {
-                    console.log("right up")
-                    keysPressed['d'] = 0; keysPressed['a'] = 1;
-                }
 
-            } 
-            //left down, right down
-            else if (coordinates.y - center.y > 0)
+            //Make sure the user is pressing on not just passing cursor over the puck
+            if (!leftPuck.isDown) 
             {
-                keysPressed['w'] = 0; keysPressed['s'] = 1;
-                if(coordinates.x - center.x > 0)
+                return;
+            }
+                
+            //Set puck position 
+            leftPuck.left = coordinates.x-(leftThumbContainer._currentMeasure.width*.5)-sideJoystickOffset;
+            leftPuck.top = (adt._canvas.height - coordinates.y-(leftThumbContainer._currentMeasure.height*.5)+bottomJoystickOffset)*-1;
+
+            //Calculate angle from 0,0 to point
+            let angle = Math.atan2(coordinates.y - center.y, coordinates.x - center.x); 
+
+            //If the puck is too close to center, no input
+            if(Math.sqrt(Math.pow(coordinates.x - center.x, 2) + Math.pow(coordinates.y - center.y, 2)) < 50)
+            {
+                keysPressed['w'] = 0; keysPressed['a'] = 0; keysPressed['s'] = 0; keysPressed['d'] = 0;
+                return;
+            }
+                           
+            //Setting key presses using the angle
+            if(angle > 0)
+            {
+                if(angle < 0.125 * Math.PI)//D
                 {
-                    console.log("left down");
-                    keysPressed['d'] = 1; keysPressed['a'] = 0;
-                } else
+                    keysPressed['w'] = 0; keysPressed['a'] = 0; keysPressed['s'] = 0; keysPressed['d'] = 1;
+                } else if (angle < 0.375 * Math.PI)//SD
                 {
-                    console.log("right down");
-                    keysPressed['d'] = 0; keysPressed['a'] = 1;
+                    keysPressed['w'] = 0; keysPressed['a'] = 0; keysPressed['s'] = 1; keysPressed['d'] = 1;
+                } else if (angle < 0.625 * Math.PI)//S
+                {
+                    keysPressed['w'] = 0; keysPressed['a'] = 0; keysPressed['s'] = 1; keysPressed['d'] = 0;
+                } else if (angle < 0.875 * Math.PI)//SA
+                {
+                    keysPressed['w'] = 0; keysPressed['a'] = 1; keysPressed['s'] = 1; keysPressed['d'] = 0;
+                } else //A
+                {
+                    keysPressed['w'] = 0; keysPressed['a'] = 1; keysPressed['s'] = 0; keysPressed['d'] = 0;
+                }
+            } else {
+                if(angle > -0.125 * Math.PI)//D
+                {
+                    keysPressed['w'] = 0; keysPressed['a'] = 0; keysPressed['s'] = 0; keysPressed['d'] = 1;
+                } else if (angle > -0.375 * Math.PI)//WD
+                {
+                    keysPressed['w'] = 1; keysPressed['a'] = 0; keysPressed['s'] = 0; keysPressed['d'] = 1;
+                } else if (angle > -0.625 * Math.PI)//W
+                {
+                    keysPressed['w'] = 1; keysPressed['a'] = 0; keysPressed['s'] = 0; keysPressed['d'] = 0;
+                } else if (angle > -0.875 * Math.PI)//WA
+                {
+                    keysPressed['w'] = 1; keysPressed['a'] = 1; keysPressed['s'] = 0; keysPressed['d'] = 0;
+                }else //A
+                {
+                    keysPressed['w'] = 0; keysPressed['a'] = 1; keysPressed['s'] = 0; keysPressed['d'] = 0;
                 }
             }
         });
 
+        //Adding the two circles and puck
         adt.addControl(leftThumbContainer);
         leftThumbContainer.addControl(leftInnerThumbContainer);
         leftThumbContainer.addControl(leftPuck);
