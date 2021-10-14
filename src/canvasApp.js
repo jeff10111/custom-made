@@ -116,6 +116,18 @@ var stopLap = function(gui) {
 };
 
 var addTriggers = function(gui, scene, vehicleName, powerup, app) {
+
+    var assemblyTrigger = scene.getMeshByName("Trigger_Assembly");
+  assemblyTrigger.visibility = 0;
+  var carTrigger = scene.getMeshByName("Trigger_CarPark");
+  carTrigger.visibility = 0;
+  var trainTrigger = scene.getMeshByName("Trigger_TrainPark");
+  trainTrigger.visibility = 0;
+  var spaceshipTrigger = scene.getMeshByName("Trigger_SpaceshipPark");
+  spaceshipTrigger.visibility = 0;
+  var tankTrigger = scene.getMeshByName("Trigger_TankPark");
+  tankTrigger.visibility = 0;
+
   var vehicleMesh = scene.getMeshByName(
     { Car: "MTLeft", Train: "TL1", Spaceship: "Omni", Tank: "TankL1" }[
       vehicleName
@@ -125,6 +137,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     console.log("VEHICLE MESH NOT DEFINED: " + vehicleName);
     return;
   }
+  
   var stopSignTrigger = scene.getMeshByName("Trigger_StopSign");
   stopSignTrigger.actionManager = new ActionManager(scene);
   stopSignTrigger.visibility = 0.1;
@@ -200,6 +213,8 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
       }
     )
   );
+
+
 };
 
 var createScene = async function (engine, canvas) {
@@ -527,10 +542,7 @@ export class BabylonApp {
   }
 
   async buildVehicle() {
-    var moveRot = vehicle.meshes.body.rotation
-    moveRot.y = this.rad(70)
-    
-    vehicle.move(new BABYLON.Vector3(418, -25, -1), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z),false)
+
     // vehicle.meshes.body.rotation.y = 
 
     var dornaHand = scene.getTransformNodeByName("HandBone");
@@ -539,6 +551,7 @@ export class BabylonApp {
     
     var engine;
     var engineAngle;
+    
 
     switch (userSelection.engine) {
       case "Nuclear Fusion":
@@ -586,21 +599,44 @@ export class BabylonApp {
         break;
     }
 
-    var vehicleChassis = vehicle.meshes.body;
+    var moveRot = vehicle.meshes.body.rotation
     var shell;
     var shellAngle = 0;
+    var enginePlaceAngle;
+    var powerupPlaceAngle;
+
     switch (userSelection.body) {
       case "Car":
+        shellAngle = -20;
+        //vehicle.move(new BABYLON.Vector3(418, -25, -1), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z),false)
+        break;
       case "Train":
+        shellAngle = -60;
+        break;
       case "Spaceship":
+        
+        moveRot.y = this.rad(120)
+        vehicle.move(new BABYLON.Vector3(387, -25, -19), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z),false)
+        shellAngle = 60;
+        enginePlaceAngle = 245;
+        powerupPlaceAngle = 235;
+        break;
       case "Tank":
-        shell = scene.getTransformNodeByName("TankTop.1");
+        moveRot = vehicle.meshes.body.rotation
+        moveRot.y = this.rad(70)
+        vehicle.move(new BABYLON.Vector3(418, -25, -1), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z),false)
         shellAngle = 20;
+        enginePlaceAngle = 192.5;
+        powerupPlaceAngle = 208;
         break;
     }
 
+    shell = scene.getTransformNodeByName(userSelection.body+"Top");
+
     // CHASSIS ASSEMBLY
     await this.playRow([shellAngle,140,,], 1)
+    /*eslint-disable */
+
 
     await this.playRow([,0,-120,120])
     shell.setParent(dornaHand);
@@ -609,7 +645,7 @@ export class BabylonApp {
 
     await this.playRow([,25,-106,81.5])
     
-    var topAttachpoint = scene.getMeshByName("Tank_TopAttach");
+    var topAttachpoint = scene.getMeshByName(userSelection.body + "_TopAttach");
     this.attachTo(shell, topAttachpoint, 0,0,0)
     shell.rotation = new BABYLON.Vector3(0, this.rad(180), this.rad(180))
 
@@ -623,12 +659,10 @@ export class BabylonApp {
     await this.playRow([155, 140,,], 1)
 
     // Model T await this.playRow([155, 20.4, -75, 47.5])
-    await this.playRow([192.5, 10, -115, 103.5])
-    var engineAttach = scene.getMeshByName("Tank_EngineAttach");
+    await this.playRow([enginePlaceAngle, 10, -115, 103.5])
+    var engineAttach = scene.getMeshByName(userSelection.body+"_EngineAttach");
     this.attachTo(engine, engineAttach, 0,0.5,0)
     engine.rotation = new BABYLON.Vector3(0, this.rad(90), this.rad(180))
-
-
     
 
     await this.playRow([155,140,,], 1)
@@ -638,11 +672,9 @@ export class BabylonApp {
     await this.playRow([powerupAngle, 57, -65, 8])
     powerup.setParent(dornaHand);
 
-    // Model T await this.playRow([165,140,,], 1), this.playRow([165,20.4,-75,47.5]
-    
-    await this.playRow([208,140,,], 1)
-    await this.playRow([208, 10, -115, 103.5])
-    var powerupAttach = scene.getMeshByName("Tank_PowerupAttach");
+    await this.playRow([powerupPlaceAngle,140,,], 1)
+    await this.playRow([, 10, -115, 103.5])
+    var powerupAttach = scene.getMeshByName(userSelection.body+"_PowerupAttach");
     this.attachTo(powerup, powerupAttach, 0,0.5,0)
     powerup.rotation = new BABYLON.Vector3(0, this.rad(90), this.rad(180))
 

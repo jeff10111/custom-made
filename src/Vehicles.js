@@ -233,6 +233,22 @@ export class Omni {
         mesh.parent = this.meshes.body;
         mesh.position.z = 0;
         mesh.position.y = -5;
+
+        mesh = this.scene.getMeshByName("Spaceship_PowerupAttach");
+        mesh.parent = this.meshes.body;
+        mesh.position.z = 6.8;
+        mesh.position.y = 5.8;
+
+        mesh = this.scene.getMeshByName("Spaceship_EngineAttach");
+        mesh.parent = this.meshes.body;
+        mesh.position.z = 6.8;
+        mesh.position.y = 5.8;
+
+        mesh = this.scene.getMeshByName("Spaceship_TopAttach");
+        mesh.parent = this.meshes.body;
+        mesh.position.z = 0;
+        mesh.position.y = 6.8;
+
     }
 
     userInput(keys) {
@@ -690,7 +706,7 @@ export class MT {
 
     attachBodyParts() {
         //attaching MOD mesh to babylon mesh, creating a physics imposter for babylon mesh
-        var mesh = this.scene.getTransformNodeByName("MTBody");
+        var mesh = this.scene.getMeshByName("MTBody");
         mesh.parent = this.meshes.body;
         //Positioning the MOD mesh relative to the babylon mesh
         mesh.position.y = -12;
