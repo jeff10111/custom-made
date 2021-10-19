@@ -307,10 +307,10 @@ export class BabylonApp {
       scene = returnedScene;
       this.scene = returnedScene;
       vehicles = new vehicles(
-      new Vehicles.MT(scene, 230, 20, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7)),
-      new Vehicles.Tank(scene, 290, 20, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7)),
-      new Vehicles.Train(scene, 260, 20, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7)),
-      new Vehicles.Omni(scene, 320, 20, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7))); 
+      new Vehicles.MT(scene, 451, -2, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7)),
+      new Vehicles.Tank(scene, 418, -1, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7)),
+      new Vehicles.Train(scene, 483, -19, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7)),
+      new Vehicles.Omni(scene, 387, -19, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7))); 
 
       // sendScoreToServer("Athena", 55, "Car", "Emergency Siren", "Nuclear Fusion")
       // sendScoreToServer("Bella", 999, "Spaceship", "Portal", "Jet")
@@ -541,6 +541,104 @@ export class BabylonApp {
     attachPoint.setParent(currentParent)
   }
 
+  async disassembleVehicle() {
+    var dornaHand = scene.getTransformNodeByName("HandBone");
+
+    console.log(userSelection.body, userSelection.engine, userSelection.powerup);
+    
+    var engine;
+    var engineAngle;
+    
+
+    switch (userSelection.engine) {
+      case "Nuclear Fusion":
+        engine = scene.getMeshByName("Engine_NuclearFusion1");
+        engineAngle = 10;
+        break;
+      case "Jet":
+        engine = scene.getMeshByName("Engine_JetEngine1");
+        engineAngle = 30;
+        break;
+      case "Petrol":
+        engine = scene.getMeshByName("Engine_PetrolEngine1");
+        engineAngle = 50;
+        break;
+      case "Steam":
+      default:
+        engine = scene.getMeshByName("Engine_SteamEngine1");
+        engineAngle = 70;
+        break;
+    }
+
+    var powerup;
+    var powerupAngle;
+
+    switch (userSelection.powerup) {
+      case "Speed Boost":
+        powerup = scene.getMeshByName("Powerup_SpeedBoost1");
+        powerupAngle = 350;
+        break;
+      case "Emergency Siren":
+        powerup = scene.getMeshByName("Powerup_EmergencySiren1");
+        powerupAngle = 330;
+        break;
+      case "4 Wheel Drive":
+        powerup = scene.getMeshByName("Powerup_4WheelDrive1");
+        powerupAngle = 310;
+        break;
+      case "Portal":
+        powerup = scene.getMeshByName("Powerup_Portal1");
+        powerupAngle = 290;
+        break;
+      default:
+        powerup = scene.getMeshByName("Powerup_SpeedBoost1");
+        powerupAngle = 350;
+        break;
+    }
+
+    var moveRot = vehicle.meshes.body.rotation
+    var shell;
+    var shellAngle = 0;
+    var enginePlaceAngle;
+    var powerupPlaceAngle;
+
+    switch (userSelection.body) {
+      case "Car":
+        shellAngle = -20;
+         moveRot.y = this.rad(110)
+        vehicle.disablePhysics()
+        await vehicle.animate(new BABYLON.Vector3(451, -25, -2), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z))
+        enginePlaceAngle = 152;
+        powerupPlaceAngle = 168;
+        break;
+      case "Train":
+        moveRot.y = this.rad(150)
+        vehicle.disablePhysics()
+        await vehicle.animate(new BABYLON.Vector3(483, -25, -19), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z))
+        shellAngle = -60;
+        enginePlaceAngle = 120;
+        powerupPlaceAngle = 120;
+        break;
+      case "Spaceship": 
+        moveRot.y = this.rad(120)
+        vehicle.disablePhysics()
+        await vehicle.animate(new BABYLON.Vector3(387, -25, -19), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z))
+        shellAngle = 60;
+        enginePlaceAngle = 245;
+        powerupPlaceAngle = 235;
+        break;
+      case "Tank":
+        moveRot = vehicle.meshes.body.rotation
+        moveRot.y = this.rad(70)
+        vehicle.disablePhysics()
+        vehicle.animate(new BABYLON.Vector3(418, -25, -1), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z))
+        shellAngle = 20;
+        enginePlaceAngle = 192.5;
+        powerupPlaceAngle = 208;
+        break;
+    }
+  }
+
   async buildVehicle() {
 
     // vehicle.meshes.body.rotation.y = 
@@ -608,15 +706,24 @@ export class BabylonApp {
     switch (userSelection.body) {
       case "Car":
         shellAngle = -20;
-        //vehicle.move(new BABYLON.Vector3(418, -25, -1), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z),false)
+         moveRot.y = this.rad(110)
+        vehicle.disablePhysics()
+        await vehicle.animate(new BABYLON.Vector3(451, -25, -2), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z))
+        enginePlaceAngle = 152;
+        powerupPlaceAngle = 168;
         break;
       case "Train":
+        moveRot.y = this.rad(150)
+        vehicle.disablePhysics()
+        await vehicle.animate(new BABYLON.Vector3(483, -25, -19), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z))
         shellAngle = -60;
+        enginePlaceAngle = 120;
+        powerupPlaceAngle = 120;
         break;
-      case "Spaceship":
-        
+      case "Spaceship": 
         moveRot.y = this.rad(120)
-        vehicle.move(new BABYLON.Vector3(387, -25, -19), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z),false)
+        vehicle.disablePhysics()
+        await vehicle.animate(new BABYLON.Vector3(387, -25, -19), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z))
         shellAngle = 60;
         enginePlaceAngle = 245;
         powerupPlaceAngle = 235;
@@ -624,7 +731,8 @@ export class BabylonApp {
       case "Tank":
         moveRot = vehicle.meshes.body.rotation
         moveRot.y = this.rad(70)
-        vehicle.move(new BABYLON.Vector3(418, -25, -1), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z),false)
+        vehicle.disablePhysics()
+        vehicle.animate(new BABYLON.Vector3(418, -25, -1), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z))
         shellAngle = 20;
         enginePlaceAngle = 192.5;
         powerupPlaceAngle = 208;
@@ -641,6 +749,7 @@ export class BabylonApp {
     await this.playRow([,0,-120,120])
     shell.setParent(dornaHand);
 
+
     await this.playRow([shellAngle+180,140,,], 1)
 
     await this.playRow([,25,-106,81.5])
@@ -648,6 +757,7 @@ export class BabylonApp {
     var topAttachpoint = scene.getMeshByName(userSelection.body + "_TopAttach");
     this.attachTo(shell, topAttachpoint, 0,0,0)
     shell.rotation = new BABYLON.Vector3(0, this.rad(180), this.rad(180))
+    
 
     await this.playRow([155,140,,], 1)
 
@@ -658,8 +768,10 @@ export class BabylonApp {
 
     await this.playRow([155, 140,,], 1)
 
-    // Model T await this.playRow([155, 20.4, -75, 47.5])
+    
     await this.playRow([enginePlaceAngle, 10, -115, 103.5])
+    
+
     var engineAttach = scene.getMeshByName(userSelection.body+"_EngineAttach");
     this.attachTo(engine, engineAttach, 0,0.5,0)
     engine.rotation = new BABYLON.Vector3(0, this.rad(90), this.rad(180))
@@ -673,7 +785,12 @@ export class BabylonApp {
     powerup.setParent(dornaHand);
 
     await this.playRow([powerupPlaceAngle,140,,], 1)
-    await this.playRow([, 10, -115, 103.5])
+    if (userSelection.body != "Train") {
+      await this.playRow([, 10, -115, 103.5])
+    } else {
+      await this.playRow([, 10, -20, -5])
+    }
+
     var powerupAttach = scene.getMeshByName(userSelection.body+"_PowerupAttach");
     this.attachTo(powerup, powerupAttach, 0,0.5,0)
     powerup.rotation = new BABYLON.Vector3(0, this.rad(90), this.rad(180))

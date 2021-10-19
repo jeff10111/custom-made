@@ -114,20 +114,53 @@ let move = function(coordinates, rotation, reenablePhysics){
     reenablePhysics && this.startPhysics();
 }
 
-let animate = function(quaternions,vector3s, steps)
+let animate = function(positionVector3,rotationQuaternion, frameRate=1000, autoStart=true)
 {
-    var v3 = new BABYLON.Animation("v3", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
-    BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE); 
-    var q = new BABYLON.Animation("q", "rotationQuaternion", 30, BABYLON.Animation.ANIMATIONTYPE_QUATERNION,
-    BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);  
-    let keyFramesV = [];
-    let keyFramesQ = [];
-    steps.forEach((x,i) =>{
-        keyFramesV.push({value:vector3s[i],frame:x});
-        keyFramesQ.push({value:quaternions[i],frame:x});
-    })
-    this.meshes.body.animations.push(v3);
-    this.meshes.body.animations.push(q);
+
+    const positionAnim = new BABYLON.Animation(
+     "vehicle_anim_pos",
+      "position",
+      frameRate,
+      BABYLON.Animation.ANIMATIONTYPE_VECTOR3
+    );
+    const keyFrames = [];
+    keyFrames.push({
+      frame: 0,
+      value: this.meshes.body.position,
+    });
+    keyFrames.push({
+      frame: 2 * frameRate,
+      value: positionVector3,
+    });
+    positionAnim.setKeys(keyFrames);
+
+    const rotationAnim = new BABYLON.Animation(
+     "vehicle_anim_rot",
+      "rotationQuaternion",
+      frameRate,
+      BABYLON.Animation.ANIMATIONTYPE_QUATERNION
+    );
+    
+    const rotationKeyFrames = []
+    rotationKeyFrames.push({
+      frame: 0,
+      value: this.meshes.body.rotationQuaternion,
+    });
+    rotationKeyFrames.push({
+      frame: 2 * frameRate,
+      value: rotationQuaternion,
+    });
+    rotationAnim.setKeys(rotationKeyFrames);
+
+    // If we need to customise the animation then we don't want to start yet
+    // otherwise:
+    if (autoStart) {
+        this.meshes.body.animations.push(positionAnim);
+        this.meshes.body.animations.push(rotationAnim);
+        var runAnim = this.scene.beginAnimation(this.meshes.body, 0, 2 * frameRate, false);
+      return runAnim.waitAsync();
+    }
+    return [rotationAnim];
 }
 
 let wheelPositioning = function(body, wheel, x, y, z) {
@@ -186,6 +219,7 @@ let vehicleBuilder = function(visible, rotation, scene){
       this.disablePhysics = disablePhysics;
       this.test = test;
       this.move = move;
+      this.animate = animate;
       this.resetPosition = resetPosition;
       this.wheelPositioning = wheelPositioning;
       this.wheelMeshParent = wheelMeshParent;
@@ -547,6 +581,24 @@ export class Train {
         mesh.position.y -= 8.2;
         mesh.position.z -= 19.5;
         mesh.position.x -= 5;
+
+                mesh = this.scene.getMeshByName("Train_PowerupAttach");
+        mesh.parent = this.meshes.body;
+        mesh.position.y -= 8.2;
+        mesh.position.z -= 19.5;
+        mesh.position.x -= 5;
+
+        mesh = this.scene.getMeshByName("Train_EngineAttach");
+        mesh.parent = this.meshes.body;
+        mesh.position.y -= 8.2;
+        mesh.position.z -= 19.5;
+        mesh.position.x -= 5;
+
+        mesh = this.scene.getMeshByName("Train_TopAttach");
+        mesh.parent = this.meshes.body;
+        mesh.position.y -= 8.2;
+        mesh.position.z -= 19.5;
+        mesh.position.x -= 5;
     }
 
     attachWheels() {
@@ -712,6 +764,25 @@ export class MT {
         mesh.position.y = -12;
         mesh.position.z = -13;
         mesh.position.x = -3;
+
+                        mesh = this.scene.getMeshByName("Car_PowerupAttach");
+        mesh.parent = this.meshes.body;
+        mesh.position.x -= 3.06
+        mesh.position.y -= 12.43
+        mesh.position.z -= 12.79
+
+        mesh = this.scene.getMeshByName("Car_EngineAttach");
+        mesh.parent = this.meshes.body;
+        mesh.position.x -= 3.06
+        mesh.position.y -= 12.43
+        mesh.position.z -= 12.79
+
+        mesh = this.scene.getMeshByName("Car_TopAttach");
+        mesh.parent = this.meshes.body;
+        mesh.position.x -= 3.06
+        mesh.position.y -= 12.43
+        mesh.position.z -= 12.79
+
     }
 
     attachWheels() {
