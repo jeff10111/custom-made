@@ -13,7 +13,7 @@
       <button type="button" @click="lowerBlocks" hidden>Lower Blocks!</button>
       <button type="button" @click="powerUp" hidden>Activate Powerup!!</button>
       <button type="button" @click="scoreSubmission">Submit Best Score</button>
-      <button type="button" @click="anything" hidden>anythingForTesting</button>
+      <button type="button" @click="anything" >anythingForTesting</button>
       <button type="button" @click="openVehicleSelection">Change Vehicle</button>
       <button type="button" @click="openLeaderboardModal">Open Leaderboard</button>
       <div id="bestScore">Current Best Score: 0</div>
@@ -123,8 +123,8 @@ export default {
       document.getElementById("leaderboardModal").style.display = "none";
     },
     anything(){
-      // this.Application.something();
-      this.buildVehicle();
+      this.Application.something();
+      //this.buildVehicle();
     },
     openVehicleSelection(){
       document.getElementById("vehicleSelection").style.display = "block";

@@ -2,7 +2,7 @@ let vehicle;
 let userSelection = { "body": "", "powerup":"", "engine":""}
 let vehicles = function(MT, Tank, Train, Omni){this.MT = MT; this.Tank = Tank, this.Train = Train, this.Omni = Omni};
 //let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
-let keysPressed = function(){ this.w = 0, this.a = 0, this.s = 0, this.d = 0 };
+let keysPressed = function(){ this.w = 0, this.a = 0, this.s = 0, this.d = 0 , this.radian = 0};
 let powerUpHasBeenActivated = false;
 let userHasRunRedLight = false;
 let startTime;
@@ -783,18 +783,9 @@ export class BabylonApp {
   something()
   {
     console.log("test");
-    for(var key in vehicles){
-      //  if(vehicles[key] != vehicle && vehicles[key].physicsEnabled)
-      //  {
-      //    vehicles[key].disablePhysics();
-      //  } else if (vehicles[key] != vehicle && !vehicles[key].physicsEnabled)
-      //  {
-      //    vehicles[key].startPhysics();
-      //  }
-      console.log(vehicles[key].meshes.body.rotationQuaternion);
-   }
-    document.getElementById("bestScore").innerText = "ASDASD";
-    //vehicle.move(vehicle.meshes.body.position, new Quaternion(0,0.7,0,0.7), true);
+    //vehicle.switchCamera();
+    //scene.activeCamera = vehicle.camera;
+    vehicle.cameras[0].radius = 50;
   }
 
   restartSimulation(body,powerup, engine){

@@ -1,7 +1,7 @@
 import * as BABYLON from "babylonjs";
 import {Ellipse, Control} from "@babylonjs/gui";
 
-let makeThumbArea = function(name, thickness, color, background, curves){
+let makeThumbArea = function(name, thickness, color, background){
     let rect = new Ellipse();
         rect.name = name;
         rect.thickness = thickness;
@@ -85,6 +85,7 @@ export class JoyStick{
 
             //Calculate angle from 0,0 to point
             let angle = Math.atan2(coordinates.y - center.y, coordinates.x - center.x); 
+            keysPressed['angle'] = angle;
 
             //If the puck is too close to center, no input
             if(Math.sqrt(Math.pow(coordinates.x - center.x, 2) + Math.pow(coordinates.y - center.y, 2)) < 50)

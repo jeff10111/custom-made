@@ -1,9 +1,11 @@
 import * as BABYLON from 'babylonjs';
 import {Vector3, Quaternion} from "@babylonjs/core";
 import { _ } from 'core-js';
+import { Box } from 'cannon';
 let sbDuration = 30000;//30 second power up duration
 let sbMultiplier = 1.3;
 
+//determines the correct torque for the vehicle
 export function engine(e) {
     switch (e) {
         case "Steam":
@@ -19,16 +21,17 @@ export function engine(e) {
     }
 }
 
+//prototypical function to call vehicle movement functions from user input
 let userInput = function(keys)
 {
     if(!this.physicsEnabled){
         return; 
     }
- 
+    //Getting the multi if speed boost is enabled.
     var multi =
     ((new Date().getTime() - this.prototype.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
-    if(this.prototype.offRoad)
-        console.log("we are offRoad");
+
+    //Function to add randomness when vehicle is offroad without offroad powerup
     if (this.prototype.offRoad && this.prototype.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
         console.log("Driving offRoad");
     switch (Math.floor(Math.random() * 8))
@@ -60,7 +63,9 @@ let userInput = function(keys)
     }
     return;
     }
+    //Normal use
     else if (keys["w"]) {
+        this.camera.maxCameraSpeed = 15;
         if(keys["a"])
         {
             this.forwardsLeft(multi);
@@ -72,6 +77,7 @@ let userInput = function(keys)
         }
     }
     else if (keys["s"]) {
+        this.camera.maxCameraSpeed = 15;
         if(keys["a"])
         {
             this.backwardsLeft(multi);
@@ -83,13 +89,17 @@ let userInput = function(keys)
         }
     } else if (keys["d"]) {
         this.right(multi);
+        this.camera.maxCameraSpeed = 2;
     } else if (keys["a"]) {
         this.left(multi);
+        this.camera.maxCameraSpeed = 2;
     } else {
         this.releaseDrive();
+        this.camera.maxCameraSpeed = 2;
     }
 }
 
+//prototypical function to disable physics
 let disablePhysics = function(){
     if(!this.physicsEnabled)
     return;
@@ -103,9 +113,11 @@ let disablePhysics = function(){
     this.motors = [];       
 }
 
+//Moving vehicle using coordinate and quaternion rotation
 let move = function(coordinates, rotation, reenablePhysics){
     this.physicsEnabled && this.disablePhysics();
     this.meshes.body.position = coordinates;
+    //Copy the values, not the object
     this.meshes.body.rotationQuaternion.x = rotation.x; 
     this.meshes.body.rotationQuaternion.y = rotation.y; 
     this.meshes.body.rotationQuaternion.z = rotation.z; 
@@ -114,6 +126,7 @@ let move = function(coordinates, rotation, reenablePhysics){
     reenablePhysics && this.startPhysics();
 }
 
+//for playback, probably won't be finished
 let animate = function(quaternions,vector3s, steps)
 {
     var v3 = new BABYLON.Animation("v3", "position", 30, BABYLON.Animation.ANIMATIONTYPE_VECTOR3,
@@ -130,6 +143,7 @@ let animate = function(quaternions,vector3s, steps)
     this.meshes.body.animations.push(q);
 }
 
+//prototypical function for positioning wheels relative to body
 let wheelPositioning = function(body, wheel, x, y, z) {
     wheel.parent = body;
     wheel.position.y = y;
@@ -137,6 +151,7 @@ let wheelPositioning = function(body, wheel, x, y, z) {
     wheel.position.x = x;
 }
 
+//prototypical function for attaching MOD wheel mesh to physics wheel
 let wheelMeshParent = function(mesh, parentMesh, x, y, z) {
     parentMesh.setParent(null);
     mesh.parent = parentMesh;
@@ -146,12 +161,26 @@ let wheelMeshParent = function(mesh, parentMesh, x, y, z) {
     mesh.position.x = x;//forward/backward
 }
 
+//Used for attaching a wheel to a body using a motor joint
+let wheelJoint = function(body, wheel, x, y, z) {
+    var newJoint = new BABYLON.MotorEnabledJoint(BABYLON.PhysicsJoint.HingeJoint, {
+        mainPivot: new BABYLON.Vector3(0, 0, 0), //0,0,0 means pivot is in center of wheel
+        connectedPivot: new BABYLON.Vector3(x, y, z),//pivot of body
+        mainAxis: new BABYLON.Vector3(0, -1, 0), //axis of rotation for body 1
+        connectedAxis: new BABYLON.Vector3(0, 0, 1), //axis of rotation for body 2
+    });
+    wheel.physicsImpostor.addJoint(body.physicsImpostor, newJoint);
+    this.motors.push(newJoint);
+}
+
+//used for debugging stuff
 let test = function(){
     this.i += 1;
     (this.physicsEnabled) ? this.disablePhysics() : this.startPhysics(); 
     console.log(this.meshes.body.position);
 }
 
+//Prototypical object used to store vehicle attributes
 let Prototype = function(speed, torque, wheelDiam, wheelHeight, wheelRestitution, wheelFriction, bodyMass, wheelMass, powerupName, engineName, x, z, rotation){
     this.speed = speed;
     this.torque = torque * engine(engineName);
@@ -170,31 +199,42 @@ let Prototype = function(speed, torque, wheelDiam, wheelHeight, wheelRestitution
     Object.preventExtensions(this);
 }
 
+//Return vehicle to its original position
 let resetPosition = function(){
     this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
 }
 
+//Prototypical builder for each vehicle
 let vehicleBuilder = function(visible, rotation, scene){
     this.scene = scene;
-    this.camera = 
-    new BABYLON.ArcRotateCamera("Camera", Math.PI / 5, Math.PI / 3, 250, this.meshes.body, this.scene, true);
-      //new BABYLON.FollowCamera("FollowCamera", new Vector3(0,0,0),this.scene, this.meshes.body);
-      //new BABYLON.UniversalCamera();
+    //Camera set up
+    this.cameras = [];
+    this.cameras.push(new BABYLON.FollowCamera("FollowCamera", new Vector3(0,0,0),this.scene, this.meshes.body));
+    this.camera = this.cameras[0];
+    this.camera.radius = 50; this.camera.heightOffset = 50; this.camera.rotationOffset = 270;this.camera.cameraAcceleration = 0.010;this.camera.maxCameraSpeed = 15;
+    this.camera.inputs.clear();
+    //Alt camera
+    this.cameras.push(new BABYLON.ArcRotateCamera("ArcCamera", Math.PI/2, Math.PI/6, 200, this.meshes.body, scene));
+
+      //Setting universal variables/functions
       this.motors = [];
       this.physicsEnabled = false;
-      !this.userInput && (this.userInput = userInput);
+      !this.userInput && (this.userInput = userInput);//only set if undefined (has not been overidden by the child class)
       this.disablePhysics = disablePhysics;
+      this.switchCamera = switchCamera;
       this.test = test;
       this.move = move;
       this.resetPosition = resetPosition;
       this.wheelPositioning = wheelPositioning;
       this.wheelMeshParent = wheelMeshParent;
+      this.wheelJoint = wheelJoint;
+      //Calling functions to build the vehicle
       this.wheels = Object.keys(this.meshes).filter(x => x != "body");
       //Body part
       this.attachBodyParts();
       //Wheel part
-      this.attachWheels && this.attachWheels();
-      this.meshes.body.rotationQuaternion = rotation;
+      this.attachWheels && this.attachWheels();//only call if defined by the child class
+      this.meshes.body.rotationQuaternion = rotation
       this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
 
       //make babylon meshes invisible
@@ -202,6 +242,16 @@ let vehicleBuilder = function(visible, rotation, scene){
           Object.entries(this.meshes).map((x) => x[1].isVisible = false);
 }
 
+let switchCamera = function(){
+    console.log('switching camera')
+    if(this.camera === this.cameras[0])
+        this.camera = this.cameras[1];
+    else
+        this.camera = this.cameras[0];
+}
+
+//Omni vehicle
+//A bit different from the others since it wasn't implemented with wheels
 export class Omni {
     constructor(scene, x, z, engineName, powerupName, visible, rotation) {
         this.prototype = new Prototype(20, 200, 2.5, 1, 1, 50, 10, 1, powerupName, engineName, x, z, rotation);
@@ -210,6 +260,7 @@ export class Omni {
         }
         this.protoConst = vehicleBuilder;
         this.protoConst(visible, rotation, scene);
+        this.switchCamera();
     }
 
     startPhysics(){
@@ -229,7 +280,6 @@ export class Omni {
 
     attachBodyParts() {
         var mesh = this.scene.getTransformNodeByName("Omni");
-        //this.meshes.body.position.y = -15;
         mesh.parent = this.meshes.body;
         mesh.position.z = 0;
         mesh.position.y = -5;
@@ -245,9 +295,9 @@ export class Omni {
             var z = Math.random() * 2 - 1 > 0 ? Math.random()*-1 : Math.random();
             impulseVector = new BABYLON.Vector3(x, y, z);
         }
-        else if (keys['s'])//north?
+        else if (keys['s'])
         {
-            if (keys['a'])//east?
+            if (keys['a'])
             {
                 impulseVector = new BABYLON.Vector3(1, 0, 1);
             } else if (keys["d"])//west?
@@ -258,10 +308,10 @@ export class Omni {
                 impulseVector = new BABYLON.Vector3(0, 0, 1);
             }
         } else if (keys['w']) {
-            if (keys['a'])//east?
+            if (keys['a'])
             {
                 impulseVector = new BABYLON.Vector3(1, 0, -1);
-            } else if (keys["d"])//west?
+            } else if (keys["d"])
             {
                 impulseVector = new BABYLON.Vector3(-1, 0, -1);
             }
@@ -388,17 +438,6 @@ export class Tank {
         this.wheelPositioning(body, R2, -1.6, wheelHeight, -wheelWidth);
         this.wheelPositioning(body, R3, 2, wheelHeight, -wheelWidth);
         this.wheelPositioning(body, R4, 5.5, wheelHeight, -wheelWidth);
-    }
-
-    wheelJoint(body, wheel, x, y, z) {
-        var newJoint = new BABYLON.MotorEnabledJoint(BABYLON.PhysicsJoint.HingeJoint, {
-            mainPivot: new BABYLON.Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
-            connectedPivot: new BABYLON.Vector3(x, y, z), //(length,y,)
-            mainAxis: new BABYLON.Vector3(0, -1, 0), //axis of rotation for body 1
-            connectedAxis: new BABYLON.Vector3(0, 0, 1), //axis of rotation for body 2
-        });
-        wheel.physicsImpostor.addJoint(body.physicsImpostor, newJoint);
-        this.motors.push(newJoint);
     }
 
     forwards(multi) {
@@ -569,18 +608,6 @@ export class Train {
         this.wheelPositioning(body, R3, 7, wheelHeight, -wheelWidth);
     }
 
-    wheelJoint(body, wheel, x, y, z) {
-        //wheel.setParent(null);
-        var newJoint = new BABYLON.MotorEnabledJoint(BABYLON.PhysicsJoint.HingeJoint, {
-            mainPivot: new BABYLON.Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
-            connectedPivot: new BABYLON.Vector3(x, y, z), //(length,y,)
-            mainAxis: new BABYLON.Vector3(0, -1, 0), //axis of rotation for body 1
-            connectedAxis: new BABYLON.Vector3(0, 0, 1), //axis of rotation for body 2
-        });
-        wheel.physicsImpostor.addJoint(body.physicsImpostor, newJoint);
-        this.motors.push(newJoint);
-    }
-
     forwards(multi) {
         this.motors.map((x) => x.setMotor(+this.prototype.speed * multi, this.prototype.torque * multi));
     }
@@ -705,17 +732,6 @@ export class MT {
         this.wheelMeshParent(this.scene.getMeshByName("MTRight"), this.meshes.wheel2, 3.5, 22.7, -9.5);
         this.wheelPositioning(this.meshes.body, this.meshes.wheel1, -6.5, -1.5, 10);
         this.wheelPositioning(this.meshes.body, this.meshes.wheel2, -6.5, -1.5, -10);
-    }
-
-    wheelJoint(body, wheel, x, y, z) {
-        var newJoint = new BABYLON.MotorEnabledJoint(BABYLON.PhysicsJoint.HingeJoint, {
-            mainPivot: new BABYLON.Vector3(0, 0, 0), //Having these as zero means the pivot is in the wheel (good thing)
-            connectedPivot: new BABYLON.Vector3(x, y, z), //(length,y,)
-            mainAxis: new BABYLON.Vector3(0, -1, 0), //axis of rotation for body 1
-            connectedAxis: new BABYLON.Vector3(0, 0, 1), //axis of rotation for body 2
-        });
-        wheel.physicsImpostor.addJoint(body.physicsImpostor, newJoint);
-        this.motors.push(newJoint);
     }
 
     forwards(multi) {
