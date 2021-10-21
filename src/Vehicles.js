@@ -2,8 +2,9 @@ import * as BABYLON from 'babylonjs';
 import {Vector3, Quaternion} from "@babylonjs/core";
 import { _ } from 'core-js';
 import { Box } from 'cannon';
-let sbDuration = 30000;//30 second power up duration
+let sbDuration = 10000;//10 second power up duration
 let sbMultiplier = 1.3;
+let sbAvailable = true;
 
 //determines the correct torque for the vehicle
 export function engine(e) {
@@ -28,9 +29,14 @@ let userInput = function(keys)
         return; 
     }
     //Getting the multi if speed boost is enabled.
-    var multi =
-    ((new Date().getTime() - this.prototype.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
-
+    var multi = 1;
+    let timeLeft = new Date().getTime() - this.prototype.sbActivationTime;
+    if(sbAvailable && (timeLeft < sbDuration))
+    {
+        multi = sbMultiplier;
+        if(timeLeft > sbDuration)
+            sbAvailable = false;
+    } 
     //Function to add randomness when vehicle is offroad without offroad powerup
     if (this.prototype.offRoad && this.prototype.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
         console.log("Driving offRoad");
@@ -211,7 +217,7 @@ let vehicleBuilder = function(visible, rotation, scene){
     this.cameras = [];
     this.cameras.push(new BABYLON.FollowCamera("FollowCamera", new Vector3(0,0,0),this.scene, this.meshes.body));
     this.camera = this.cameras[0];
-    this.camera.radius = 50; this.camera.heightOffset = 50; this.camera.rotationOffset = 270;this.camera.cameraAcceleration = 0.010;this.camera.maxCameraSpeed = 15;
+    this.camera.radius = 100; this.camera.heightOffset = 70; this.camera.rotationOffset = 270;this.camera.cameraAcceleration = 0.010;this.camera.maxCameraSpeed = 15;
     this.camera.inputs.clear();
     //Alt camera
     this.cameras.push(new BABYLON.ArcRotateCamera("ArcCamera", Math.PI/2, Math.PI/6, 200, this.meshes.body, scene));
@@ -286,9 +292,10 @@ export class Omni {
     }
 
     userInput(keys) {
+        console.log("Radian" + keys['radian']);
         var impulseVector = new BABYLON.Vector3(0, 0, 0);
-        // var multi =
-        // ((new Date().getTime() - this.prototype.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+        var multi =
+        ((new Date().getTime() - this.prototype.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
         if (this.prototype.offRoad && this.prototype.powerupName != "4 Wheel Drive" && Math.floor(Math.random() * 10) == 9) {
             var x = Math.random() * 2 - 1 > 0 ? Math.random()*-1 : Math.random();
             var y = Math.random() * 2 - 1 > 0 ? Math.random()*-1 : Math.random();
@@ -323,7 +330,7 @@ export class Omni {
         } else if (keys['a']) {
             impulseVector = new BABYLON.Vector3(1, 0, 0);
         }
-        this.meshes.body.physicsImpostor.applyImpulse(impulseVector.scale(this.prototype.bodyMass * sbMultiplier), this.meshes.body.getAbsolutePosition());
+        this.meshes.body.physicsImpostor.applyImpulse(impulseVector.scale(this.prototype.bodyMass * multi), this.meshes.body.getAbsolutePosition());
     }
 }
 

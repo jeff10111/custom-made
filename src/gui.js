@@ -17,10 +17,12 @@ import {
   SceneSerializer,
 } from "@babylonjs/core";
 import { JoyStick } from "./joystick"; 
+import { SpeedBoostGui } from "./SpeedBoost";
 
 export class Hud {
-  constructor(scene, keysPressed) {
+  constructor(scene, ba) {
     this._scene = scene;
+    this._app = ba;
 
     const playerUI = AdvancedDynamicTexture.CreateFullscreenUI("UI");
     this._playerUI = playerUI;
@@ -30,6 +32,7 @@ export class Hud {
     this._sString = "00";
     this._mString = 0;
     this.time;
+    this.vehicle;
 
     const stackPanel = new StackPanel();
     stackPanel.height = "100%";
@@ -53,7 +56,9 @@ export class Hud {
     this._clockTime = clockTime;
 
     //start joystick
-    new JoyStick(playerUI, keysPressed);
+    new JoyStick(playerUI, this._app);
+    //Add speed boost gui
+    this.speedBoostButton = new SpeedBoostGui(this._playerUI, this._app);
   }
 
   updateHud() {
@@ -65,6 +70,7 @@ export class Hud {
       this.time = curTime; //keeps track of the total time elapsed in seconds
       this._clockTime.text = this._formatTime(curTime);
     }
+    this.speedBoostButton.updateTimerText();
   }
 
   //---- Game Timer ----

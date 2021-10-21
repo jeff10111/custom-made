@@ -1,8 +1,6 @@
 let vehicle;
 let userSelection = { "body": "", "powerup":"", "engine":""}
 let vehicles = function(MT, Tank, Train, Omni){this.MT = MT; this.Tank = Tank, this.Train = Train, this.Omni = Omni};
-//let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
-let keysPressed = function(){ this.w = 0, this.a = 0, this.s = 0, this.d = 0 , this.radian = 0};
 let powerUpHasBeenActivated = false;
 let userHasRunRedLight = false;
 let startTime;
@@ -150,6 +148,8 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         parameter: vehicleMesh,
       },
       () => {
+        vehicle.cameras[0].radius = 150;
+        vehicle.cameras[0].heightOffset = 200;
         fourWheelDrivePassed = true;
         if (powerup != "Portal") {
           app.raiseBlock("RoadBlock2");
@@ -172,6 +172,8 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         parameter: vehicleMesh,
       },
       () => {
+        vehicle.cameras[0].radius = 130;
+        vehicle.cameras[0].heightOffset = 70;
         startLap(gui);
         fourWheelDrivePassed = false;
         vehicle.prototype.offRoad = false;
@@ -190,6 +192,8 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         parameter: vehicleMesh,
       },
       () => {
+        vehicle.cameras[0].radius = 100;
+        vehicle.cameras[0].heightOffset = 70;
         if (fourWheelDrivePassed) {
           stopLap(gui);
           document.getElementById("bestScore").innerText = `Current Best Score: ${app.calculateScore(bestLap)}`;
@@ -278,7 +282,7 @@ export class BabylonApp {
     this.powerupName;
     this.engineType;
     this.vehicleName;
-    this.keysPressed = new keysPressed();
+    this.keysPressed = function(){ this.w = 0, this.a = 0, this.s = 0, this.d = 0 , this.radian = 0};
     //this.leftJoystick = new BABYLON.VirtualJoystick(true);
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
@@ -309,7 +313,7 @@ export class BabylonApp {
       // sendScoreToServer("Octavia", 19, "Train", "4 Wheel Drive","Nuclear Fusion")
 
       document.getElementById("vehicleSelection").style.display = "block";
-      this.gui = new Hud(scene, this.keysPressed);
+      this.gui = new Hud(scene, this);
 
       engine.runRenderLoop(() => {
         scene.render();
@@ -359,32 +363,7 @@ export class BabylonApp {
       engine.resize();
     });
   }
-  powerUpActivation() {
-    if (powerUpHasBeenActivated) {
-      return;
-    }
-    powerUpHasBeenActivated = true;
-    switch (this.powerupName) {
-      case "Speed Boost":
-        //increases vehicle speed for a time duration
-        vehicle.prototype.sbActivationTime = new Date().getTime();
-        console.log("Speed boost activated");
-        break;
-      case "4 Wheel Drive":
-        //prevents noise through 4wd section
-        console.log("4 Wheel Drive boost activated");
-        break;
-      case "Emergency Siren":
-        //prevents losing points for not stopping at traffic lights
-        //so this requires implementation of traffic lights first
-        console.log("Emergency boost activated");
-        break;
-      case "Portal":
-        //this changes the track rather than the vehicle
-        console.log("Portal boost activated");
-        break;
-    }
-  }
+
   rotateToDegrees(boneName, attribute, valueTo, autoStart = true) {
     return this.rotateTo(
       boneName,
@@ -785,7 +764,8 @@ export class BabylonApp {
     console.log("test");
     //vehicle.switchCamera();
     //scene.activeCamera = vehicle.camera;
-    vehicle.cameras[0].radius = 50;
+    vehicle.cameras[0].radius+=10;
+    console.log(`Radius: ${vehicle.cameras[0].radius}, height: ${vehicle.cameras[0].heightOffset}, rotation: ${vehicle.cameras[0].rotationOffset}`);
   }
 
   restartSimulation(body,powerup, engine){
@@ -807,8 +787,14 @@ export class BabylonApp {
     document.getElementById("bestScore").innerText = `Current Best Score: 0`
     //add triggers
     addTriggers(this.gui, scene, body, this.powerupName, this)
+    //Add vehicle to gui
+    this.gui.speedBoostButton.deactivateButton();
+    if(powerup == "Speed Boost")
+    {
+      this.gui.speedBoostButton.activateButton();
+    } 
+
   }
-  
 
   submitScore(name){
     if(bestLap == 0)
@@ -818,6 +804,15 @@ export class BabylonApp {
 
   calculateScore() {
     return (bestLap == undefined || bestLap == 0) ? 0 : 50000 - (bestLap*111);
+  }
+
+  buttonPressed(name) {
+    if(name == "speedBoost")
+    {
+      vehicle.prototype.sbActivationTime = new Date().getTime();
+      this.gui.speedBoostButton.startTimer();
+      console.log("Speed Boost button pressed");
+    }
   }
 }
 

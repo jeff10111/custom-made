@@ -15,8 +15,9 @@ let makeThumbArea = function(name, thickness, color, background){
  }
 
 export class JoyStick{
-    constructor(adt, keysPressed)
+    constructor(adt, ba)
     {
+        var app = ba;
         //Distance from bottom of canvas
         let sideJoystickOffset = 20;
         let bottomJoystickOffset = -20;
@@ -64,7 +65,7 @@ export class JoyStick{
         leftThumbContainer.onPointerUpObservable.add(function() {
             leftPuck.isDown = false;
             //release all inputs
-            keysPressed['a'] = keysPressed['w'] = keysPressed['s'] = keysPressed['d'] = 0;
+            app.keysPressed['a'] = app.keysPressed['w'] = app.keysPressed['s'] = app.keysPressed['d'] = 0;
             //return puck to center
             leftPuck.left = 0;
             leftPuck.top = 0;
@@ -85,12 +86,12 @@ export class JoyStick{
 
             //Calculate angle from 0,0 to point
             let angle = Math.atan2(coordinates.y - center.y, coordinates.x - center.x); 
-            keysPressed['angle'] = angle;
+            app.keysPressed['radian'] = angle;
 
             //If the puck is too close to center, no input
             if(Math.sqrt(Math.pow(coordinates.x - center.x, 2) + Math.pow(coordinates.y - center.y, 2)) < 50)
             {
-                keysPressed['w'] = 0; keysPressed['a'] = 0; keysPressed['s'] = 0; keysPressed['d'] = 0;
+                app.keysPressed['w'] = 0; app.keysPressed['a'] = 0; app.keysPressed['s'] = 0; app.keysPressed['d'] = 0;
                 return;
             }
                            
@@ -99,36 +100,36 @@ export class JoyStick{
             {
                 if(angle < 0.125 * Math.PI)//D
                 {
-                    keysPressed['w'] = 0; keysPressed['a'] = 0; keysPressed['s'] = 0; keysPressed['d'] = 1;
+                    app.keysPressed['w'] = 0; app.keysPressed['a'] = 0; app.keysPressed['s'] = 0; app.keysPressed['d'] = 1;
                 } else if (angle < 0.375 * Math.PI)//SD
                 {
-                    keysPressed['w'] = 0; keysPressed['a'] = 0; keysPressed['s'] = 1; keysPressed['d'] = 1;
+                    app.keysPressed['w'] = 0; app.keysPressed['a'] = 0; app.keysPressed['s'] = 1; app.keysPressed['d'] = 1;
                 } else if (angle < 0.625 * Math.PI)//S
                 {
-                    keysPressed['w'] = 0; keysPressed['a'] = 0; keysPressed['s'] = 1; keysPressed['d'] = 0;
+                    app.keysPressed['w'] = 0; app.keysPressed['a'] = 0; app.keysPressed['s'] = 1; app.keysPressed['d'] = 0;
                 } else if (angle < 0.875 * Math.PI)//SA
                 {
-                    keysPressed['w'] = 0; keysPressed['a'] = 1; keysPressed['s'] = 1; keysPressed['d'] = 0;
+                    app.keysPressed['w'] = 0; app.keysPressed['a'] = 1; app.keysPressed['s'] = 1; app.keysPressed['d'] = 0;
                 } else //A
                 {
-                    keysPressed['w'] = 0; keysPressed['a'] = 1; keysPressed['s'] = 0; keysPressed['d'] = 0;
+                    app.keysPressed['w'] = 0; app.keysPressed['a'] = 1; app.keysPressed['s'] = 0; app.keysPressed['d'] = 0;
                 }
             } else {
                 if(angle > -0.125 * Math.PI)//D
                 {
-                    keysPressed['w'] = 0; keysPressed['a'] = 0; keysPressed['s'] = 0; keysPressed['d'] = 1;
+                    app.keysPressed['w'] = 0; app.keysPressed['a'] = 0; app.keysPressed['s'] = 0; app.keysPressed['d'] = 1;
                 } else if (angle > -0.375 * Math.PI)//WD
                 {
-                    keysPressed['w'] = 1; keysPressed['a'] = 0; keysPressed['s'] = 0; keysPressed['d'] = 1;
+                    app.keysPressed['w'] = 1; app.keysPressed['a'] = 0; app.keysPressed['s'] = 0; app.keysPressed['d'] = 1;
                 } else if (angle > -0.625 * Math.PI)//W
                 {
-                    keysPressed['w'] = 1; keysPressed['a'] = 0; keysPressed['s'] = 0; keysPressed['d'] = 0;
+                    app.keysPressed['w'] = 1; app.keysPressed['a'] = 0; app.keysPressed['s'] = 0; app.keysPressed['d'] = 0;
                 } else if (angle > -0.875 * Math.PI)//WA
                 {
-                    keysPressed['w'] = 1; keysPressed['a'] = 1; keysPressed['s'] = 0; keysPressed['d'] = 0;
+                    app.keysPressed['w'] = 1; app.keysPressed['a'] = 1; app.keysPressed['s'] = 0; app.keysPressed['d'] = 0;
                 }else //A
                 {
-                    keysPressed['w'] = 0; keysPressed['a'] = 1; keysPressed['s'] = 0; keysPressed['d'] = 0;
+                    app.keysPressed['w'] = 0; app.keysPressed['a'] = 1; app.keysPressed['s'] = 0; app.keysPressed['d'] = 0;
                 }
             }
         });
