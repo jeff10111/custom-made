@@ -272,16 +272,19 @@ export class Omni {
         mesh.parent = this.meshes.body;
         mesh.position.z = 6.8;
         mesh.position.y = 5.8;
+        mesh.visibility = 0;
 
         mesh = this.scene.getMeshByName("Spaceship_EngineAttach");
         mesh.parent = this.meshes.body;
         mesh.position.z = 6.8;
         mesh.position.y = 5.8;
+        mesh.visibility = 0;
 
         mesh = this.scene.getMeshByName("Spaceship_TopAttach");
         mesh.parent = this.meshes.body;
         mesh.position.z = 0;
         mesh.position.y = 6.8;
+        mesh.visibility = 0;
 
     }
 
@@ -384,16 +387,21 @@ export class Tank {
         mesh.position.y -= 4;
         mesh.position.z -= 23;
         mesh.position.x -= 2;
+        mesh.visibility = 0;
+
         mesh = this.scene.getMeshByName("Tank_EngineAttach");
         mesh.parent = body;
-                mesh.position.y -= 4;
+        mesh.position.y -= 4;
         mesh.position.z -= 23;
         mesh.position.x -= 2;
+        mesh.visibility = 0;
+
         mesh = this.scene.getMeshByName("Tank_TopAttach");
         mesh.parent = body;
         mesh.position.y -= 4;
         mesh.position.z -= 23;
         mesh.position.x -= 2;
+        mesh.visibility = 0;
 
     }
     attachWheels() {
@@ -582,23 +590,26 @@ export class Train {
         mesh.position.z -= 19.5;
         mesh.position.x -= 5;
 
-                mesh = this.scene.getMeshByName("Train_PowerupAttach");
+        mesh = this.scene.getMeshByName("Train_PowerupAttach");
         mesh.parent = this.meshes.body;
         mesh.position.y -= 8.2;
         mesh.position.z -= 19.5;
         mesh.position.x -= 5;
+        mesh.visibility = 0;
 
         mesh = this.scene.getMeshByName("Train_EngineAttach");
         mesh.parent = this.meshes.body;
         mesh.position.y -= 8.2;
         mesh.position.z -= 19.5;
         mesh.position.x -= 5;
+        mesh.visibility = 0;
 
         mesh = this.scene.getMeshByName("Train_TopAttach");
         mesh.parent = this.meshes.body;
         mesh.position.y -= 8.2;
         mesh.position.z -= 19.5;
         mesh.position.x -= 5;
+        mesh.visibility = 0;
     }
 
     attachWheels() {
@@ -765,23 +776,26 @@ export class MT {
         mesh.position.z = -13;
         mesh.position.x = -3;
 
-                        mesh = this.scene.getMeshByName("Car_PowerupAttach");
+        mesh = this.scene.getMeshByName("Car_PowerupAttach");
         mesh.parent = this.meshes.body;
         mesh.position.x -= 3.06
         mesh.position.y -= 12.43
         mesh.position.z -= 12.79
+        mesh.visibility = 0;
 
         mesh = this.scene.getMeshByName("Car_EngineAttach");
         mesh.parent = this.meshes.body;
         mesh.position.x -= 3.06
         mesh.position.y -= 12.43
         mesh.position.z -= 12.79
+        mesh.visibility = 0;
 
         mesh = this.scene.getMeshByName("Car_TopAttach");
         mesh.parent = this.meshes.body;
         mesh.position.x -= 3.06
         mesh.position.y -= 12.43
         mesh.position.z -= 12.79
+        mesh.visibility = 0;
 
     }
 

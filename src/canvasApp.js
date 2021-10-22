@@ -4,6 +4,7 @@ let vehicles = function(MT, Tank, Train, Omni){this.MT = MT; this.Tank = Tank, t
 //let keysPressed = { "w": 0, "a": 0, "s": 0, "d": 0 };
 let keysPressed = function(){ this.w = 0, this.a = 0, this.s = 0, this.d = 0 };
 let powerUpHasBeenActivated = false;
+let firstBuild = true;
 let userHasRunRedLight = false;
 let startTime;
 let endTime;
@@ -26,7 +27,6 @@ import * as HTTP from "./clientHttpRequests";
 import { SceneLoader, Engine, Scene, ActionManager, ExecuteCodeAction } from "@babylonjs/core";
 import { Animation, Vector3, Quaternion, MeshBuilder } from "@babylonjs/core";
 import { Hud } from "./gui";
-import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/";
 import { readCsv } from "@/utils/csvHelper.js";
 window.CANNON = require("cannon");
 
@@ -121,8 +121,7 @@ var exitedAssembly = false;
 var addTriggers = function(gui, scene, vehicleName, powerup, app) {
 
   // If exitedAssembly, disassembleVehicle()
-  var assemblyTrigger = scene.getMeshByName("Trigger_Assembly");
-  assemblyTrigger.visibility = 0;
+
   var carTrigger = scene.getMeshByName("Trigger_CarPark");
   carTrigger.visibility = 0;
   var trainTrigger = scene.getMeshByName("Trigger_TrainPark");
@@ -132,8 +131,9 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
   var tankTrigger = scene.getMeshByName("Trigger_TankPark");
   tankTrigger.visibility = 0;
 
+  // Must be a mesh, not a transform node
   var vehicleMesh = scene.getMeshByName(
-    { Car: "MTLeft", Train: "TL1", Spaceship: "Omni", Tank: "TankL1" }[
+    { Car: "Car_TopAttach", Train: "Train_TopAttach", Spaceship: "Spaceship_TopAttach", Tank: "Tank_TopAttach" }[
       vehicleName
     ]
   );
@@ -141,6 +141,26 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     console.log("VEHICLE MESH NOT DEFINED: " + vehicleName);
     return;
   }
+  console.log("Set vehicleMesh to " + vehicleMesh)
+
+  var assemblyTrigger = scene.getMeshByName("Trigger_Assembly");
+  assemblyTrigger.visibility = 0.1;
+  assemblyTrigger.actionManager = new ActionManager(scene);
+  assemblyTrigger.actionManager.registerAction(
+    new ExecuteCodeAction(
+      {
+        trigger: ActionManager.OnIntersectionEnterTrigger,
+        parameter: vehicleMesh,
+      },
+      () => {
+        if (exitedAssembly) {
+          console.log("AssemblyReEntered");
+          app.disassembleVehicle();
+        }
+
+      }
+    )
+  )
   
   var stopSignTrigger = scene.getMeshByName("Trigger_StopSign");
   stopSignTrigger.actionManager = new ActionManager(scene);
@@ -613,6 +633,8 @@ export class BabylonApp {
         powerupAngle = 350;
         break;
     }
+    vehicle.disablePhysics()
+    await vehicle.animate(new BABYLON.Vector3(400, -25, 80), new BABYLON.Quaternion(0,0,0,0))
 
     var moveRot = vehicle.meshes.body.rotation
     var shell;
@@ -658,30 +680,46 @@ export class BabylonApp {
 
     shell = scene.getTransformNodeByName(userSelection.body+"Top");
 
+    // for (const element of [powerup, engine, shell]) {
+    //   const originalParent = originalPositionDict[element.name][0];
+    //   element.parent = originalParent
+    //   const originalPos = originalPositionDict[element.name][1]
+    //   element.position = new BABYLON.Vector3(originalPos.x, originalPos.y, originalParent.z)
+    //   console.log(element.name)
+    //   console.log(originalParent)
+    //   console.log(originalPos)
+    // }
 
     console.log("ORiginal powerup position:")
     console.log(originalPositionDict[powerup.name])
-    powerup.parent = originalPositionDict[powerup.name][0];
-    powerup.position = originalPositionDict[powerup.name][1]
+    const powerupOriginalParent = originalPositionDict[powerup.name][0];
+    powerup.parent = powerupOriginalParent
+    const powerupOriginalPos = originalPositionDict[powerup.name][1]
+    powerup.position = new BABYLON.Vector3(powerupOriginalPos.x, powerupOriginalPos.y, powerupOriginalPos.z)
 
         console.log("ORiginal engine position:")
     console.log(originalPositionDict[engine.name])
-    engine.parent = originalPositionDict[engine.name][0];
-    engine.position = originalPositionDict[engine.name][1]
+    const engineOriginalParent = originalPositionDict[engine.name][0];
+    engine.parent = engineOriginalParent
+    const engineOriginalPosition = originalPositionDict[engine.name][1]
+    engine.position = new BABYLON.Vector3(engineOriginalPosition.x, engineOriginalPosition.y, engineOriginalPosition.z)
 
             console.log("ORiginal shell position:")
-
-    console.log(originalPositionDict[shell.name][2])
-    shell.parent = originalPositionDict[shell.name][0]
-    shell.position = originalPositionDict[shell.name][1]
+    console.log(originalPositionDict[shell.name][1])
+    var shellOriginalParent = originalPositionDict[shell.name][0]
+    shell.parent = shellOriginalParent
+    var shellOriginalPos = originalPositionDict[shell.name][1]
+    shell.position = new BABYLON.Vector3(shellOriginalPos.x, shellOriginalPos.y, shellOriginalPos.z)
     var rot = originalPositionDict[shell.name][2]
     shell.rotation = new BABYLON.Vector3(rot.x, rot.y - this.rad(180), rot.z - this.rad(180))
   }
 
+  
+
   async buildVehicle() {
 
     // vehicle.meshes.body.rotation.y = 
-
+    exitedAssembly = false;
     var dornaHand = scene.getTransformNodeByName("HandBone");
 
     console.log(userSelection.body, userSelection.engine, userSelection.powerup);
@@ -780,10 +818,15 @@ export class BabylonApp {
 
     shell = scene.getTransformNodeByName(userSelection.body+"Top");
     console.log("--------------")
-    if (!(shell.name in originalPositionDict)) {
+    if (firstBuild) {
       originalPositionDict[shell.name] = [shell.parent, shell.position.clone(), shell.rotationQuaternion.toEulerAngles()]
     }
+
     console.log(originalPositionDict[shell.name])
+    console.log(originalPositionDict[shell.name][0].name)
+    console.log(originalPositionDict[shell.name][1].x)
+    console.log(originalPositionDict[shell.name][1].y)
+    console.log(originalPositionDict[shell.name][1].z)
 
     // CHASSIS ASSEMBLY
     await this.playRow([shellAngle,140,,], 1)
@@ -800,8 +843,16 @@ export class BabylonApp {
     
     var topAttachpoint = scene.getMeshByName(userSelection.body + "_TopAttach");
     this.attachTo(shell, topAttachpoint, 0,0,0)
+
     shell.rotation = new BABYLON.Vector3(0, 0, 0)
-    shell.rotation = new BABYLON.Vector3(0, this.rad(180), this.rad(180))
+    if (firstBuild){
+      shell.rotation = new BABYLON.Vector3(0, this.rad(180), this.rad(180))
+    } else {
+      shell.rotation = new BABYLON.Vector3(0, 0, 0)
+    }
+
+
+
     
 
     await this.playRow([155,140,,], 1)
@@ -819,8 +870,15 @@ export class BabylonApp {
 
     var engineAttach = scene.getMeshByName(userSelection.body+"_EngineAttach");
     this.attachTo(engine, engineAttach, 0,0.5,0)
+
     engine.rotation = new BABYLON.Vector3(0, 0, 0)
-    engine.rotation = new BABYLON.Vector3(0, this.rad(90), this.rad(180))
+    if (firstBuild) {
+      engine.rotation = new BABYLON.Vector3(0, this.rad(90), this.rad(180))
+    } else {
+      engine.rotation = new BABYLON.Vector3(0, 0, 0)
+    }
+
+
     
 
     await this.playRow([155,140,,], 1)
@@ -839,8 +897,15 @@ export class BabylonApp {
 
     var powerupAttach = scene.getMeshByName(userSelection.body+"_PowerupAttach");
     this.attachTo(powerup, powerupAttach, 0,0.5,0)
+
     powerup.rotation = new BABYLON.Vector3(0, 0, 0)
-    powerup.rotation = new BABYLON.Vector3(0, this.rad(90), this.rad(180))
+    if (firstBuild) {
+      powerup.rotation = new BABYLON.Vector3(0, this.rad(90), this.rad(180))
+    } else {
+      powerup.rotation = new BABYLON.Vector3(0, 0, 0)
+    }
+
+
 
     // RESET
     await this.playRow([155,140,,], 1)
@@ -890,6 +955,7 @@ export class BabylonApp {
 
     this.raiseBlock("RoadBlock1");
     exitedAssembly = true;
+    firstBuild = false;
     vehicle.startPhysics()
   }
 
@@ -1038,6 +1104,7 @@ export class BabylonApp {
   }
 
   restartSimulation(body,powerup, engine){
+    firstBuild = true;
     userSelection.body = body || "Car";
     userSelection.engine = engine || "Steam";
     userSelection.powerup = powerup || "4 Wheel Drive";
@@ -1045,6 +1112,7 @@ export class BabylonApp {
     Object.keys(vehicles).map(x => vehicles[x].resetPosition());
     //Switch vehicle
     switchVehicle(body, this.scene);
+    addTriggers(this.gui, scene, body, this.powerupName, this)
     //Switch powerup and engines 
     vehicle.prototype.torque = Vehicles.engine(engine) * vehicle.prototype.originalTorque;
     vehicle.prototype.powerupName = powerup;
@@ -1055,7 +1123,6 @@ export class BabylonApp {
     stopLap(this.gui);
     document.getElementById("bestScore").innerText = `Current Best Score: 0`
     //add triggers
-    addTriggers(this.gui, scene, body, this.powerupName, this)
   }
   
 
