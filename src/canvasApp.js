@@ -110,6 +110,9 @@ var stopLap = function(gui) {
   if (!bestLap || gui.time < bestLap) {
     bestLap = gui.time;
   }
+  if (gui._redlightTime > 50) {
+    bestLap += Math.floor((gui._redlightTime / 1000) * 1.5)
+  }
   laps.push([gui.time, vehicle]);
   HTTP.stopRecording();
   console.log(bestLap);
@@ -144,7 +147,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
   console.log("Set vehicleMesh to " + vehicleMesh)
 
   var assemblyTrigger = scene.getMeshByName("Trigger_Assembly");
-  assemblyTrigger.visibility = 0.1;
+  assemblyTrigger.visibility = 0;
   assemblyTrigger.actionManager = new ActionManager(scene);
   assemblyTrigger.actionManager.registerAction(
     new ExecuteCodeAction(
@@ -155,6 +158,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
       () => {
         if (exitedAssembly) {
           console.log("AssemblyReEntered");
+          exitedAssembly = false;
           app.disassembleVehicle();
         }
 
@@ -164,7 +168,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
   
   var stopSignTrigger = scene.getMeshByName("Trigger_StopSign");
   stopSignTrigger.actionManager = new ActionManager(scene);
-  stopSignTrigger.visibility = 0.1;
+  stopSignTrigger.visibility = 0.2;
   stopSignTrigger.actionManager.registerAction(
     new ExecuteCodeAction(
       {
@@ -192,7 +196,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
   
   var fourWheelDriveTrigger = scene.getMeshByName("Trigger_4WDStart");
   fourWheelDriveTrigger.actionManager = new ActionManager(scene);
-  fourWheelDriveTrigger.visibility = 0.1;
+  fourWheelDriveTrigger.visibility = 0;
   fourWheelDriveTrigger.actionManager.registerAction(
     new ExecuteCodeAction(
       {
@@ -214,7 +218,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
 
   var startTrigger = scene.getMeshByName("Trigger_Start");
   startTrigger.actionManager = new ActionManager(scene);
-  startTrigger.visibility = 0.1;
+  startTrigger.visibility = 0;
   startTrigger.actionManager.registerAction(
     new ExecuteCodeAction(
       {
@@ -233,7 +237,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
 
   var finishTrigger = scene.getMeshByName("Trigger_Finish");
   finishTrigger.actionManager = new ActionManager(scene);
-  finishTrigger.visibility = 0.1;
+  finishTrigger.visibility = 0;
   finishTrigger.actionManager.registerAction(
     new ExecuteCodeAction(
       {

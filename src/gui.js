@@ -87,8 +87,11 @@ export class Hud {
       this._prevTime = new Date().getTime();
       if (this._redlightTime < 0) {
         this._redlightTime = 0;
+        this._redlightTimeClock.text = ("GO!");
+        this._redlightTimeClock.color = "#66ff00"
+      } else {
+        this._redlightTimeClock.text = ("WAIT: " + this._redlightTime)
       }
-      this._redlightTimeClock.text = ("WAIT: " + this._redlightTime)
     }
 
   }
@@ -99,6 +102,8 @@ export class Hud {
     console.log(this._startTime);
     this._stopTimer = false;
     this._redlightTime = 5000;
+    this._redlightTimeClock.color = "red"
+    this._redlightTimeClock.text = ""
   }
   stopTimer() {
     this._stopTimer = true;
@@ -110,7 +115,6 @@ export class Hud {
     if (this._redlightTime > 5000) {
       this._redlightTimeClock.visible = true;
     }
-
   }
   stopRedlight() {
     this._stopRedlight = true;
