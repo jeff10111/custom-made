@@ -546,6 +546,10 @@ export class Train {
         };
         this.protoConst = vehicleBuilder;
         this.protoConst(visible, rotation, scene);
+
+        //hide un-used rails
+        this.scene.getMeshByName("RightBar").position.y = -100;
+        this.scene.getMeshByName("LeftBar").position.y = -100;
     }
 
     startPhysics(){
