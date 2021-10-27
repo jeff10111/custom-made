@@ -55,6 +55,22 @@ export class Hud {
     stackPanel.addControl(clockTime);
     this._clockTime = clockTime;
 
+    //Redlight timer text
+    const redlightTime = new TextBlock();
+    redlightTime.name = "redlight";
+    redlightTime.textHorizontalAlignment = TextBlock.HORIZONTAL_ALIGNMENT_LEFT;
+    redlightTime.fontSize = "48px";
+    redlightTime.color = "red";
+    redlightTime.text = "";
+    redlightTime.resizeToFit = true;
+    redlightTime.height = "96px";
+    redlightTime.width = "220px";
+    redlightTime.fontFamily = "Lucida Console";
+    stackPanel.addControl(redlightTime);
+    this._redlightTime = 5000;
+    this._redlightTimeClock = redlightTime;
+    this._stopRedlight = true;
+
     //start joystick
     new JoyStick(playerUI, this._app);
     //Add speed boost gui
@@ -64,13 +80,26 @@ export class Hud {
   updateHud() {
     if (!this._stopTimer && this._startTime != null) {
       let curTime =
-        Math.floor((new Date().getTime() - this._startTime) / 1000) +
-        this._prevTime; // divide by 1000 to get seconds
+        Math.floor((new Date().getTime() - this._startTime) / 1000) ; // divide by 1000 to get seconds
 
       this.time = curTime; //keeps track of the total time elapsed in seconds
       this._clockTime.text = this._formatTime(curTime);
     }
     this.speedBoostButton.updateTimerText();
+    if (!this._stopRedlight && this._redlightTime >= 0) {
+      console.log(new Date().getTime(), " - ", this._prevTime)
+      this._redlightTime -= (new Date().getTime() - this._prevTime)
+      console.log(this._redlightTime)
+      this._prevTime = new Date().getTime();
+      if (this._redlightTime < 0) {
+        this._redlightTime = 0;
+        this._redlightTimeClock.text = ("GO!");
+        this._redlightTimeClock.color = "#66ff00"
+      } else {
+        this._redlightTimeClock.text = ("WAIT: " + this._redlightTime)
+      }
+    }
+
   }
 
   //---- Game Timer ----
@@ -78,9 +107,27 @@ export class Hud {
     this._startTime = new Date().getTime();
     console.log(this._startTime);
     this._stopTimer = false;
+    this._redlightTime = 5000;
+    this._redlightTimeClock.color = "red"
+    this._redlightTimeClock.text = ""
   }
   stopTimer() {
     this._stopTimer = true;
+  }
+
+  startRedlight() {
+    this._prevTime = new Date().getTime()
+    this._stopRedlight = false;
+    if (this._redlightTime > 5000) {
+      this._redlightTimeClock.visible = true;
+    }
+  }
+  stopRedlight() {
+    this._stopRedlight = true;
+    if (this._redlightTime < 10) {
+      this._redlightTimeClock.visible = false;
+      this._redlightTimeClock.text = ""
+    }
   }
 
   //format the time so that it is relative to 11:00 -- game time

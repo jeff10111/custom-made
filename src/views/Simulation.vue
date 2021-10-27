@@ -6,14 +6,12 @@
       {{ this.userSelection.powerup }} powerup
     </div>
     <div class="btn-group" role="group">
-      <button type="button" @click="spinArm" hidden>Spin!</button>
       <button type="button" @click="buildVehicle">Build Selected Vehicle!</button>
       <button type="button" @click="playCSV" hidden>Play CSV!</button>
-      <button type="button" @click="raiseBlocks" id="av" class="simButton" hidden>Raise Blocks!</button>
-      <button type="button" @click="lowerBlocks" hidden>Lower Blocks!</button>
       <button type="button" @click="powerUp" hidden>Activate Powerup!!</button>
       <button type="button" @click="scoreSubmission">Submit Best Score</button>
-      <button type="button" @click="anything" >anythingForTesting</button>
+      <button type="button" @click="anything">anythingForTesting</button>
+      <button type="button" @click="resetVehicle">Stuck? Reset Vehicle</button>
       <button type="button" @click="openVehicleSelection">Change Vehicle</button>
       <button type="button" @click="openLeaderboardModal">Open Leaderboard</button>
       <div id="bestScore">Current Best Score: 0</div>
@@ -94,6 +92,12 @@ export default {
     },
     buildVehicle() {
       this.Application.buildVehicle();
+    },
+    disassembleVehicle() {
+      this.Application.disassembleVehicle();
+    },
+    resetVehicle() {
+      this.Application.resetVehicle();
     },
     playCSV() {
       this.Application.playCSV();
