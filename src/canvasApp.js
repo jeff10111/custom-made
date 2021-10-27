@@ -735,7 +735,6 @@ export class BabylonApp {
 
   async buildVehicle() {
 
-    // vehicle.meshes.body.rotation.y = 
     exitedAssembly = false;
     var dornaHand = scene.getTransformNodeByName("HandBone");
 
@@ -834,25 +833,15 @@ export class BabylonApp {
     }
 
     shell = scene.getTransformNodeByName(userSelection.body+"Top");
-    console.log("--------------")
     if (firstBuild) {
       originalPositionDict[shell.name] = [shell.parent, shell.position.clone(), shell.rotationQuaternion.toEulerAngles()]
     }
 
-    console.log(originalPositionDict[shell.name])
-    console.log(originalPositionDict[shell.name][0].name)
-    console.log(originalPositionDict[shell.name][1].x)
-    console.log(originalPositionDict[shell.name][1].y)
-    console.log(originalPositionDict[shell.name][1].z)
-
     // CHASSIS ASSEMBLY
     await this.playRow([shellAngle,140,,], 1)
-    /*eslint-disable */
-
 
     await this.playRow([,0,-120,120])
     shell.setParent(dornaHand);
-
 
     await this.playRow([shellAngle+180,140,,], 1)
 
@@ -863,21 +852,14 @@ export class BabylonApp {
 
     shell.rotation = new BABYLON.Vector3(0, 0, 0)
     shell.scaling =  new BABYLON.Vector3(1,1,1)
-
-
-
-    
-
     await this.playRow([155,140,,], 1)
 
     // ENGINE ASSEMBLY
-
     await this.playRow([engineAngle, 57, -65, 8])
     engine.setParent(dornaHand);
 
     await this.playRow([155, 140,,], 1)
 
-    
     await this.playRow([enginePlaceAngle, 10, -115, 103.5])
     
 
@@ -887,13 +869,9 @@ export class BabylonApp {
     engine.rotation = new BABYLON.Vector3(0, this.rad(90), 0)
     engine.scaling = new BABYLON.Vector3(1,1,1)
 
-
-    
-
     await this.playRow([155,140,,], 1)
 
     // POWERUP ASSEMBLY
-
     await this.playRow([powerupAngle, 57, -65, 8])
     powerup.setParent(dornaHand);
 
@@ -910,10 +888,8 @@ export class BabylonApp {
     powerup.rotation = new BABYLON.Vector3(0, this.rad(90), 0)
     powerup.scaling = new BABYLON.Vector3(1,1,1)
 
-
     // RESET
     await this.playRow([155,140,,], 1)
-
 
     moveRot = vehicle.meshes.body.rotation
     moveRot.y = this.rad(90)
@@ -961,7 +937,7 @@ export class BabylonApp {
       vehicle.meshes.body.rotation.x, vehicle.meshes.body.rotation.z)
     )
 
-    //this.raiseBlock("RoadBlock1");
+    this.raiseBlock("RoadBlock1");
     exitedAssembly = true;
     firstBuild = false;
     vehicle.startPhysics()
