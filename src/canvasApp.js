@@ -1100,7 +1100,6 @@ export class BabylonApp {
     Object.keys(vehicles).map(x => vehicles[x].resetPosition());
     //Switch vehicle
     switchVehicle(body, this.scene);
-    addTriggers(this.gui, scene, body, this.powerupName, this)
     //Switch powerup and engines 
     vehicle.prototype.torque = Vehicles.engine(engine) * vehicle.prototype.originalTorque;
     vehicle.prototype.powerupName = powerup;
@@ -1111,7 +1110,7 @@ export class BabylonApp {
     stopLap(this.gui);
     document.getElementById("bestScore").innerText = `Current Best Score: 0`
     //add triggers
-    addTriggers(this.gui, scene, body, this.powerupName, this)
+    //addTriggers(this.gui, scene, body, this.powerupName, this)
     //Add vehicle to gui
     this.gui.speedBoostButton.deactivateButton();
     if(powerup == "Speed Boost")
