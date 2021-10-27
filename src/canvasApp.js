@@ -165,7 +165,6 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         parameter: vehicleMesh,
       },
       () => {
-        console.log("$$$$$$$$$$$" + powerup)
         if (powerup != "Emergency Siren") {
           gui.startRedlight();
           console.log("RedLightArea");
@@ -273,8 +272,6 @@ var createScene = async function (engine, canvas) {
   await SceneLoader.ImportMeshAsync("", "/assets/", "track.glb").then(
     (result) => {
       for (var mesh in result.meshes) {
-
-
         var thisMesh = result.meshes[mesh];
         if (
           thisMesh.name.startsWith("Dorna_") &&
@@ -288,12 +285,14 @@ var createScene = async function (engine, canvas) {
           thisMesh.rotation = newRot;
         }
 
+        var rot = thisMesh.rotation.clone()
+        console.log("$$" + thisMesh.name)
+        if (thisMesh.rotationQuaternion != undefined) {
+          rot = thisMesh.rotationQuaternion.toEulerAngles()
+        }
+
         if (thisMesh.position != undefined) {
-
-        originalPositionDict[thisMesh.name] = [thisMesh.parent, thisMesh.position.clone(), thisMesh.rotation.clone()]
-
-        // originalRotationDict[thisMesh.name] = ;
-
+          originalPositionDict[thisMesh.name] = [thisMesh.parent, thisMesh.position.clone(), rot]
         }
 
         if (thisMesh.name.startsWith("MapCollide")) {
@@ -636,35 +635,36 @@ export class BabylonApp {
         break;
     }
     vehicle.disablePhysics()
-    await vehicle.animate(new BABYLON.Vector3(400, -25, 80), new BABYLON.Quaternion(0,0,0,0))
 
     var moveRot = vehicle.meshes.body.rotation
     var shell;
     var shellAngle = 0;
     var enginePlaceAngle;
     var powerupPlaceAngle;
+    var assemblyPosition;
+    var assemblyRotation;
 
     switch (userSelection.body) {
       case "Car":
         shellAngle = -20;
-         moveRot.y = this.rad(110)
-        vehicle.disablePhysics()
-        await vehicle.animate(new BABYLON.Vector3(451, -25, -2), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z))
+        moveRot.y = this.rad(110)
+        assemblyPosition = new BABYLON.Vector3(451, -25, -2)
+        assemblyRotation = BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z)
         enginePlaceAngle = 152;
         powerupPlaceAngle = 168;
         break;
       case "Train":
         moveRot.y = this.rad(150)
-        vehicle.disablePhysics()
-        await vehicle.animate(new BABYLON.Vector3(483, -25, -19), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z))
+        assemblyPosition = new BABYLON.Vector3(483, -25, -19)
+        assemblyRotation = BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z)
         shellAngle = -60;
         enginePlaceAngle = 120;
         powerupPlaceAngle = 120;
         break;
       case "Spaceship": 
         moveRot.y = this.rad(120)
-        vehicle.disablePhysics()
-        await vehicle.animate(new BABYLON.Vector3(387, -25, -19), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z))
+        assemblyPosition = new BABYLON.Vector3(387, -25, -19)
+        assemblyRotation = BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z)
         shellAngle = 60;
         enginePlaceAngle = 245;
         powerupPlaceAngle = 235;
@@ -672,13 +672,27 @@ export class BabylonApp {
       case "Tank":
         moveRot = vehicle.meshes.body.rotation
         moveRot.y = this.rad(70)
-        vehicle.disablePhysics()
-        vehicle.animate(new BABYLON.Vector3(418, -25, -1), BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z))
+        assemblyPosition = new BABYLON.Vector3(418, -25, -1)
+        assemblyRotation = BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z)
         shellAngle = 20;
         enginePlaceAngle = 192.5;
         powerupPlaceAngle = 208;
         break;
     }
+
+    var segments = 3;
+    var targetX = vehicle.meshes.body.position.x - assemblyPosition.x;
+    var difference = targetX / segments
+
+    for (var i = 0; i < segments; i++) {
+      await vehicle.animate(
+        new BABYLON.Vector3(vehicle.meshes.body.position.x - difference, vehicle.meshes.body.position.y, vehicle.meshes.body.position.z), 
+        BABYLON.Quaternion.RotationYawPitchRoll(vehicle.meshes.body.rotation.y,
+        vehicle.meshes.body.rotation.x, vehicle.meshes.body.rotation.z)
+      )
+    }
+
+    await vehicle.animate(assemblyPosition, assemblyRotation)
 
     shell = scene.getTransformNodeByName(userSelection.body+"Top");
 
@@ -688,16 +702,18 @@ export class BabylonApp {
     powerup.parent = powerupOriginalParent
     const powerupOriginalPos = originalPositionDict[powerup.name][1]
     powerup.position = new BABYLON.Vector3(powerupOriginalPos.x, powerupOriginalPos.y, powerupOriginalPos.z)
+    const powerupOriginalRotation = originalPositionDict[powerup.name][2]
+    powerup.rotation = new BABYLON.Vector3(powerupOriginalRotation.x, powerupOriginalRotation.y, powerupOriginalRotation.z)
 
-        console.log("ORiginal engine position:")
+    console.log("ORiginal engine position:")
     console.log(originalPositionDict[engine.name])
     const engineOriginalParent = originalPositionDict[engine.name][0];
     engine.parent = engineOriginalParent
     const engineOriginalPosition = originalPositionDict[engine.name][1]
     engine.position = new BABYLON.Vector3(engineOriginalPosition.x, engineOriginalPosition.y, engineOriginalPosition.z)
+    const engineOriginalRotation = originalPositionDict[engine.name][2]
+    engine.rotation = new BABYLON.Vector3(engineOriginalRotation.x, engineOriginalRotation.y, engineOriginalRotation.z)
 
-            console.log("ORiginal shell position:")
-    console.log(originalPositionDict[shell.name][1])
     var shellOriginalParent = originalPositionDict[shell.name][0]
     shell.parent = shellOriginalParent
     var shellOriginalPos = originalPositionDict[shell.name][1]
