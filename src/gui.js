@@ -90,7 +90,7 @@ export class Hud {
         this._redlightTimeClock.text = ("GO!");
         this._redlightTimeClock.color = "#66ff00"
       } else {
-        this._redlightTimeClock.text = ("WAIT: " + this._redlightTime)
+        this._redlightTimeClock.text = ("WAIT: " + ((this._redlightTime/1000) + "000").slice(0, 4))
       }
     }
 

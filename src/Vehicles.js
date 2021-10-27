@@ -160,7 +160,7 @@ let animate = function(positionVector3,rotationQuaternion, frameRate=1000, autoS
         var runAnim = this.scene.beginAnimation(this.meshes.body, 0, 2 * frameRate, false);
       return runAnim.waitAsync();
     }
-    return [rotationAnim];
+    return [positionAnim, rotationAnim];
 }
 
 let wheelPositioning = function(body, wheel, x, y, z) {
@@ -334,7 +334,7 @@ export class Tank {
     constructor(scene, x, z, engineName, powerupName, visible, rotation) {
         this.prototype = new Prototype(50, 50, 2.5, 1, 0.05, 100, 20, 1, powerupName, engineName, x, z, rotation);
         this.meshes = {
-            body: BABYLON.MeshBuilder.CreateBox(null, { width: 22, depth: 20, height: 6 }, scene),
+            body: BABYLON.MeshBuilder.CreateBox("TankBodyBox", { width: 22, depth: 20, height: 6 }, scene),
             wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheelL2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheelL3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
@@ -548,7 +548,7 @@ export class Train {
     constructor(scene, x, z, engineName, powerupName, visible, rotation) {
         this.prototype = new Prototype(30,10,5.5,1,0.05,100,30,1,powerupName,engineName, x, z, rotation);
         this.meshes = {
-            body: BABYLON.MeshBuilder.CreateBox("ABCDE", { width: 25, depth: 15, height: 6 }, scene),
+            body: BABYLON.MeshBuilder.CreateBox("TrainBodyBox", { width: 25, depth: 15, height: 6 }, scene),
             wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheelL2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheelL3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
@@ -744,7 +744,7 @@ export class MT {
     constructor(scene, x, z, engineName, powerupName, visible, rotation) {
         this.prototype = new Prototype(30, 10, 5.5, 1.5, 0.01, 80, 10, 1, powerupName, engineName, x, z, rotation);
         this.meshes = {
-            body: BABYLON.MeshBuilder.CreateBox(null, { width: 24, depth: 20, height: 6 }, scene),
+            body: BABYLON.MeshBuilder.CreateBox("CarBodyBox", { width: 24, depth: 20, height: 6 }, scene),
             wheel1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheel2: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
         };

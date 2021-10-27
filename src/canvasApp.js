@@ -110,7 +110,7 @@ var stopLap = function(gui) {
   if (!bestLap || gui.time < bestLap) {
     bestLap = gui.time;
   }
-  if (gui._redlightTime > 50) {
+  if (userSelection.powerup != "Emergency Siren" && gui._redlightTime > 50) {
     bestLap += Math.floor((gui._redlightTime / 1000) * 1.5)
   }
   laps.push([gui.time, vehicle]);
@@ -122,17 +122,6 @@ var stopLap = function(gui) {
 var exitedAssembly = false;
 
 var addTriggers = function(gui, scene, vehicleName, powerup, app) {
-
-  // If exitedAssembly, disassembleVehicle()
-
-  var carTrigger = scene.getMeshByName("Trigger_CarPark");
-  carTrigger.visibility = 0;
-  var trainTrigger = scene.getMeshByName("Trigger_TrainPark");
-  trainTrigger.visibility = 0;
-  var spaceshipTrigger = scene.getMeshByName("Trigger_SpaceshipPark");
-  spaceshipTrigger.visibility = 0;
-  var tankTrigger = scene.getMeshByName("Trigger_TankPark");
-  tankTrigger.visibility = 0;
 
   // Must be a mesh, not a transform node
   var vehicleMesh = scene.getMeshByName(
@@ -176,8 +165,11 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         parameter: vehicleMesh,
       },
       () => {
-        gui.startRedlight();
-        console.log("RedLightArea");
+        console.log("$$$$$$$$$$$" + powerup)
+        if (powerup != "Emergency Siren") {
+          gui.startRedlight();
+          console.log("RedLightArea");
+        }
       }
     )
   );
@@ -188,8 +180,10 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         parameter: vehicleMesh,
       },
       () => {
-        gui.stopRedlight();
-        console.log("RedLightAreaExit");
+        if (powerup != "Emergency Siren") {
+          gui.stopRedlight();
+          console.log("RedLightAreaExit");
+        }
       }
     )
   );
@@ -365,16 +359,7 @@ export class BabylonApp {
       new Vehicles.Train(scene, 483, -19, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7)),
       new Vehicles.Omni(scene, 387, -19, "Steam", "4 Wheel Drive", v, new Quaternion(0,0.7,0,0.7))); 
 
-      // sendScoreToServer("Athena", 55, "Car", "Emergency Siren", "Nuclear Fusion")
-      // sendScoreToServer("Bella", 999, "Spaceship", "Portal", "Jet")
-      // sendScoreToServer("Cara", 34, "Tank", "Speed Boost", "Petrol")
-      // sendScoreToServer("Diana", 45, "Car", "4 Wheel Drive", "Steam")
-      // sendScoreToServer("Emilia", 12, "Train", "Emergency Siren", "Nuclear Fusion")
-      // sendScoreToServer("Felicia", 11, "Spaceship", "Emergency Siren", "Steam")
-      // sendScoreToServer("Gloria", 90, "Tank", "Speed Boost", "Nuclear Fusion")
-      // sendScoreToServer("Hadria", 66, "Tank", "Portal", "Nuclear Fusion")
-      // sendScoreToServer("Nelia", 32, "Spaceship", "Portal", "Nuclear Fusion")
-      // sendScoreToServer("Octavia", 19, "Train", "4 Wheel Drive","Nuclear Fusion")
+      scene.getMeshByName("TrainBodyBox").scaling.z = -1
 
       document.getElementById("vehicleSelection").style.display = "block";
       this.gui = new Hud(scene, this.keysPressed);
@@ -718,9 +703,8 @@ export class BabylonApp {
     var shellOriginalPos = originalPositionDict[shell.name][1]
     shell.position = new BABYLON.Vector3(shellOriginalPos.x, shellOriginalPos.y, shellOriginalPos.z)
     var rot = originalPositionDict[shell.name][2]
-    if (firstBuild) {
-      shell.rotation = new BABYLON.Vector3(rot.x, rot.y - this.rad(180), rot.z - this.rad(180))
-    }
+    shell.rotation = new BABYLON.Vector3(rot.x, rot.y, rot.z)
+    shell.scaling = new BABYLON.Vector3(1,1,1)
   }
 
   async resetVehicle() {
@@ -862,11 +846,7 @@ export class BabylonApp {
     this.attachTo(shell, topAttachpoint, 0,0,0)
 
     shell.rotation = new BABYLON.Vector3(0, 0, 0)
-    if (firstBuild){
-      shell.rotation = new BABYLON.Vector3(0, this.rad(180), this.rad(180))
-    } else {
-      shell.rotation = new BABYLON.Vector3(0, 0, 0)
-    }
+    shell.scaling =  new BABYLON.Vector3(1,1,1)
 
 
 
@@ -888,12 +868,8 @@ export class BabylonApp {
     var engineAttach = scene.getMeshByName(userSelection.body+"_EngineAttach");
     this.attachTo(engine, engineAttach, 0,0.5,0)
 
-    engine.rotation = new BABYLON.Vector3(0, 0, 0)
-    if (firstBuild) {
-      engine.rotation = new BABYLON.Vector3(0, this.rad(90), this.rad(180))
-    } else {
-      engine.rotation = new BABYLON.Vector3(0, 0, 0)
-    }
+    engine.rotation = new BABYLON.Vector3(0, this.rad(90), 0)
+    engine.scaling = new BABYLON.Vector3(1,1,1)
 
 
     
@@ -915,13 +891,8 @@ export class BabylonApp {
     var powerupAttach = scene.getMeshByName(userSelection.body+"_PowerupAttach");
     this.attachTo(powerup, powerupAttach, 0,0.5,0)
 
-    powerup.rotation = new BABYLON.Vector3(0, 0, 0)
-    if (firstBuild) {
-      powerup.rotation = new BABYLON.Vector3(0, this.rad(90), this.rad(180))
-    } else {
-      powerup.rotation = new BABYLON.Vector3(0, 0, 0)
-    }
-
+    powerup.rotation = new BABYLON.Vector3(0, this.rad(90), 0)
+    powerup.scaling = new BABYLON.Vector3(1,1,1)
 
 
     // RESET
@@ -957,7 +928,7 @@ export class BabylonApp {
     )
 
     var segments = 4;
-    var targetX = vehicle.meshes.body.position.x - 230;
+    var targetX = vehicle.meshes.body.position.x - 215;
     difference = targetX / segments
 
     for (var i = 0; i < segments; i++) {
@@ -968,9 +939,13 @@ export class BabylonApp {
       )
     }
 
+    await vehicle.animate(
+      new BABYLON.Vector3(vehicle.meshes.body.position.x, vehicle.meshes.body.position.y, vehicle.meshes.body.position.z), 
+      BABYLON.Quaternion.RotationYawPitchRoll(this.rad(140),
+      vehicle.meshes.body.rotation.x, vehicle.meshes.body.rotation.z)
+    )
 
-
-    this.raiseBlock("RoadBlock1");
+    //this.raiseBlock("RoadBlock1");
     exitedAssembly = true;
     firstBuild = false;
     vehicle.startPhysics()
@@ -1129,7 +1104,7 @@ export class BabylonApp {
     Object.keys(vehicles).map(x => vehicles[x].resetPosition());
     //Switch vehicle
     switchVehicle(body, this.scene);
-    addTriggers(this.gui, scene, body, this.powerupName, this)
+    addTriggers(this.gui, scene, body, userSelection.powerup, this)
     //Switch powerup and engines 
     vehicle.prototype.torque = Vehicles.engine(engine) * vehicle.prototype.originalTorque;
     vehicle.prototype.powerupName = powerup;
