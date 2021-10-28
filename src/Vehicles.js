@@ -282,7 +282,6 @@ let vehicleBuilder = function(visible, rotation, scene){
 }
 
 let switchCamera = function(){
-    console.log('switching camera')
     if(this.camera === this.cameras[0])
         this.camera = this.cameras[1];
     else
@@ -344,10 +343,10 @@ export class Omni {
     }
 
     userInput(keys) {
-        console.log("Radian" + keys['radian']);
         var impulseVector = new BABYLON.Vector3(0, 0, 0);
         var multi =
         ((new Date().getTime() - this.prototype.sbActivationTime) < sbDuration) ? sbMultiplier : 1;
+
         if (this.prototype.offRoad && this.prototype.powerupName != "4 Wheel Drive" && Math.floor(Math.random() * 10) == 9) {
             var x = Math.random() * 2 - 1 > 0 ? Math.random()*-1 : Math.random();
             var y = Math.random() * 2 - 1 > 0 ? Math.random()*-1 : Math.random();
@@ -382,7 +381,7 @@ export class Omni {
         } else if (keys['a']) {
             impulseVector = new BABYLON.Vector3(1, 0, 0);
         }
-        this.meshes.body.physicsImpostor.applyImpulse(impulseVector.scale(this.prototype.bodyMass * multi), this.meshes.body.getAbsolutePosition());
+        this.meshes.body.physicsImpostor.applyImpulse(impulseVector.scale(this.prototype.bodyMass * multi * 2), this.meshes.body.getAbsolutePosition());
     }
 }
 
