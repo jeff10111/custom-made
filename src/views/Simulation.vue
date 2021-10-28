@@ -5,20 +5,21 @@
       {{ this.userSelection.engine }} engine and
       {{ this.userSelection.powerup }} powerup
     </div>
+    <div class="row justify-content-center">
+      <div id="bestScore">Current Best Score: 0</div>
+    </div>
     <div class="btn-group" role="group">
-      <button type="button" @click="buildVehicle">Build Selected Vehicle!</button>
+      <button type="button" @click="buildVehicle" hidden>Build Selected Vehicle!</button>
       <button type="button" @click="playCSV" hidden>Play CSV!</button>
       <button type="button" @click="powerUp" hidden>Activate Powerup!!</button>
       <button type="button" @click="scoreSubmission">Submit Best Score</button>
       <button type="button" @click="anything" >anythingForTesting</button>
       <button type="button" @click="resetVehicle">Stuck? Reset Vehicle</button>
-      <button type="button" @click="openVehicleSelection">Change Vehicle</button>
+      <button type="button" @click="openVehicleSelection" hidden>Change Vehicle</button>
       <button type="button" @click="openLeaderboardModal">Open Leaderboard</button>
-      <div id="bestScore">Current Best Score: 0</div>
-
     </div>
     <div>
-    <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
+    <canvas id="gameCanvas" style="margin:1%" width="1000px" height="600px"></canvas>
     </div>
 
     <!-- Leaderboard Modal -->
@@ -174,11 +175,23 @@ export default {
     };
   },
   mounted() {
+    // TODO:
+    //window.addEventListener('resize', function(){ this.Application.resize(); });
+    // Set canvas size to the size of the window
+    var w = window,
+    d = document,
+    e = d.documentElement,
+    g = d.getElementsByTagName('body')[0],
+    xS = w.innerWidth || e.clientWidth || g.clientWidth,
+    yS = w.innerHeight|| e.clientHeight|| g.clientHeight;
+    document.getElementById("gameCanvas").width = xS * 0.8
+    document.getElementById("gameCanvas").height = yS * 0.7
+
     this.userSelection["body"] = this.$route.query.body || "Car";
     this.userSelection["engine"] = this.$route.query.engine || "Steam";
     this.userSelection["powerup"] = this.$route.query.powerup || "4 Wheel Drive";
       if(!this.Application)
-        this.Application = new CanvasApp.BabylonApp();
+        this.Application = new CanvasApp.BabylonApp(this);
     [this.userSelection.body, this.userSelection.engine, this.userSelection.powerup].map(x => this.sendText(x));
   }, 
 };
