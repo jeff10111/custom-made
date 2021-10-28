@@ -10,7 +10,7 @@
       <button type="button" @click="playCSV" hidden>Play CSV!</button>
       <button type="button" @click="powerUp" hidden>Activate Powerup!!</button>
       <button type="button" @click="scoreSubmission">Submit Best Score</button>
-      <button type="button" @click="anything" hidden>anythingForTesting</button>
+      <button type="button" @click="anything" >anythingForTesting</button>
       <button type="button" @click="resetVehicle">Stuck? Reset Vehicle</button>
       <button type="button" @click="openVehicleSelection">Change Vehicle</button>
       <button type="button" @click="openLeaderboardModal">Open Leaderboard</button>

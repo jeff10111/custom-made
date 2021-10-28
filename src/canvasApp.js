@@ -1052,11 +1052,6 @@ export class BabylonApp {
   something()
   {
     console.log("test");
-    //vehicle.switchCamera();
-    //scene.activeCamera = vehicle.camera;
-    //vehicle.cameras[0].radius+=10;
-    //console.log(`Radius: ${vehicle.cameras[0].radius}, height: ${vehicle.cameras[0].heightOffset}, rotation: ${vehicle.cameras[0].rotationOffset}`);
-    vehicle.disablePhysics();
     vehicle.move(new Vector3(vehicle.meshes.body.position.x,vehicle.meshes.body.position.y+60,vehicle.meshes.body.position.z),
     vehicle.meshes.body.rotationQuaternion, true);
   }
