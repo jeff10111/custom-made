@@ -175,7 +175,8 @@ export default {
     };
   },
   mounted() {
-    window.addEventListener('resize', function(){ this.Application.resize(); });
+    // TODO:
+    //window.addEventListener('resize', function(){ this.Application.resize(); });
     // Set canvas size to the size of the window
     var w = window,
     d = document,
