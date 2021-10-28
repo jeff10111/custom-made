@@ -605,8 +605,8 @@ export class Train {
         this.protoConst(visible, rotation, scene);
 
         //hide un-used rails
-        this.scene.getMeshByName("RightBar").position.y = -100;
-        this.scene.getMeshByName("LeftBar").position.y = -100;
+        this.scene.getMeshByName("RightBar").visibility = 0;
+        this.scene.getMeshByName("LeftBar").visibility = 0;
     }
 
     startPhysics(){
