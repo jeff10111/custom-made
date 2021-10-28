@@ -321,9 +321,14 @@ var createScene = async function (engine, canvas) {
         "ForearmBone",
         "HandBone",
       ];
-      for (var bone in boneList) {
-        var sceneBone = scene.getTransformNodeByName(boneList[bone]);
+      for (var bone of boneList) {
+        var sceneBone = scene.getTransformNodeByName(bone);
         sceneBone.rotation = new Vector3(0, 0, 0);
+      }
+
+      for (var shellName of ["CarTop", "SpaceshipTop", "TrainTop", "TankTop"]) {
+        var shell = scene.getTransformNodeByName(shellName);
+        originalPositionDict[shell.name] = [shell.parent, shell.position.clone(), shell.rotationQuaternion.toEulerAngles()]
       }
 
       scene.getTransformNodeByName("ShoulderBone").rotation = new Vector3(
@@ -897,10 +902,6 @@ export class BabylonApp {
 
 
     shell = scene.getTransformNodeByName(userSelection.body+"Top");
-    if (firstBuild) {
-      originalPositionDict[shell.name] = [shell.parent, shell.position.clone(), shell.rotationQuaternion.toEulerAngles()]
-    }
-
 
     // CHASSIS ASSEMBLY
     await this.playRow([shellAngle,140,,], 1)
@@ -1001,13 +1002,14 @@ export class BabylonApp {
       )
     }
 
+    this.raiseBlock("RoadBlock1");
+
     await vehicle.animate(
       new BABYLON.Vector3(vehicle.meshes.body.position.x, vehicle.meshes.body.position.y, vehicle.meshes.body.position.z), 
       BABYLON.Quaternion.RotationYawPitchRoll(this.rad(140),
       vehicle.meshes.body.rotation.x, vehicle.meshes.body.rotation.z)
     )
 
-    // this.raiseBlock("RoadBlock1");
     exitedAssembly = true;
     firstBuild = false;
     vehicle.startPhysics()
