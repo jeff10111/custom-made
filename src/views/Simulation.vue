@@ -5,17 +5,18 @@
       {{ this.userSelection.engine }} engine and
       {{ this.userSelection.powerup }} powerup
     </div>
+    <div class="row justify-content-center">
+      <div id="bestScore">Current Best Score: 0</div>
+    </div>
     <div class="btn-group" role="group">
-      <button type="button" @click="buildVehicle">Build Selected Vehicle!</button>
+      <button type="button" @click="buildVehicle" hidden>Build Selected Vehicle!</button>
       <button type="button" @click="playCSV" hidden>Play CSV!</button>
       <button type="button" @click="powerUp" hidden>Activate Powerup!!</button>
       <button type="button" @click="scoreSubmission">Submit Best Score</button>
       <button type="button" @click="anything" hidden>anythingForTesting</button>
       <button type="button" @click="resetVehicle">Stuck? Reset Vehicle</button>
-      <button type="button" @click="openVehicleSelection">Change Vehicle</button>
+      <button type="button" @click="openVehicleSelection" hidden>Change Vehicle</button>
       <button type="button" @click="openLeaderboardModal">Open Leaderboard</button>
-      <div id="bestScore">Current Best Score: 0</div>
-
     </div>
     <div>
     <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
@@ -178,7 +179,7 @@ export default {
     this.userSelection["engine"] = this.$route.query.engine || "Steam";
     this.userSelection["powerup"] = this.$route.query.powerup || "4 Wheel Drive";
       if(!this.Application)
-        this.Application = new CanvasApp.BabylonApp();
+        this.Application = new CanvasApp.BabylonApp(this);
     [this.userSelection.body, this.userSelection.engine, this.userSelection.powerup].map(x => this.sendText(x));
   }, 
 };
