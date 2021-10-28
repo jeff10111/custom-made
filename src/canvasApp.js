@@ -369,7 +369,7 @@ export class BabylonApp {
       new Vehicles.MT(scene, 451, -2, "Steam", "4 Wheel Drive", v, new Quaternion(0, 0.819152, 0, 0.5735764)),
       new Vehicles.Tank(scene, 418, -1, "Steam", "4 Wheel Drive", v, new Quaternion(0, 0.5735764, 0, 0.819152)),
       new Vehicles.Train(scene, 483, -19, "Steam", "4 Wheel Drive", v, new Quaternion(0, 0.9659258, 0, 0.258819)),
-      new Vehicles.Omni(scene, 387, -19, "Steam", "4 Wheel Drive", v, new Quaternion(0, 0.8660254, 0, 0.5))); 
+      new Vehicles.Omni(scene, 390, -20, "Steam", "4 Wheel Drive", v, new Quaternion(0, 0.8660254, 0, 0.5))); 
 
       scene.getMeshByName("TrainBodyBox").scaling.z = -1
 
@@ -658,7 +658,7 @@ export class BabylonApp {
         break;
       case "Spaceship": 
         moveRot.y = this.rad(120)
-        assemblyPosition = new BABYLON.Vector3(387, -25, -19)
+        assemblyPosition = new BABYLON.Vector3(390, -25, -20)
         assemblyRotation = BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z)
         shellAngle = 60;
         enginePlaceAngle = 245;
@@ -875,7 +875,7 @@ export class BabylonApp {
         break;
       case "Spaceship": 
         moveRot.y = this.rad(120)
-        assemblyPosition = new BABYLON.Vector3(387, -25, -19)
+        assemblyPosition = new BABYLON.Vector3(390, -25, -20)
         assemblyRotation = BABYLON.Quaternion.RotationYawPitchRoll(moveRot.y, moveRot.x, moveRot.z)
         shellAngle = 60;
         enginePlaceAngle = 245;
@@ -1007,7 +1007,7 @@ export class BabylonApp {
       vehicle.meshes.body.rotation.x, vehicle.meshes.body.rotation.z)
     )
 
-    this.raiseBlock("RoadBlock1");
+    // this.raiseBlock("RoadBlock1");
     exitedAssembly = true;
     firstBuild = false;
     vehicle.startPhysics()

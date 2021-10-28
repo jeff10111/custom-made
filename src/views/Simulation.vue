@@ -19,7 +19,7 @@
       <button type="button" @click="openLeaderboardModal">Open Leaderboard</button>
     </div>
     <div>
-    <canvas id="gameCanvas" width="1000px" height="600px"></canvas>
+    <canvas id="gameCanvas" style="margin:1%" width="1000px" height="600px"></canvas>
     </div>
 
     <!-- Leaderboard Modal -->
@@ -175,6 +175,17 @@ export default {
     };
   },
   mounted() {
+    window.addEventListener('resize', function(){ this.Application.resize(); });
+    // Set canvas size to the size of the window
+    var w = window,
+    d = document,
+    e = d.documentElement,
+    g = d.getElementsByTagName('body')[0],
+    xS = w.innerWidth || e.clientWidth || g.clientWidth,
+    yS = w.innerHeight|| e.clientHeight|| g.clientHeight;
+    document.getElementById("gameCanvas").width = xS * 0.8
+    document.getElementById("gameCanvas").height = yS * 0.7
+
     this.userSelection["body"] = this.$route.query.body || "Car";
     this.userSelection["engine"] = this.$route.query.engine || "Steam";
     this.userSelection["powerup"] = this.$route.query.powerup || "4 Wheel Drive";
