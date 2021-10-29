@@ -13,7 +13,7 @@
       <button type="button" @click="playCSV" hidden>Play CSV!</button>
       <button type="button" @click="powerUp" hidden>Activate Powerup!!</button>
       <button type="button" @click="scoreSubmission">Submit Best Score</button>
-      <button type="button" @click="anything" >anythingForTesting</button>
+      <button type="button" @click="anything" hidden>anythingForTesting</button>
       <button type="button" @click="resetVehicle">Stuck? Reset Vehicle</button>
       <button type="button" @click="openVehicleSelection" hidden>Change Vehicle</button>
       <button type="button" @click="openLeaderboardModal">Open Leaderboard</button>
@@ -184,8 +184,8 @@ export default {
     g = d.getElementsByTagName('body')[0],
     xS = w.innerWidth || e.clientWidth || g.clientWidth,
     yS = w.innerHeight|| e.clientHeight|| g.clientHeight;
-    document.getElementById("gameCanvas").width = xS * 0.8
-    document.getElementById("gameCanvas").height = yS * 0.7
+    document.getElementById("gameCanvas").width = xS * 0.9
+    document.getElementById("gameCanvas").height = yS * 0.8
 
     this.userSelection["body"] = this.$route.query.body || "Car";
     this.userSelection["engine"] = this.$route.query.engine || "Steam";
