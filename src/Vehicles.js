@@ -2,9 +2,9 @@ import * as BABYLON from 'babylonjs';
 import {Vector3, Quaternion} from "@babylonjs/core";
 import { _ } from 'core-js';
 import { Box } from 'cannon';
-let sbDuration = 10000;//10 second power up duration
-let sbMultiplier = 1.3;
-let sbAvailable = true;
+let sbDuration = 10000;//10 second speed boost duration
+let sbMultiplier = 1.3;//powerup gives 1.3x boost
+let sbAvailable = true;//makes sure speed boost is not activated more than once
 
 //determines the correct torque for the vehicle
 export function engine(e) {
@@ -28,8 +28,8 @@ let userInput = function(keys)
     if(!this.physicsEnabled){
         return; 
     }
+    var multi = 1;//Default
     //Getting the multi if speed boost is enabled.
-    var multi = 1;
     let timeLeft = new Date().getTime() - this.prototype.sbActivationTime;
     if(sbAvailable && (timeLeft < sbDuration))
     {
@@ -39,7 +39,6 @@ let userInput = function(keys)
     } 
     //Function to add randomness when vehicle is offroad without offroad powerup
     if (this.prototype.offRoad && this.prototype.powerupName != "4 Wheel Drive" && Math.random() > 0.85) {
-        console.log("Driving offRoad");
     switch (Math.floor(Math.random() * 8))
     {
         case 0:
@@ -121,15 +120,21 @@ let disablePhysics = function(){
 
 //Moving vehicle using coordinate and quaternion rotation
 let move = function(coordinates, rotation, reenablePhysics){
-    this.physicsEnabled && this.disablePhysics();
+    if (this.physicsEnabled)
+    {
+        this.disablePhysics();
+    } 
     this.meshes.body.position = coordinates;
     //Copy the values, not the object
+    //(otherwise it doesn't work properly)
     this.meshes.body.rotationQuaternion.x = rotation.x; 
     this.meshes.body.rotationQuaternion.y = rotation.y; 
     this.meshes.body.rotationQuaternion.z = rotation.z; 
     this.meshes.body.rotationQuaternion.w = rotation.w; 
-    console.log(`Setting quaternion to: ${rotation}. Result is: ${this.meshes.body.rotationQuaternion}`)
-    reenablePhysics && this.startPhysics();
+    if(reenablePhysics)
+    {
+        this.startPhysics();
+    }
 }
 
 let animate = function(positionVector3,rotationQuaternion, frameRate=1000, autoStart=true)
@@ -193,9 +198,9 @@ let wheelPositioning = function(body, wheel, x, y, z) {
 let wheelMeshParent = function(mesh, parentMesh, x, y, z) {
     parentMesh.setParent(null);
     mesh.parent = parentMesh;
-    mesh.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);
+    mesh.rotate(BABYLON.Axis.X, Math.PI / 2, BABYLON.Space.LOCAL);//by rotating the mesh, it rotates the axis as well
     mesh.position.y = y;//width
-    mesh.position.z = z;// y negative is up
+    mesh.position.z = z;//y negative is up
     mesh.position.x = x;//forward/backward
 }
 
@@ -234,7 +239,7 @@ let Prototype = function(speed, torque, wheelDiam, wheelHeight, wheelRestitution
     this.sbActivationTime = 0;
     this.originalVector3 = new Vector3(x,-25,z);
     this.originalQuaternion = {x:rotation.x, y:rotation.y, z:rotation.z, w:rotation.w};
-    Object.preventExtensions(this);
+    Object.preventExtensions(this);//this prevents new properties being added
 }
 
 //Return vehicle to its original position
@@ -254,31 +259,31 @@ let vehicleBuilder = function(visible, rotation, scene){
     //Alt camera
     this.cameras.push(new BABYLON.ArcRotateCamera("ArcCamera", Math.PI/2, Math.PI/6, 200, this.meshes.body, scene));
 
-      //Setting universal variables/functions
-      this.motors = [];
-      this.physicsEnabled = false;
-      !this.userInput && (this.userInput = userInput);//only set if undefined (has not been overidden by the child class)
-      this.disablePhysics = disablePhysics;
-      this.switchCamera = switchCamera;
-      this.test = test;
-      this.move = move;
-      this.animate = animate;
-      this.resetPosition = resetPosition;
-      this.wheelPositioning = wheelPositioning;
-      this.wheelMeshParent = wheelMeshParent;
-      this.wheelJoint = wheelJoint;
-      //Calling functions to build the vehicle
-      this.wheels = Object.keys(this.meshes).filter(x => x != "body");
-      //Body part
-      this.attachBodyParts();
-      //Wheel part
-      this.attachWheels && this.attachWheels();//only call if defined by the child class
-      this.meshes.body.rotationQuaternion = rotation
-      this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
+    //Setting universal variables/functions
+    this.motors = [];
+    this.physicsEnabled = false;
+    !this.userInput && (this.userInput = userInput);//only set if undefined (has not been overidden by the child class)
+    this.disablePhysics = disablePhysics;
+    this.switchCamera = switchCamera;
+    this.test = test;
+    this.move = move;
+    this.animate = animate;
+    this.resetPosition = resetPosition;
+    this.wheelPositioning = wheelPositioning;
+    this.wheelMeshParent = wheelMeshParent;
+    this.wheelJoint = wheelJoint;
+    //Calling functions to build the vehicle
+    this.wheels = Object.keys(this.meshes).filter(x => x != "body");
+    //Body part
+    this.attachBodyParts();
+    //Wheel part
+    this.attachWheels && this.attachWheels();//only call if defined by the child class
+    this.meshes.body.rotationQuaternion = rotation
+    this.move(this.prototype.originalVector3, this.prototype.originalQuaternion, false);
 
-      //make babylon meshes invisible
-      if (!visible)
-          Object.entries(this.meshes).map((x) => x[1].isVisible = false);
+    //make babylon meshes invisible
+    if (!visible)
+        Object.entries(this.meshes).map((x) => x[1].isVisible = false);
 }
 
 let switchCamera = function(){
@@ -316,6 +321,7 @@ export class Omni {
         this.physicsEnabled = false;
     }
 
+    //Attaches the MOD meshes as child meshes of the physics body
     attachBodyParts() {
         var mesh = this.scene.getTransformNodeByName("Omni");
         mesh.parent = this.meshes.body;
@@ -406,17 +412,19 @@ export class Tank {
     startPhysics(){
         if(this.physicsEnabled)
             return;
+        //1. Removes body as parent of each wheel (they are about to be attached via physics joint)
+        //2. Creates a cylindrical physical imposter for each wheel
         this.wheels.forEach((x) => {
             this.meshes[x].setParent(null);
             this.meshes[x].physicsImpostor = 
             new BABYLON.PhysicsImpostor(this.meshes[x], BABYLON.PhysicsImpostor.CylinderImpostor, { mass: this.prototype.wheelMass, friction: this.prototype.wheelFriction, restitution: this.prototype.wheelRestitution }, this.scene);
         });
-        //Adding physics imposter to body mesh (the parent of the mod mesh)
+        //Adding physics imposter to body mesh (the parent of the MOD mesh)
         this.meshes.body.physicsImpostor =
         new BABYLON.PhysicsImpostor(this.meshes.body, BABYLON.PhysicsImpostor.BoxImpostor, { mass: this.prototype.bodyMass , restitution: 0, friction: 0}, this.scene);
         //hinges part
-        let wheelWidth = 10.5;
-        let wheelHeight = -3;
+        let wheelWidth = 10.5;//width for center of body
+        let wheelHeight = -3;//Height on the body
         this.wheelJoint(this.meshes.body, this.meshes.wheelL1, -5.3, wheelHeight, wheelWidth);
         this.wheelJoint(this.meshes.body, this.meshes.wheelL2, -1.6, wheelHeight, wheelWidth);
         this.wheelJoint(this.meshes.body, this.meshes.wheelL3, 2, wheelHeight, wheelWidth);
@@ -428,6 +436,7 @@ export class Tank {
         this.physicsEnabled = true;
     }
 
+    //Attaches the MOD meshes as child meshes of the physics body
     attachBodyParts() {
         let body = this.meshes.body;
         var mesh = this.scene.getTransformNodeByName("TankBody");
@@ -629,6 +638,7 @@ export class Train {
         this.physicsEnabled = true;
     }
 
+    //Attaches the MOD meshes as child meshes of the physics body
     attachBodyParts() {
         //Attaching mod mesh to babylon mesh
         var mesh = this.scene.getTransformNodeByName("TrainBody");
@@ -803,6 +813,7 @@ export class MT {
         this.physicsEnabled = true;
     }
 
+    //Attaches the MOD meshes as child meshes of the physics body
     attachBodyParts() {
         //attaching MOD mesh to babylon mesh, creating a physics imposter for babylon mesh
         var mesh = this.scene.getMeshByName("MTBody");

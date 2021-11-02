@@ -1,10 +1,11 @@
 import * as BABYLON from "babylonjs";
 import {Ellipse, Control} from "@babylonjs/gui";
 
+//Used to make the two circles and the puck
 let makeThumbArea = function(name, thickness, color, background){
     let rect = new Ellipse();
         rect.name = name;
-        rect.thickness = thickness;
+        rect.thickness = thickness;//0 makes solid circle
         rect.color = color;
         rect.background = background;
         rect.paddingLeft = "0px";
@@ -15,9 +16,8 @@ let makeThumbArea = function(name, thickness, color, background){
  }
 
 export class JoyStick{
-    constructor(adt, ba)
+    constructor(adt, app)
     {
-        var app = ba;
         //Distance from bottom of canvas
         let sideJoystickOffset = 20;
         let bottomJoystickOffset = -20;
@@ -26,7 +26,7 @@ export class JoyStick{
         let innerContainerHeight = 80;
         let outerContainerHeight = 200;
         //Center point offset for user mouse/touch input calculations
-        let center = {x:outerContainerHeight/2, y:adt._canvas.height - outerContainerHeight/2};
+        let center = {x:outerContainerHeight/2 + puckSize/2, y:adt._canvas.height - (outerContainerHeight/2) - puckSize/2};
 
         //Outer container
         let leftThumbContainer = makeThumbArea("leftThumb", 2, "red", null);
@@ -79,17 +79,26 @@ export class JoyStick{
             {
                 return;
             }
-                
+
+            //Distance from center
+            let distance = Math.sqrt(Math.pow(coordinates.x - center.x, 2) + Math.pow(coordinates.y - center.y, 2))
+            
+            //If it's outside the container stop
+            if(distance > outerContainerHeight/2)
+                return;
+
             //Set puck position 
             leftPuck.left = coordinates.x-(leftThumbContainer._currentMeasure.width*.5)-sideJoystickOffset;
             leftPuck.top = (adt._canvas.height - coordinates.y-(leftThumbContainer._currentMeasure.height*.5)+bottomJoystickOffset)*-1;
 
             //Calculate angle from 0,0 to point
             let angle = Math.atan2(coordinates.y - center.y, coordinates.x - center.x); 
+
+            //Un-used, but radians could be implemented on the vehicle instead of key pressed
             app.keysPressed['radian'] = angle;
 
             //If the puck is too close to center, no input
-            if(Math.sqrt(Math.pow(coordinates.x - center.x, 2) + Math.pow(coordinates.y - center.y, 2)) < 50)
+            if(distance < 50)
             {
                 app.keysPressed['w'] = 0; app.keysPressed['a'] = 0; app.keysPressed['s'] = 0; app.keysPressed['d'] = 0;
                 return;

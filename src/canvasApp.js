@@ -1,18 +1,12 @@
 let vehicle;
 let userSelection = { "body": "", "powerup":"", "engine":""}
 let vehicles = function(MT, Tank, Train, Omni){this.MT = MT; this.Tank = Tank, this.Train = Train, this.Omni = Omni};
-let powerUpHasBeenActivated = false;
 let firstBuild = true;
-let userHasRunRedLight = false;
-let startTime;
-let endTime;
 let fourWheelDrivePassed;
 let bestLap = 0;
 let laps = [];
-let sendLapToServer = true;
-let timeStart;
 var originalPositionDict = {}
-var dornaCam;
+
 
 var scene;
 const frameRate = 1000;
@@ -29,6 +23,7 @@ import { Hud } from "./gui";
 import { readCsv } from "@/utils/csvHelper.js";
 window.CANNON = require("cannon");
 
+//Used to switch the active vehicle and also the camera
 function switchVehicle(vehicleName, scene) {
   switch (vehicleName) {
     case "Car":
@@ -113,7 +108,6 @@ var stopLap = function(gui) {
     bestLap += Math.floor((gui._redlightTime / 1000) * 1.5)
   }
   laps.push([gui.time, vehicle]);
-  HTTP.stopRecording();
   console.log(bestLap);
   console.log(laps);
 };
@@ -203,7 +197,6 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
           app.raiseBlock("RoadBlock2");
         }
         if (powerup != "4 Wheel Drive"){
-          console.log("setting vehicle offroad");
           vehicle.prototype.offRoad = true;
         }
       }
@@ -257,6 +250,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
 
 };
 
+//Create the main canvas scene
 var createScene = async function (engine, canvas) {
   //Creating scene, camera and lighting
   var scene = new Scene(engine);
@@ -270,8 +264,6 @@ var createScene = async function (engine, canvas) {
   await SceneLoader.ImportMeshAsync("", "/assets/", "Train.glb", scene);
   await SceneLoader.ImportMeshAsync("", "/assets/", "Tank.glb", scene);
 
-  var mat = new BABYLON.StandardMaterial("green", scene);
-  mat.diffuseColor = new BABYLON.Color3.Green();
   scene.enablePhysics(new BABYLON.Vector3(10, -9.8, 0));
 
   await SceneLoader.ImportMeshAsync("", "/assets/", "track.glb").then(
@@ -338,15 +330,7 @@ var createScene = async function (engine, canvas) {
       );
     }
   );
-  console.log(originalPositionDict)
   scene.ambientColor = new BABYLON.Color3.White();
-
-  // dornaCam = new BABYLON.FreeCamera("DornaCam", new Vector3(0,30,0), scene)
-  // dornaCam.parent = scene.getMeshByName("Dorna_Grip_primitive0")
-  // dornaCam.position = new Vector3(0,30,50)
-  // dornaCam.rotation = new Quaternion(0.0830442, 0.996531, 0, -0.0054447 )
-  
-
 
   return scene;
 };
@@ -357,13 +341,12 @@ export class BabylonApp {
     this.powerupName;
     this.engineType;
     this.vehicleName;
+    //object will be sent to joystick gui so it can store inputs
     this.keysPressed = function(){ this.w = 0, this.a = 0, this.s = 0, this.d = 0 , this.radian = 0};
-    //this.leftJoystick = new BABYLON.VirtualJoystick(true);
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
-    // this.leftJoystick.canvas = canvas;
-    // this.leftJoystick.containerSize = 5;
     var v = false; // Vehicle physics boxes visibility
+
     // initialize babylon scene and engine
     var engine = new Engine(canvas, true);
     var scenePromise = createScene(engine, canvas);
@@ -381,6 +364,7 @@ export class BabylonApp {
       document.getElementById("vehicleSelection").style.display = "block";
       this.gui = new Hud(scene, this);
 
+      //Main loop of the application
       engine.runRenderLoop(() => {
         scene.render();
         if(vehicle != undefined && vehicle.physicsEnabled)
@@ -388,6 +372,7 @@ export class BabylonApp {
           this.gui.updateHud();
       });
     });
+    //Catch keypress input
     window.addEventListener("keydown", (ev) => {
       if (ev.shiftKey && ev.ctrlKey && ev.altKey && ev.keyCode === 73) {
         if (scene.debugLayer.isVisible()) {
@@ -1142,6 +1127,7 @@ export class BabylonApp {
     );
   }
 
+  //used during testing, attached to button
   something()
   {
     console.log("test");
@@ -1149,6 +1135,7 @@ export class BabylonApp {
     vehicle.meshes.body.rotationQuaternion, true);
   }
 
+  //Used to start over with a new vehicle build
   restartSimulation(body,powerup, engine){
     firstBuild = true;
     userSelection.body = body || "Car";
@@ -1180,16 +1167,19 @@ export class BabylonApp {
 
   }
 
+  //Used for user submitting score
   submitScore(name){
     if(bestLap == 0)
       return;
       HTTP.sendScoreToServer(name || "unknown", this.calculateScore(), this.vehicleName, this.powerupName, this.engineType);
   }
 
+  //Used to calc score
   calculateScore() {
     return (bestLap == undefined || bestLap == 0) ? 0 : 50000 - (bestLap*111);
   }
 
+  //Used for speed boost button, can be extended to support more canvas buttons
   buttonPressed(name) {
     if(name == "speedBoost")
     {
