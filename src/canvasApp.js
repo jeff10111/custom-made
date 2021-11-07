@@ -1031,19 +1031,14 @@ export class BabylonApp {
   }
 
   // Plays a CSV in the format of Shoulder Angle, Uppearm, Forearm, Hand
-  async playCSV() {
-    var csv = readCsv("Tank_Assembly_J");
+  async playCSV(fileName = "Tank_Assembly_J") {
+    var csv = readCsv(fileName);
     var lastrow = csv[0];
     var x = 0;
     for (var row of csv) {
       if (JSON.stringify(lastrow) !== JSON.stringify(row)) {
-        x += 1;
-        if (x % 10 == 0) {
-          x = 0;
-          lastrow = row;
-
-          this.playRow([parseInt(row[0]),parseInt(row[1]),parseInt(row[2]),parseInt(row[3])], 3)
-        }
+        lastrow = row;
+        this.playRow([parseInt(row[0]),parseInt(row[1]),parseInt(row[2]),parseInt(row[3])], 3)
       }
     }
   }
