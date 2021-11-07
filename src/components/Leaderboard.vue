@@ -63,6 +63,11 @@ export default {
   name: "Leaderboard",
   props: {},
   methods: {
+    //update and repeat parameters are both functions
+    //The server responds with "Re" to tell the client to re-send the request
+    //In that situation, the client calls the repeat() function
+    //Otherwise, it calls update(data) where data is the response from the server
+    //
     getRequest(update, repeat) {
       const url = `http://localhost:3000/"name":"${this.getReq.name}"x"body":"${this.getReq.body}"x"powerup":"${this.getReq.powerup}"x"engine":"${this.getReq.engine}"`;
       var xhr = new XMLHttpRequest();
@@ -77,9 +82,11 @@ export default {
       xhr.setRequestHeader("Content-Type", "text/plain");
       xhr.send();
     },
+    //overwrites the leaderboard object with new data
     update(data) {
       this.scores = JSON.parse(data).scores; //Object: {name:, score:, body:, powerup:, engine:}
     }, 
+    //waits 50ms then resends the request
     repeat(){
         setTimeout(() => {
           this.getRequest(this.update, this.repeat);
@@ -88,8 +95,9 @@ export default {
   },
   data() {
     return {
-      scores: [],
-      getReq: {name: "", body: "", engine: "", powerup: "" },
+      scores: [],//store the response from server here
+      getReq: {name: "", body: "", engine: "", powerup: "" },//sent to server based on user selection
+      //Event called when user clicks a button
       click: function (param, input) {        
         var element = document.getElementById(input);
         if(element.classList.contains("pressed")){
@@ -105,12 +113,14 @@ export default {
         }
         this.getRequest(this.update, this.repeat);
       },
+      //event called when user clicks in text box (where they enter their name)
       text: function(){
         console.log("Text clicked");
         document.getElementById("nameInput").textContent = "";
         this.getReq["name"] = "";
         this.getRequest(this.update, this.repeat);
       },
+      //User name sent to server
       enterName: function(){
         let n = (x) => x == "Enter name here..." ? "" : x;
         this.getReq["name"] = n(document.getElementById("nameInput").textContent);
@@ -119,9 +129,11 @@ export default {
     };
   },
   mounted() {
+    //immediately request from server on page load
     this.getRequest(this.update, this.repeat);
     document.getElementById('nameInput').addEventListener('keydown', (evt) => {
       console.log(evt.key);
+      //detect user entering their name
       if (evt.key === "Enter") {
         evt.preventDefault();
         this.enterName();

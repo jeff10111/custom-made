@@ -4,6 +4,9 @@ import {
     Control,
   } from "@babylonjs/gui";
 
+  /*
+  * Class for the SpeedBoost button and integrated timer
+  */
 export class SpeedBoostGui{
     //Creating container for button (it is not visible)
     constructor(adt, ba)
@@ -19,7 +22,7 @@ export class SpeedBoostGui{
         this.currentTime;
     }
 
-    //Activating the button if user has chosen this powerup
+    //Creating the button if user has chosen this powerup
     activateButton(){
         //If the button already exists, we want to remove and rebuilt it
         if(this.button)

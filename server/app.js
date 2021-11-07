@@ -1,4 +1,10 @@
-// app.js
+/* app.js
+* Two uses are implemented on the server
+* 1. Respond to get requests for leaderboard data
+* 2. Recieve post request, write new leaderboard entry
+* This uses http get/post and SQLite database
+*/
+
 //Connecting to database
 const fs = require('fs');
 const sqlite3 = require('sqlite3');
@@ -10,13 +16,19 @@ let db = new sqlite3.Database("custom-made-db", sqlite3.OPEN_READWRITE, (err) =>
   }
   console.log("successfully connected to the database");
 });
-//Valid options
+//Valid options (to compare when user makes a request)
 var validBodies = {"Train":0,"Car":1,"Tank":2,"Spaceship":3};
 var validPowerups = {"4 Wheel Drive":0, "Emergency Siren":1, "Portal":2, "Speed Boost":3};
 var validEngines = {"Steam":0, "Petrol":1, "Jet":2, "Nuclear Fusion":3};
+
 //Store results of db requests for sending to clients
-var selectAllString = "";
-var selectWhereStrings = {};
+//This is a caching system
+//I couldn't get the server to wait for the database to return an answer,
+//So the first request causes the result to be cached, the server tells the client to resend the request, 
+//Client resends the request, server sends cached result to client
+var selectAllString = "";//Store select all response here to send to clients
+var selectWhereStrings = {};//Key:Response pair
+
 //Creating server
 const server = http.createServer();
 //ctrl-c
@@ -63,10 +75,10 @@ server.on('request', (request, response) => {
       {
         response.write(selectAllString);
       }
-      //response is already cached
+      //response is already cached - return it
       else if(selectWhereStrings[key] != undefined){
         response.write(selectWhereStrings[key])
-      //Response has not been cached
+      //Response has not been cached - tell the client to request again, update cache
       } else {
         response.write("Re");
         selectWhere(string, key);
@@ -76,29 +88,23 @@ server.on('request', (request, response) => {
   }
   //Used for sending new scores
   else if (request.method == "POST") {
-    if(request.url == "score"){
-      var a = [];
-      request.on('data', (chunk) => {
-        a.push(chunk);
-      }).on('end', () => {
-        console.log(a);
-      });
-      return;
-    }
-    
-      var badPost = false;
-      var vehicle = [];
+
+    var badPost = false;//set to true if post violates any rules
+    var vehicle = [];//store the response here
 
     request.on('data', (chunk) => {
       vehicle.push(chunk);
     }).on('end', () => {
       try {
-        vehicle = JSON.parse(Buffer.concat(vehicle).toString());
-        vehicle.name.replace(/[^0-9a-zA-Z]/g, '').slice(0,20);
 
+        vehicle = JSON.parse(Buffer.concat(vehicle).toString());//tries to convert post to JSON
+        vehicle.name.replace(/[^0-9a-zA-Z]/g, '').slice(0,20);//Only allows alphanumeric characters, maximum length of 20
+
+        //Validates that all the required keys are in the object and no additional keys are included
         if (!('body' in vehicle && 'powerup' in vehicle && 'engine' in vehicle && 'name' in vehicle && 'score' in vehicle && Object.keys(vehicle).length == 5)) {
           throw 'Invalid KEYS: ' + Object.keys(vehicle);
         }
+        //Validates the values for body, powerup and engine
         if (validBodies[vehicle.body] == undefined) {
           throw 'Invalid BODY: ' + vehicle.body;
         }
@@ -108,16 +114,19 @@ server.on('request', (request, response) => {
         if (validEngines[vehicle.engine] == undefined) {
           throw 'Invalid ENGINE: ' + vehicle.engine;
         }
+        //Validates the score is a number
         if (isNaN(parseInt(vehicle.score))) {
           throw 'Invalid SCORE: ' + vehicle.score;
         }
+        //Valides the name is at least one character, and doesn't include a bad word
         if (vehicle.name.length < 1 || badWords.some((x) => vehicle.name.toLowerCase().includes(x))) {
           throw "Invalid NAME: " + vehicle.name;
         }
       } catch (e) {
-        badPost = true;
+        badPost = true;//If it's a bad post nothing happens
         console.error(e);
       }
+      //if the post is good then an entry is inserted into the database
       if (!badPost) {
         console.log("Inserting user: " + vehicle.name);
         dbInsert(
@@ -128,7 +137,7 @@ server.on('request', (request, response) => {
           validEngines[vehicle.engine],
         );
         console.log("Completed Database Insertion");
-        selectAll();
+        selectAll();//updates the cache for select all to make sure it's valid
         response.end("Finished receiving data, Thank You!");
       }
     });
@@ -136,6 +145,7 @@ server.on('request', (request, response) => {
 
 });
 
+//Cleanly shut down
 process.on('SIGINT', function () {
   console.log("Shutting down");
   //do any clean up here
@@ -143,10 +153,12 @@ process.on('SIGINT', function () {
   exit();
 });
 
+//query string, all the values are already validated
 function dbInsert(score, name, body, powerup, engine) {
   db.run(`INSERT INTO leaderboard (score, name, body, powerup, engine) VALUES (${score}, "${name}", ${body}, ${powerup}, ${engine})`);
 }
 
+//Updates select all cache
 function selectAll() {
   let sql = `SELECT * FROM leaderboard ORDER BY score DESC LIMIT 10`;
   var scores = {scores: []};
@@ -160,10 +172,13 @@ function selectAll() {
   });
 }
 
+//Updates selectWhere cache
+//Values parameter is an object with key:value pairs
+//key represents the query and is used to store the db response in the cache
 function selectWhere(values, key) {//Expects words as values, not numbers which are stored in the database
   //values = {body: "", powerup: "", engine: ""}
   var scores = {scores: []};
-  //None of the keys are valid
+  //None of the keys are valid - these keys should exist even if the value is an empty string
   if(!("body" in values || "powerup" in values || "engine" in values)){
     return;
   }
@@ -181,6 +196,7 @@ function selectWhere(values, key) {//Expects words as values, not numbers which 
     return;
   }
 
+  //Creating the query string
   let sql = `SELECT * FROM leaderboard WHERE`;
   if(values.body != -1){
     sql += ` body = ${values.body}`;
@@ -214,7 +230,7 @@ function selectWhere(values, key) {//Expects words as values, not numbers which 
   });
 }
 
-//Load bad words list. Words are from:
+//Load bad words list. I got the list from:
 // https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words
 fs.readFile('bannedWords.txt', 'utf8', function (err,data) {
   if (err) {
@@ -226,6 +242,6 @@ fs.readFile('bannedWords.txt', 'utf8', function (err,data) {
 // Start the server on port 3000
 server.listen(3000, '127.0.0.1');
 console.log('Node server running on port 3000');
-//Push initial result into cache
+//Preload result into cache
 selectAll();
 

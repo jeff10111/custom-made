@@ -391,9 +391,18 @@ export class Omni {
     }
 }
 
+/*
+* Class for Tank vehicle
+*   Builds the vehicle from imported meshes when instantiated
+*   Implements vehicle physics
+*   Constructor takes x,z coordinates (as height is constant), engine, powerup, visibility for physics meshes and rotation (quaternions)
+*   Train/MT are the same so not commented
+*/
 export class Tank {
     constructor(scene, x, z, engineName, powerupName, visible, rotation) {
+        //Each vehicle uses the same set of attributes
         this.prototype = new Prototype(50, 50, 2.5, 1, 0.05, 100, 20, 1, powerupName, engineName, x, z, rotation);
+        //Meshes are defined in this.meshes for each vehicle
         this.meshes = {
             body: BABYLON.MeshBuilder.CreateBox("TankBodyBox", { width: 22, depth: 20, height: 6 }, scene),
             wheelL1: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
@@ -405,10 +414,17 @@ export class Tank {
             wheelR3: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
             wheelR4: BABYLON.MeshBuilder.CreateCylinder(null, { diameter: this.prototype.wheelDiam, height: this.prototype.wheelHeight }, scene),
         };
+        //Assigning the constructor as a member function so that when it's called,
+        // "this" keyword refers to this object.
         this.protoConst = vehicleBuilder;
+        //Calling the prototypical construct/builder that is the same for each object
         this.protoConst(visible, rotation, scene);
     }
 
+    //Function for starting physics.
+    //Please note how the wheels are associated with a physics imposter prior to the body.
+    //This is a seemingly arbitary but required condition that enables the ability for the wheels to be
+    //  assigned the body as parent when *disabling* physics without any bugs occuring.
     startPhysics(){
         if(this.physicsEnabled)
             return;
@@ -419,10 +435,10 @@ export class Tank {
             this.meshes[x].physicsImpostor = 
             new BABYLON.PhysicsImpostor(this.meshes[x], BABYLON.PhysicsImpostor.CylinderImpostor, { mass: this.prototype.wheelMass, friction: this.prototype.wheelFriction, restitution: this.prototype.wheelRestitution }, this.scene);
         });
-        //Adding physics imposter to body mesh (the parent of the MOD mesh)
+        //3. Adding physics imposter to body mesh (the parent of the MOD mesh)
         this.meshes.body.physicsImpostor =
         new BABYLON.PhysicsImpostor(this.meshes.body, BABYLON.PhysicsImpostor.BoxImpostor, { mass: this.prototype.bodyMass , restitution: 0, friction: 0}, this.scene);
-        //hinges part
+        //4. hinges part - joining all wheels to body
         let wheelWidth = 10.5;//width for center of body
         let wheelHeight = -3;//Height on the body
         this.wheelJoint(this.meshes.body, this.meshes.wheelL1, -5.3, wheelHeight, wheelWidth);

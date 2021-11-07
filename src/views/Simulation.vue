@@ -77,6 +77,8 @@ export default {
   name: "Simulation",
   props: {},
   components: {SelectionInterface, Leaderboard},
+  //All of these methods are used by a button
+  //Most of the buttons are not enabled as these were test function calls mainly
   methods: {
     restartSimulation(body, engine, powerup) {
       this.userSelection.body = body || "Car";

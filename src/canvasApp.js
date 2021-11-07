@@ -335,13 +335,17 @@ var createScene = async function (engine, canvas) {
   return scene;
 };
 
+/*
+* Represents the entire canvas application
+* Called from simulation.vue
+*/
 export class BabylonApp {
   constructor(simulationWrapper) {
     this.simulationWrapper = simulationWrapper;
     this.powerupName;
     this.engineType;
     this.vehicleName;
-    //object will be sent to joystick gui so it can store inputs
+    //keysPressed are written to by the keyboard or joystick, and read by the active vehicle
     this.keysPressed = function(){ this.w = 0, this.a = 0, this.s = 0, this.d = 0 , this.radian = 0};
     // create the canvas html element and attach it to the webpage
     var canvas = document.getElementById("gameCanvas");
@@ -361,6 +365,7 @@ export class BabylonApp {
 
       scene.getMeshByName("TrainBodyBox").scaling.z = -1
 
+      //Bring up the vehicle selection interface on start
       document.getElementById("vehicleSelection").style.display = "block";
       this.gui = new Hud(scene, this);
 
@@ -368,7 +373,7 @@ export class BabylonApp {
       engine.runRenderLoop(() => {
         scene.render();
         if(vehicle != undefined && vehicle.physicsEnabled)
-          vehicle.userInput(this.keysPressed);
+          vehicle.userInput(this.keysPressed);//send activated keys to vehicle
           this.gui.updateHud();
       });
     });
