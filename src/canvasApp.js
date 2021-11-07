@@ -43,18 +43,17 @@ function switchVehicle(vehicleName, scene) {
   vehicle.camera.attachControl(document.getElementById("gameCanvas"), true);
 }
 
+// Add a collider to a mesh using its bounding box
 var addCollider = function(scene, thisMesh, visible, friction) {
   try {
     thisMesh = scene.getMeshByName(thisMesh.name);
     var meshRot = thisMesh.rotation
 
-    // meshRot = new BABYLON.Vector3(0,0,0)
     thisMesh.scaling.x = Math.abs(thisMesh.scaling.x);
     thisMesh.scaling.y = Math.abs(thisMesh.scaling.y);
     thisMesh.scaling.z = Math.abs(thisMesh.scaling.z);
 
     var bb = thisMesh.getBoundingInfo().boundingBox;
-    // Don't really know why I have to double the scale but it works
     var width = (bb.maximum.x - bb.minimum.x);
     var height = (bb.maximum.y - bb.minimum.y);
     var depth = (bb.maximum.z - bb.minimum.z);
@@ -72,7 +71,6 @@ var addCollider = function(scene, thisMesh, visible, friction) {
 
     if (thisMesh.name.includes("_rot")) {
       var numbers = parseFloat(thisMesh.name.slice(thisMesh.name.lastIndexOf("_rot") + 4))
-      console.log("Rot: " + numbers)
       thisMesh.rotation.y = numbers * Math.PI / 180
       box.rotation.y = (numbers * Math.PI / 180) * -1
     }
@@ -84,8 +82,6 @@ var addCollider = function(scene, thisMesh, visible, friction) {
       { mass: 0, restitution: 0 },
       scene
     );
-    //console.log("Making bb of " + thisMesh.name);
-
 
     box.showBoundingBox = true;
     box.position = bb.centerWorld;
@@ -104,16 +100,14 @@ var stopLap = function(gui) {
   if (!bestLap || gui.time < bestLap) {
     bestLap = gui.time;
   }
+  // Apply a penalty if the user did not stop for the red light
   if (userSelection.powerup != "Emergency Siren" && gui._redlightTime > 50) {
     bestLap += Math.floor((gui._redlightTime / 1000) * 1.5)
   }
   laps.push([gui.time, vehicle]);
-  console.log(bestLap);
-  console.log(laps);
 };
 
 var exitedAssembly = false;
-
 var addTriggers = function(gui, scene, vehicleName, powerup, app) {
 
   // Must be a mesh, not a transform node
@@ -126,8 +120,8 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
     console.log("VEHICLE MESH NOT DEFINED: " + vehicleName);
     return;
   }
-  console.log("Set vehicleMesh to " + vehicleMesh)
 
+  // Triggerable function for re-entering the assembly area
   var assemblyTrigger = scene.getMeshByName("Trigger_Assembly");
   assemblyTrigger.visibility = 0;
   assemblyTrigger.actionManager = new ActionManager(scene);
@@ -138,8 +132,8 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         parameter: vehicleMesh,
       },
       () => {
+        // Do not trigger on first touch - that is the vehicle exiting
         if (exitedAssembly) {
-          console.log("AssemblyReEntered");
           exitedAssembly = false;
           app.disassembleVehicle();
         }
@@ -160,7 +154,6 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
       () => {
         if (powerup != "Emergency Siren") {
           gui.startRedlight();
-          console.log("RedLightArea");
         }
       }
     )
@@ -174,7 +167,6 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
       () => {
         if (powerup != "Emergency Siren") {
           gui.stopRedlight();
-          console.log("RedLightAreaExit");
         }
       }
     )
@@ -193,6 +185,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         vehicle.cameras[0].radius = 150;
         vehicle.cameras[0].heightOffset = 200;
         fourWheelDrivePassed = true;
+        // The portal powerup bypasses this blockade
         if (powerup != "Portal") {
           app.raiseBlock("RoadBlock2");
         }
@@ -218,8 +211,7 @@ var addTriggers = function(gui, scene, vehicleName, powerup, app) {
         startLap(gui);
         fourWheelDrivePassed = false;
         vehicle.prototype.offRoad = false;
-        // app.raiseBlock("RoadBlock1");
-
+        app.raiseBlock("RoadBlock1");
       }
     )
   );
@@ -282,8 +274,8 @@ var createScene = async function (engine, canvas) {
           thisMesh.rotation = newRot;
         }
 
+        // Store the original positions of each mesh so they can be reset
         var rot = thisMesh.rotation.clone()
-        console.log("$$" + thisMesh.name)
         if (thisMesh.rotationQuaternion != undefined) {
           rot = thisMesh.rotationQuaternion.toEulerAngles()
         }
@@ -412,7 +404,6 @@ export class BabylonApp {
       } else if (ev.key == "ArrowLeft" || ev.key == "a") {
         this.keysPressed["a"] = 0;
       }
-      console.log("key pressed. Vehicle: " + vehicle);
     });
 
     window.addEventListener("resize", function() {
@@ -428,6 +419,8 @@ export class BabylonApp {
       autoStart
     );
   }
+
+  // Helper function for rotating the different joints in the arm
   rotateTo(boneName, attribute, valueTo, autoStart = true) {
     // //TEMPLATE
     // this.rotateTo("ShoulderBone", "rotation.z", Math.PI/4);
@@ -444,17 +437,13 @@ export class BabylonApp {
       thisAttr = thisAttr[element];
     });
 
-    // console.log("Retrieved val: " + thisAttr)
-
     const thisAnim = new Animation(
       boneName + "_" + attribute,
       attribute,
       frameRate,
       Animation.ANIMATIONTYPE_FLOAT
     );
-    thisAnim.onAnimationLoop = function() {
-      console.error("HEYO");
-    };
+
     const keyFrames = [];
     keyFrames.push({
       frame: 0,
@@ -476,7 +465,7 @@ export class BabylonApp {
     return thisAnim;
   }
 
-
+  // Helper function to move a mesh from a position t oanother
   moveMesh(meshName, attribute, valueFrom, valueTo, autoStart = true) {
     // //TEMPLATE
     // this.moveMesh("RoadBlock1", "position.y", -30, 30);
@@ -489,8 +478,6 @@ export class BabylonApp {
     splitAttr.forEach((element) => {
       thisAttr = thisAttr[element];
     });
-
-    // console.log("Retrieved val: " + thisAttr)
 
     const thisAnim = new Animation(
       meshName + "_" + attribute,
@@ -520,35 +507,34 @@ export class BabylonApp {
     }
     return thisAnim;
   }
+
+  //Debug function to randomly spin the dorna arm
   spinArm() {
-    //console.log(vehicle.meshes.body.position);
     var test = Math.floor(Math.random() * 10 - 5);
     if (test == 0) {
       test = 1;
     }
-    //console.log("Shoulder spin amt: " + test);
 
     this.rotateTo("ShoulderBone", "rotation.z", Math.PI / test);
     test = Math.floor(Math.random() * 20 - 10);
     if (test == 0) {
       test = 1;
     }
-    //console.log("Forearm spin amt: " + test);
     this.rotateTo("ForearmBone", "rotation.x", Math.PI / test);
     test = Math.floor(Math.random() * 20 - 10);
     if (test == 0) {
       test = 1;
     }
-    //console.log("Upperarm spin amt: " + test);
     this.rotateTo("UpperarmBone", "rotation.x", Math.PI / test);
     test = Math.floor(Math.random() * 20 - 10);
     if (test == 0) {
       test = 1;
     }
-    //console.log("Hand spin amt: " + test);
     this.rotateTo("HandBone", "rotation.x", Math.PI / test);
   }
 
+  // Attach a mesh (attachable) to a different mesh (attachPoint), matching
+  // position and rotation
   async attachTo(attachable, attachPoint, offsetx=0, offsety=0, offsetz=0) {
     var currentParent = attachPoint.parent
     attachPoint.setParent(null);
@@ -561,22 +547,15 @@ export class BabylonApp {
     attachPoint.setParent(currentParent)
   }
 
-  
-
+  // Drive the vehicle to its respective platform and disassemble it
   async disassembleVehicle() {
     var currentRad = scene.activeCamera.radius
     scene.activeCamera.radius = 150
     var currentRotOffset = scene.activeCamera.rotationOffset
-
-
     var dornaHand = scene.getTransformNodeByName("HandBone");
-
-    console.log(userSelection.body, userSelection.engine, userSelection.powerup);
-    
     var engine;
     var engineAngle;
     
-
     switch (userSelection.engine) {
       case "Nuclear Fusion":
         engine = scene.getMeshByName("Engine_NuclearFusion1");
@@ -695,7 +674,7 @@ export class BabylonApp {
       vehicle.meshes.body.rotation.x, vehicle.meshes.body.rotation.z)
     )
 
-    await vehicle.animate(assemblyPosition,       BABYLON.Quaternion.RotationYawPitchRoll(this.rad(90),
+    await vehicle.animate(assemblyPosition, BABYLON.Quaternion.RotationYawPitchRoll(this.rad(90),
       vehicle.meshes.body.rotation.x, vehicle.meshes.body.rotation.z))
 
     await vehicle.animate(assemblyPosition, assemblyRotation)
@@ -718,7 +697,6 @@ export class BabylonApp {
 
     // POWERUP DISASSEMBLY
     await this.playRow([powerupAngle, 57, -65, 8])
-
 
     const powerupOriginalParent = originalPositionDict[powerup.name][0];
     powerup.parent = powerupOriginalParent
@@ -762,12 +740,15 @@ export class BabylonApp {
     var rot = originalPositionDict[shell.name][2]
     shell.rotation = new BABYLON.Vector3(rot.x, rot.y, rot.z)
     shell.scaling = new BABYLON.Vector3(1,1,1)
+
     scene.activeCamera.radius = currentRad 
     scene.activeCamera.rotationOffset = currentRotOffset
+
     this.simulationWrapper.openVehicleSelection();
 
   }
 
+  // Move the vehicle to the start line, in case it flips or is stuck
   async resetVehicle() {
     if (exitedAssembly) {
       vehicle.disablePhysics();
@@ -787,9 +768,6 @@ export class BabylonApp {
 
     exitedAssembly = false;
     var dornaHand = scene.getTransformNodeByName("HandBone");  
-
-
-    console.log(userSelection.body, userSelection.engine, userSelection.powerup);
     
     var engine;
     var engineAngle;
@@ -890,7 +868,6 @@ export class BabylonApp {
 
     await vehicle.animate(assemblyPosition, assemblyRotation)
 
-
     shell = scene.getTransformNodeByName(userSelection.body+"Top");
 
     // CHASSIS ASSEMBLY
@@ -900,7 +877,6 @@ export class BabylonApp {
     shell.setParent(dornaHand);
 
     await this.playRow([shellAngle+180,140,,], 1)
-
 
     await this.playRow([,25,-106,81.5])
     
@@ -919,7 +895,6 @@ export class BabylonApp {
     await this.playRow([155, 140,,], 1)
 
     await this.playRow([enginePlaceAngle, 10, -115, 103.5])
-    
 
     var engineAttach = scene.getMeshByName(userSelection.body+"_EngineAttach");
     this.attachTo(engine, engineAttach, 0,0.5,0)
@@ -992,6 +967,7 @@ export class BabylonApp {
       )
     }
 
+    // Block off the assembly area
     this.raiseBlock("RoadBlock1");
 
     await vehicle.animate(
@@ -1002,14 +978,20 @@ export class BabylonApp {
 
     exitedAssembly = true;
     firstBuild = false;
+
+    // Give control to the player
     vehicle.startPhysics()
   }
 
+  // Helper to convert degrees to radians
   rad(degrees) {
     return degrees * Math.PI / 180
   }
 
+  // Play a "row" of dorna arm positions, matches the CSV dorna output format
   // arrayOfPositions = [Shoulder.z, Upper.x, Fore.x, Hand.x]
+  // awaitIndex: which animation is async awaitable, the rest will be played concurrently
+  // Defaults to the dorna hand
   async playRow(arrayOfPositions, awaitIndex = 3) {
     var shoulder = parseInt(arrayOfPositions[0])
     if (!isNaN(shoulder)) {
@@ -1046,34 +1028,27 @@ export class BabylonApp {
         this.rotateToDegrees("HandBone", "rotation.x", hand);
       }
     }
-    console.log(shoulder,upper,fore,hand)
-
   }
 
+  // Plays a CSV in the format of Shoulder Angle, Uppearm, Forearm, Hand
   async playCSV() {
     var csv = readCsv("Tank_Assembly_J");
     var lastrow = csv[0];
     var x = 0;
     for (var row of csv) {
-      // var row = csv[250]
       if (JSON.stringify(lastrow) !== JSON.stringify(row)) {
         x += 1;
         if (x % 10 == 0) {
           x = 0;
           lastrow = row;
 
-          this.rotateToDegrees("ShoulderBone", "rotation.z", parseInt(row[0]));
-          this.rotateToDegrees("UpperarmBone", "rotation.x", parseInt(row[1]));
-          this.rotateToDegrees("ForearmBone", "rotation.x", parseInt(row[2]));
-          await this.rotateToDegrees(
-            "HandBone",
-            "rotation.x",
-            parseInt(row[3])
-          );
+          this.playRow([parseInt(row[0]),parseInt(row[1]),parseInt(row[2]),parseInt(row[3])], 3)
         }
       }
     }
   }
+
+  // Debug method to raise all blocks on the track
   raiseBlocks() {
     this.raiseBlock("RoadBlock1");
     this.raiseBlock("RoadBlock2");
@@ -1135,7 +1110,6 @@ export class BabylonApp {
   //used during testing, attached to button
   something()
   {
-    console.log("test");
     vehicle.move(new Vector3(vehicle.meshes.body.position.x,vehicle.meshes.body.position.y+60,vehicle.meshes.body.position.z),
     vehicle.meshes.body.rotationQuaternion, true);
   }
@@ -1190,7 +1164,6 @@ export class BabylonApp {
     {
       vehicle.prototype.sbActivationTime = new Date().getTime();
       this.gui.speedBoostButton.startTimer();
-      console.log("Speed Boost button pressed");
     }
   }
 }
