@@ -220,7 +220,6 @@ let wheelJoint = function(body, wheel, x, y, z) {
 let test = function(){
     this.i += 1;
     (this.physicsEnabled) ? this.disablePhysics() : this.startPhysics(); 
-    console.log(this.meshes.body.position);
 }
 
 //Prototypical object used to store vehicle attributes

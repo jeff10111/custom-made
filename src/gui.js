@@ -87,9 +87,7 @@ export class Hud {
     }
     this.speedBoostButton.updateTimerText();
     if (!this._stopRedlight && this._redlightTime >= 0) {
-      console.log(new Date().getTime(), " - ", this._prevTime)
       this._redlightTime -= (new Date().getTime() - this._prevTime)
-      console.log(this._redlightTime)
       this._prevTime = new Date().getTime();
       if (this._redlightTime < 0) {
         this._redlightTime = 0;
@@ -105,7 +103,6 @@ export class Hud {
   //---- Game Timer ----
   startTimer() {
     this._startTime = new Date().getTime();
-    console.log(this._startTime);
     this._stopTimer = false;
     this._redlightTime = 5000;
     this._redlightTimeClock.color = "red"
